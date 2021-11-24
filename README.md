@@ -1,3 +1,8 @@
+![image](https://user-images.githubusercontent.com/43166007/143251407-38f54ce4-739e-40d5-85ff-8961ab41fff8.png)
+
+![image](https://user-images.githubusercontent.com/43166007/143251429-d33c9e1a-9cb0-4889-9e8b-cabe5bf9184a.png)
+
+
 1.基于 qcat库，该库在github中管理，而pland也使用。最初是基于同样的原版本修改而来，后期github可能会进一步更改。
 并以GitHub为准而pland跟进，尽量不改动。作为子模块使用
 

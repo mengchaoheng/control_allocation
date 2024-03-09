@@ -15,3 +15,27 @@ The new algorithm will used by a ductedfan UAV.
 3. test.m, constraint.m and twin.slx come from `allocation m2C`，view the attainable set。
 
 4. some new algorithm is show here.
+
+# Some files and folders
+submodules used sa lib:
+* aircraft-control-allocation-book-simulation
+* qcat
+
+new algorithm
+* LP
+* PCA
+* QP
+
+simulink test and some test:
+* `ac.slx` and `twin.slx`
+* test_qcat_wls.m
+* test_vview.m
+
+come from the old version modified `aircraft-control-allocation-book-simulation`:
+* some_modified_function 
+ 
+come from the old version `control allocation`:
+* s-function_used_in PlanD 
+* plot_actuator.m 
+
+

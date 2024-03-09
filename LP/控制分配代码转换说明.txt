@@ -1,0 +1,19 @@
+/*
+ * File: wls_alloc.c
+ *
+ * MATLAB Coder version            : 4.0
+ * C/C++ source code generated on  : 10-Jul-2019 19:50:47
+ * 参考Efficient Active Set Algorithms for Solving Constrained Least Squares Problems in Aircraft Control Allocation
+ * 参考网址 http://research.harkegard.se/qcat/
+ * 由matlab代码生成，参数设置为
+ * Generated on:	10-Jul-2019 21:21:13
+ * Build type:	Static Library
+ * Output file:	C:\Users\Ducted Fan\Downloads\???????????????????\codegen\lib\wls_alloc\wls_alloc.lib
+ * Processor:	ARM Compatible->ARM Cortex
+ * Version:	MATLAB Coder 4.0 (R2018a)
+ * Details:	Entry PointsSettings
+ * Reports:	Code MetricsCode Replacements
+ * 重新生成记得往wls_alloc_initialize添加初始化W，在头文件添加sWls结构体和extern sWls wls，包含#include "userlib.h"
+ * 最后在c文件添加sWls wls;
+ * 如果仅仅修改wls_alloc函数，可以仅覆盖wls_alloc函数，其他不用修改
+ */

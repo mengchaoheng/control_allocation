@@ -1,9 +1,10 @@
 clear all;
 close all;
+rmpath(genpath(pwd))
 folder ='some_modified_function';  % 
 addpath( genpath(folder) );
 
-B=zeros(3,4);uMin=zeros(4,1);uMax=zeros(4,1);INDX=zeros(1,4);
+
 
 B=[-0.5     0       0.5     0;
                      0      -0.5     0       0.5;

@@ -1,4 +1,4 @@
-function [u] = wls_alloc_mch(v, u, p_limits, v_limits)
+function [u] = wls_alloc_mch_tdf(v, u, p_limits, v_limits)
 % function [u] = wls_alloc_mch(v, u, umin, umax)
 %  [u] = wls_alloc_mch(v,u,p_limits,v_limits)
 % WLS_ALLOC - Control allocation using weighted least squares.

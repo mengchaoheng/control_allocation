@@ -6,14 +6,9 @@ rmpath(folder) % remove old version
 folder ='s-function_used_in PlanD'; 
 rmpath(folder) % remove old version
 
-
-
 B=[-0.5     0       0.5     0;
                      0      -0.5     0       0.5;
                      0.25    0.25    0.25    0.25];
-% B(:,1:effector)=[-1     0      1     0;
-%                   0    -1      0     1;
-%                   1     1      1     1];
 
 [k,m] = size(B);
 % m=4;

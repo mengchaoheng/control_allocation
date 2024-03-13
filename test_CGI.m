@@ -43,7 +43,7 @@ end
 %           INDX  0]
 yd=[-0.2;-0.2;0]; 
 IN_MAT = [B yd;uMin' 0;uMax' 0;INDX 0];
-u1= CGIwrap(IN_MAT)
+u1= CGIwrap(IN_MAT);
 for i=1:N% (N+1)^2  for  sphere %length(M_des(1:1000,1))%%length(X)
 % 
 if(use_date)

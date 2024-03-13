@@ -1,4 +1,4 @@
-function [u,z,iters] = dir_alloc_sim(v, umin,umax,B)
+function [u,z,iters] = dir_alloc_sim_new(v, umin,umax,B)
 % (c) mengchaoheng
 % Last edited 2019-11
 %   min z=c*x   subj. to  A*x (=、 >=、 <=) b
@@ -86,7 +86,7 @@ P=[Ad(1:3,1:3) zeros(3,mad-3);Ad(4:mad,1:3) eye(mad-3)];
 %      1     1     2     0     0     0     0     0     0     0     1     0     0;
 %      0     0     0     0     0     0     0     0     0     0     0     1     0;
 %      0     0     0     0     0     0     0     0     0     0     0     0     1];
-P_inv=inv_mch(P,mad,mad);
+P_inv=inv_mch(P);
 Ad_eye=P_inv*Ad;
 % Ad_eye=[1     0     0     1     0    -1     0     0    -1     0;
 %         0     1     0    -1     0     0    -1     0     1     0;

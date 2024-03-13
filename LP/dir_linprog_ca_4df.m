@@ -1,4 +1,4 @@
-function [u,a] = linprog_dir_ca_4df(B,v,last_u, p_limits, v_limits,incre)
+function [u,a] = dir_linprog_ca_4df(B,v, umin, umax)
   
 % DIR_ALLOC - Direct control allocation.
 %
@@ -27,28 +27,28 @@ function [u,a] = linprog_dir_ca_4df(B,v,last_u, p_limits, v_limits,incre)
 %
 % See also: DIR_SIM.
     %====仅幅值约束================
-if(~v_limits)
-    if(incre)
-        last_v=B*last_u;
-        umin=[1;1;1;1]*(-p_limits)*pi/180-last_u;
-        umax=[1;1;1;1]*p_limits*pi/180-last_u;
-        v=v-last_v;
-    else
-        umin=[1;1;1;1]*(-p_limits)*pi/180;
-        umax=[1;1;1;1]*p_limits*pi/180;
-    end
-%====幅值、速度约束================ 
-else
-    if(incre)
-        last_v=B*last_u;
-        umin=max([1;1;1;1]*(-p_limits)*pi/180-last_u,-0.01*500*pi/180);
-        umax=min([1;1;1;1]*p_limits*pi/180-last_u,0.01*500*pi/180);
-        v=v-last_v;
-    else
-        umin=max([1;1;1;1]*(-p_limits)*pi/180,-0.01*500*pi/180+last_u);
-        umax=min([1;1;1;1]*p_limits*pi/180,0.01*500*pi/180+last_u);
-    end
-end
+% if(~v_limits)
+%     if(incre)
+%         last_v=B*last_u;
+%         umin=[1;1;1;1]*(-p_limits)*pi/180-last_u;
+%         umax=[1;1;1;1]*p_limits*pi/180-last_u;
+%         v=v-last_v;
+%     else
+%         umin=[1;1;1;1]*(-p_limits)*pi/180;
+%         umax=[1;1;1;1]*p_limits*pi/180;
+%     end
+% %====幅值、速度约束================ 
+% else
+%     if(incre)
+%         last_v=B*last_u;
+%         umin=max([1;1;1;1]*(-p_limits)*pi/180-last_u,-0.01*500*pi/180);
+%         umax=min([1;1;1;1]*p_limits*pi/180-last_u,0.01*500*pi/180);
+%         v=v-last_v;
+%     else
+%         umin=max([1;1;1;1]*(-p_limits)*pi/180,-0.01*500*pi/180+last_u);
+%         umax=min([1;1;1;1]*p_limits*pi/180,0.01*500*pi/180+last_u);
+%     end
+% end
 % Number of variables
   [k,m] = size(B);
   
@@ -73,7 +73,7 @@ end
   
   % Solve linear program
   options = optimset('Display', 'iter');% ,'Algorithm','interior-point-legacy'
-  [x,fval,exitflag,output,lambda]= linprog(f,A,b,Aeq,beq,lb,ub,[],options);
+  [x,fval,exitflag,output,lambda]= linprog(f,A,b,Aeq,beq,lb,ub,options);
   if(exitflag~=1)
       a=0;
       u=[0;0;0;0];
@@ -85,7 +85,7 @@ end
   if a>1
     u = u/a;
   end
-  if(incre)
-     u=u+last_u;
-  end
+  % if(incre)
+  %    u=u+last_u;
+  % end
   

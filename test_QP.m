@@ -37,7 +37,9 @@ v=0.5*[X(i);Y(i);Z(i)];% 虚拟指令
 % test old version, maybe use for a simulink block
 % u= qp_ca_mch([v;u],B,[umin umax],[],0.01,eye(3),eye(4),zeros(4,1),100,1e6,true);
 % test 4df allocation
-u = wls_ca_4df(v, u);
+ u = wls_ca_4df_pv_limit(v, u, 20, 0);
+
+% u = wls_ca_4df(v, u);
 % u=dyn_ca_4df(v,u);
 
 

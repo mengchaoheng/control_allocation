@@ -1,4 +1,4 @@
-function [u] = dir_alloc_mch(v, umin,umax)
+function [u] = dir_ca_4df(v, umin,umax)
 % (c) mengchaoheng
 % Last edited 2019-11
 %   min z=c*x   subj. to  A*x (=、 >=、 <=) b

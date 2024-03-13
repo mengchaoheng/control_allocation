@@ -12,7 +12,7 @@
 /* Function Declarations */
 static boolean_T all(const boolean_T x[20]);
 static void eye(double I[100]);
-static void inv_mvh(double A[169], double A_inv[169]);
+static void inv_mch(double A[169], double A_inv[169]);
 static void rdivide(const double x_data[], const int x_size[1], const double
                     y_data[], double z_data[], int z_size[1]);
 
@@ -56,28 +56,28 @@ static void eye(double I[100])
 }
 
 /*
- * ¶Ô¾ØÕó½øÐÐ³õµÈÐÐ±ä»»ÇóÆäÄæ
+ * ï¿½Ô¾ï¿½ï¿½ï¿½ï¿½ï¿½Ð³ï¿½ï¿½ï¿½ï¿½Ð±ä»»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
  * Arguments    : double A[169]
  *                double A_inv[169]
  * Return Type  : void
  */
-static void inv_mvh(double A[169], double A_inv[169])
+static void inv_mch(double A[169], double A_inv[169])
 {
   int k;
   int i;
   double div_i;
   int jj;
 
-  /*  function Ad_eye=inv_mvh(B_inv,Ad) */
-  /*  Ad_eye=B_inv\Ad;% »¯¼ò */
-  /*  BÎªµ¥Î»¾ØÕó */
+  /*  function Ad_eye=inv_mch(B_inv,Ad) */
+  /*  Ad_eye=B_inv\Ad;% ï¿½ï¿½ï¿½ï¿½ */
+  /*  BÎªï¿½ï¿½Î»ï¿½ï¿½ï¿½ï¿½ */
   memset(&A_inv[0], 0, 169U * sizeof(double));
   for (k = 0; k < 13; k++) {
     A_inv[k + 13 * k] = 1.0;
   }
 
   for (i = 0; i < 13; i++) {
-    /*  ÒÀ´Î½«¶Ô½ÇÐÐµÄÔªËØ¹éÒ»»¯ */
+    /*  ï¿½ï¿½ï¿½Î½ï¿½ï¿½Ô½ï¿½ï¿½Ðµï¿½Ôªï¿½Ø¹ï¿½Ò»ï¿½ï¿½ */
     div_i = A[i + 13 * i];
     for (k = 0; k < 13; k++) {
       A[i + 13 * k] /= div_i;
@@ -90,7 +90,7 @@ static void inv_mvh(double A[169], double A_inv[169])
         div_i = 0.0;
       }
 
-      /*  ³õµÈÐÐ±ä»» */
+      /*  ï¿½ï¿½ï¿½ï¿½ï¿½Ð±ä»» */
       for (jj = 0; jj < 13; jj++) {
         A[k + 13 * jj] += div_i * A[i + 13 * jj];
         A_inv[k + 13 * jj] += div_i * A_inv[i + 13 * jj];
@@ -122,9 +122,9 @@ static void rdivide(const double x_data[], const int x_size[1], const double
 /*
  * (c) mengchaoheng
  *  Last edited 2019-11
- *    min z=c*x   subj. to  A*x (=¡¢ >=¡¢ <=) b
+ *    min z=c*x   subj. to  A*x (=ï¿½ï¿½ >=ï¿½ï¿½ <=) b
  *    x
- *  Ô­ÎÊÌâ
+ *  Ô­ï¿½ï¿½ï¿½ï¿½
  *  Performs direct control allocation by solving the LP
  *    max z=a   subj. to  Bu = av
  *    a,u               umin <= u <= umax
@@ -140,20 +140,20 @@ static void rdivide(const double x_data[], const int x_size[1], const double
  *   -------
  *  u     optimal control (m x 1)
  *  a     scaling factor
- *  ÕûÀí³É
+ *  ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
  *    min z=[0 -1]x   subj. to  [B -v]x = 0
  *    x                       [I 0;-I 0]x <= [umax; -umin]
- *    ÆäÖÐ x=[u; a]
- *  ¶ÔÓ¦¡¶Í¹ÓÅ»¯¡·p139,¼ÇÎª
+ *    ï¿½ï¿½ï¿½ï¿½ x=[u; a]
+ *  ï¿½ï¿½Ó¦ï¿½ï¿½Í¹ï¿½Å»ï¿½ï¿½ï¿½p139,ï¿½ï¿½Îª
  *    min z=c*x   subj. to  Aeq*x = beq
  *    x                     G*x <= h
- *  ºÏ²¢
- *    min z=c*x   subj. to  [Aeq; G]*x (=¡¢<=) [beq;h]
+ *  ï¿½Ï²ï¿½
+ *    min z=c*x   subj. to  [Aeq; G]*x (=ï¿½ï¿½<=) [beq;h]
  *    x
- *  ±£Ö¤x>=0£¬±äÐÎ
- *    min z=[c -c]*X   subj. to  [Aeq -Aeq;G -G]*X (=¡¢<=) [beq;h]
+ *  ï¿½ï¿½Ö¤x>=0ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+ *    min z=[c -c]*X   subj. to  [Aeq -Aeq;G -G]*X (=ï¿½ï¿½<=) [beq;h]
  *     X
- *  ÆäÖÐ X=[x^+; x^-]
+ *  ï¿½ï¿½ï¿½ï¿½ X=[x^+; x^-]
  *
  *  B=[-0.5   0       0.5   0;
  *       0  -0.5    0       0.5;
@@ -231,7 +231,7 @@ void dir_alloc_mch(const double v[3], const double umin[4], const double umax[4]
   /*  beq=zeros(3,1); */
   /*  G=[eye(5);-eye(5)]; */
   /*  h=[umax; 20; -umin; 0]; */
-  /*  Çó½âÏßÐÔ¹æ»® */
+  /*  ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô¹æ»® */
   /*  b=[beq;h]; */
   for (i = 0; i < 3; i++) {
     b[i] = 0.0;
@@ -240,7 +240,7 @@ void dir_alloc_mch(const double v[3], const double umin[4], const double umax[4]
   b[7] = 20.0;
   b[12] = 0.0;
 
-  /*  ¹¹ÔìÏßÐÔ¹æ»®±ê×¼ÐÍ */
+  /*  ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô¹æ»®ï¿½ï¿½×¼ï¿½ï¿½ */
   /*  Convert free variables to positively constrained variables */
   /*  Ad=[Aeq -Aeq; G -G]; */
   for (i = 0; i < 4; i++) {
@@ -274,11 +274,11 @@ void dir_alloc_mch(const double v[3], const double umin[4], const double umax[4]
 
   /*  [mad,~]= size(Ad); */
   /*  mad=13; */
-  /*  ÏÈ°ÑÇ°Èý¸öµÈÊ½µÄ»ùÕÒµ½£¬²¢»¯¼ò */
+  /*  ï¿½È°ï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê½ï¿½Ä»ï¿½ï¿½Òµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
   /*  B_inv=[Ad(1:3,1:3) zeros(3,mad-3);Ad(4:mad,1:3) eye(mad-3)]; */
   /*  B_inv=[Ad(1:3,1:3) zeros(3,10);Ad(4:mad,1:3) eye(10)]; */
-  /*  ÇóÄæ */
-  /*  Ad_eye=P\Ad;% »¯¼ò */
+  /*  ï¿½ï¿½ï¿½ï¿½ */
+  /*  Ad_eye=P\Ad;% ï¿½ï¿½ï¿½ï¿½ */
   for (i0 = 0; i0 < 3; i0++) {
     for (i = 0; i < 3; i++) {
       b_Ad[i + 13 * i0] = Ad[i + 13 * i0];
@@ -301,7 +301,7 @@ void dir_alloc_mch(const double v[3], const double umin[4], const double umax[4]
     }
   }
 
-  inv_mvh(b_Ad, dv2);
+  inv_mch(b_Ad, dv2);
   for (i0 = 0; i0 < 13; i0++) {
     for (i = 0; i < 10; i++) {
       Ad_eye[i0 + 13 * i] = 0.0;
@@ -312,7 +312,7 @@ void dir_alloc_mch(const double v[3], const double umin[4], const double umax[4]
     }
   }
 
-  /*  ¼ÓÉÏËÉ³Ú±äÁ¿¶ÔÓ¦µÄ»ù */
+  /*  ï¿½ï¿½ï¿½ï¿½ï¿½É³Ú±ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½Ä»ï¿½ */
   eye(dv3);
   for (i0 = 0; i0 < 10; i0++) {
     for (i = 0; i < 3; i++) {
@@ -338,7 +338,7 @@ void dir_alloc_mch(const double v[3], const double umin[4], const double umax[4]
 
   /*  Simplex algorithm */
   /*  Iterate through simplex algorithm main loop */
-  /*  [x,z]=Simplex_loop_mch(basis, A, b, c, z); % ÏßÐÔ¹æ»®µ¥´¿ÐÎ·¨ */
+  /*  [x,z]=Simplex_loop_mch(basis, A, b, c, z); % ï¿½ï¿½ï¿½Ô¹æ»®ï¿½ï¿½ï¿½ï¿½ï¿½Î·ï¿½ */
   /*  Initialization */
   e = -1;
 
@@ -353,7 +353,7 @@ void dir_alloc_mch(const double v[3], const double umin[4], const double umax[4]
 
     if (!all(b_c)) {
       /*  3.~isempty(c(c(N)<0)) */
-      /*      e = find(c < 0, 1, 'first'); % ½ø»ù±äÁ¿Ë÷Òý    % 4. e = N(find(c(N)<0,1)) */
+      /*      e = find(c < 0, 1, 'first'); % ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½    % 4. e = N(find(c(N)<0,1)) */
       i = 0;
       exitg2 = false;
       while ((!exitg2) && (i < 20)) {
@@ -408,14 +408,14 @@ void dir_alloc_mch(const double v[3], const double umin[4], const double umax[4]
         }
       }
 
-      /* Ñ¡ÔñÀë»ù ÐÐË÷Òý */
-      /*          li = basis(L);    % Àë»ù±äÁ¿Ë÷Òý                */
+      /* Ñ¡ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
+      /*          li = basis(L);    % ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½                */
       if (delta[idx] == 1.0E+6) {
         /*  disp('System is unbounded!'); */
         exitg1 = 1;
       } else {
         /*         %% Perform pivot operation, exchanging L-row with e-coLumn variabLe */
-        /*          [basis,A,b,c,z] = pivot_mch(basis,A,b,c,z,L,e); %»»»ù£¬¼´½øÐÐ³õµÈÐÐ±ä»» */
+        /*          [basis,A,b,c,z] = pivot_mch(basis,A,b,c,z,L,e); %ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð³ï¿½ï¿½ï¿½ï¿½Ð±ä»» */
         /*  Compute the coefficients of the equation for new basic variabLe x_e. */
         b[idx] /= A[idx + 13 * e];
 
@@ -514,13 +514,13 @@ void dir_alloc_mch(const double v[3], const double umin[4], const double umax[4]
     c[basis[i0] - 1] = b[i0];
   }
 
-  /*  ×ª»¯½â */
+  /*  ×ªï¿½ï¿½ï¿½ï¿½ */
   for (i0 = 0; i0 < 4; i0++) {
     u[i0] = c[i0] - c[5 + i0];
   }
 
   if (z > 1.0) {
-    /*  ·Å´óÁË±¶Êý£¬ÔÙ»¹Ô­£¬ÈôÐ¡ÓÚ1£¬Ôò±íÊ¾ÐèÒªËõÐ¡£¬xÒÑ¾­×ÔÈ»µ½´ï±ß½ç */
+    /*  ï¿½Å´ï¿½ï¿½Ë±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ù»ï¿½Ô­ï¿½ï¿½ï¿½ï¿½Ð¡ï¿½ï¿½1ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½Òªï¿½ï¿½Ð¡ï¿½ï¿½xï¿½Ñ¾ï¿½ï¿½ï¿½È»ï¿½ï¿½ï¿½ï¿½ß½ï¿½ */
     for (i0 = 0; i0 < 4; i0++) {
       u[i0] /= z;
     }

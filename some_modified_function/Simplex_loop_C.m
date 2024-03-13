@@ -1,9 +1,9 @@
 %% Iterate through simplex algorithm main loop
-function [x,z,iters,f]=Simplex_loop_C(B, A, b, c, z,m,n)
+function [x,z,iters,f]=Simplex_loop_C(B, A, b, C, z,m,n)
 % (c) mengchaoheng
 % 不考虑无解的情形
 % Last edited 2019-11
-%   min z=c*x   subj. to  A*x (=、 >=、 <=) b
+%   min z=C*x   subj. to  A*x (=、 >=、 <=) b
 %   x 
     %% Initialization
     tol=1e6;   
@@ -12,14 +12,14 @@ function [x,z,iters,f]=Simplex_loop_C(B, A, b, c, z,m,n)
     z=0;
     f=0;
 %     [m,n] = size(A);
-%     while ~all(c>=0)                      % 3.~isempty(c(c(N)<0))
-%     e = find(c < 0, 1, 'first'); % 进基变量索引    % 4. e = N(find(c(N)<0,1))
+%     while ~all(C>=0)                      % 3.~isempty(C(C(N)<0))
+%     e = find(C < 0, 1, 'first'); % 进基变量索引    % 4. e = N(find(C(N)<0,1))
     while(1)
         flag=false;
         e=0;
         L=0;
         for i=1:n
-            if c(i)< -1/tol % <0
+            if C(i)< -1/tol % <0
                 flag=true;
                 e=i;
                 break;
@@ -52,7 +52,7 @@ function [x,z,iters,f]=Simplex_loop_C(B, A, b, c, z,m,n)
             if MIN >= tol
                 return;  % 无界解
             else % 此时一定有一个L
-                [B,A,b,c,z] = pivot_C(B,A,b,c,z,L,e,m,n); %换基，即进行初等行变换
+                [B,A,b,C,z] = pivot_C(B,A,b,C,z,L,e,m,n); %换基，即进行初等行变换
             end
             iters = iters + 1;
         else

@@ -1,4 +1,4 @@
-function [u,a] = dir_alloc(B,v,last_u, p_limits, v_limits,incre)
+function [u,a] = linprog_dir_ca_4df(B,v,last_u, p_limits, v_limits,incre)
   
 % DIR_ALLOC - Direct control allocation.
 %

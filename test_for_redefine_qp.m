@@ -1,14 +1,20 @@
-clc;
-clear;
+clear all;
+close all;
+addpath(genpath(pwd))
+folder ='some_modified_function'; 
+rmpath(folder) % remove old version
+folder ='s-function_used_in PlanD'; 
+rmpath(folder) % remove old version
+
 B=[-0.5   0       0.5   0;
     0  -0.5    0       0.5;
     0.25   0.25   0.25   0.25];
-umin=[1;1;1;1]*(-20)*pi/180;
-umax=[1;1;1;1]*20*pi/180;
 [k,m] = size(B);
 % m=4;
+umin=ones(m,1)*(-20)*pi/180;
+umax=ones(m,1)*20*pi/180;
 %===================================幅值测试==================================================
-N=100;
+N=50;
 [X,Y,Z] = sphere(N);
 %==================================速度约束测试==================================
 t=0:0.01:1;
@@ -31,7 +37,7 @@ v=0.5*[X(i);Y(i);Z(i)];% 虚拟指令
 % test old version, maybe use for a simulink block
 % u= qp_ca_mch([v;u],B,[umin umax],[],0.01,eye(3),eye(4),zeros(4,1),100,1e6,true);
 % test 4df allocation
-% u = wls_ca_4df(v, u);
+u = wls_ca_4df(v, u);
 % u=dyn_ca_4df(v,u);
 
 

@@ -635,7 +635,7 @@
     <var.cfi.preBuildChecksum>175496839</var.cfi.preBuildChecksum>
     <var.lastCfiTestSnippet>test</var.lastCfiTestSnippet>
     <var.outdatedOnRestore />
-    <var.lastUserSourceChecksum>&lt;?xml version="1.0" encoding="UTF-8" standalone="yes"?&gt;&lt;checksum&gt;&lt;includedFiles&gt;&lt;file&gt;C:\Users\mengc\Desktop\控制分配matlab转C工程_11_24\Linear Programming\dir_alloc_mch.m&lt;/file&gt;&lt;file&gt;C:\Users\mengc\Desktop\控制分配matlab转C工程_11_24\Linear Programming\inv_mvh.m&lt;/file&gt;&lt;/includedFiles&gt;&lt;value&gt;883859727&lt;/value&gt;&lt;/checksum&gt;</var.lastUserSourceChecksum>
+    <var.lastUserSourceChecksum>&lt;?xml version="1.0" encoding="UTF-8" standalone="yes"?&gt;&lt;checksum&gt;&lt;includedFiles&gt;&lt;file&gt;C:\Users\mengc\Desktop\控制分配matlab转C工程_11_24\Linear Programming\dir_alloc_mch.m&lt;/file&gt;&lt;file&gt;C:\Users\mengc\Desktop\控制分配matlab转C工程_11_24\Linear Programming\inv_mch.m&lt;/file&gt;&lt;/includedFiles&gt;&lt;value&gt;883859727&lt;/value&gt;&lt;/checksum&gt;</var.lastUserSourceChecksum>
     <var.sourceSetState>&lt;?xml version="1.0" encoding="UTF-8" standalone="yes"?&gt;&lt;sourceModel&gt;&lt;primarySourceFiles&gt;&lt;file&gt;/Users/mch/Proj/control_allocation/LP/dir_alloc_mch.m&lt;/file&gt;&lt;/primarySourceFiles&gt;&lt;fixedPointSourceFiles/&gt;&lt;fixedPointSourceRegistered&gt;false&lt;/fixedPointSourceRegistered&gt;&lt;fixedPointSourceSelected&gt;false&lt;/fixedPointSourceSelected&gt;&lt;/sourceModel&gt;</var.sourceSetState>
     <param.forceMexBuild>false</param.forceMexBuild>
     <param.NoDefaultJIT />

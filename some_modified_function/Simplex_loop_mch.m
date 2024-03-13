@@ -1,15 +1,15 @@
 %% Iterate through simplex algorithm main loop
-function [x,z,iters]=Simplex_loop_mch(B, A, b, c, z)
+function [x,z,iters]=Simplex_loop_mch(B, A, b, C, z)
 % (c) mengchaoheng
 % Last edited 2019-11
-%   min z=c*x   subj. to  A*x (=、 >=、 <=) b
+%   min z=C*x   subj. to  A*x (=、 >=、 <=) b
 %   x 
     %% Initialization
     tol=1e8;    
     iters=0;
     [m,n] = size(A);
-    while ~all(c>=-1/tol) % 0 is 1/tol               % 3.~isempty(c(c(N)<0))
-    e = find(c < -1/tol, 1, 'first'); % 进基变量索引    % 4. e = N(find(c(N)<0,1))
+    while ~all(C>=-1/tol) % 0 is 1/tol               % 3.~isempty(C(C(N)<0))
+    e = find(C < -1/tol, 1, 'first'); % 进基变量索引    % 4. e = N(find(C(N)<0,1))
     a_ie=A(:,e);
     ip=a_ie>(1/tol);
     delta=tol*ones(m,1);
@@ -22,7 +22,7 @@ function [x,z,iters]=Simplex_loop_mch(B, A, b, c, z)
         disp('System is unbounded!');
         return;  % 11.
     else
-        [B,A,b,c,z] = pivot_mch(B,A,b,c,z,L,e); %换基，即进行初等行变换
+        [B,A,b,C,z] = pivot_mch(B,A,b,C,z,L,e); %换基，即进行初等行变换
     end
     iters = iters + 1;
        

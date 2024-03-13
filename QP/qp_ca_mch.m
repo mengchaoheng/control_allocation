@@ -5,7 +5,7 @@ function u= qp_ca_mch(arg,B,plim,rlim,T,Wv,Wu,ud,imax,gam,only_plim)
   
 % Dimensions
   k=3; %B行数
-  m=9; %B列数
+  m=4; %B列数
   % Extract nonconstant input arguments
   v = arg(1:k);
   uprev = arg(k+1:end);
@@ -28,4 +28,4 @@ W0(infeasible1)=-1;
 infeasible2 = (uprev >= umax);
 W0(infeasible2)= 1;
 %   u = wls_alloc(B,v,umin,umax,Wv,Wu,ud,gam,u0,W0,imax);
-u= wls_alloc_mch(B,v,umin,umax,Wv,Wu,ud,gam,uprev,W0,imax,m);
+u= wls_alloc_gen(B,v,umin,umax,Wv,Wu,ud,gam,uprev,W0,imax,m);

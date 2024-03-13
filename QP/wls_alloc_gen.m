@@ -1,5 +1,6 @@
-function [u] = dyn_alloc_m1(v,u,only_plim)
+function u = wls_alloc_gen(B,v,umin,umax,Wv,Wu,ud,gam,u,W,imax,m)
   
+%change for matlab generate C, just add the param m, remove values of optional arguments, then this fuction can be used as lib.
 % WLS_ALLOC - Control allocation using weighted least squares.
 %
 %  [u,W,iter] = wls_alloc(B,v,umin,umax,[Wv,Wu,ud,gamma,u0,W0,imax])
@@ -37,60 +38,21 @@ function [u] = dyn_alloc_m1(v,u,only_plim)
 %                           +1 if u_i = umax_i
 %
 % See also: WLSC_ALLOC, IP_ALLOC, FXP_ALLOC, QP_SIM.
-B=[-4.6718         0    4.6718         0   -4.6718         0    4.6718         0    3.2055;
-         0  -14.9632         0   14.9632         0  -14.9632         0   14.9632         0;
-    4.2635   -6.9597    4.2635   15.4868    4.2635   15.4868    4.2635   -6.9597         0];
+  
 % Number of variables
-m = 9;
-  if (only_plim)
-    umin = [[1;1;1;1;1;1;1;1]*(-20*pi/180);-4.89];
-    umax = [[1;1;1;1;1;1;1;1]*20*pi/180;4.89];
-  else
-    umin = max([[1;1;1;1;1;1;1;1]*(-20*pi/180);-4.89],u+[[1;1;1;1;1;1;1;1]*(-400*pi/180);-19.56]*0.01);
-    umax = min( [[1;1;1;1;1;1;1;1]*20*pi/180;4.89],u+[[1;1;1;1;1;1;1;1]*400*pi/180;19.56]*0.01);
-  end
-  %========计算当前有效集============
-W=zeros(m,1);
-infeasible1 = (u <= umin);
-W(infeasible1)=-1;
-infeasible2 = (u >= umax);
-W(infeasible2)= 1;
-%===============期望舵机位置========================
-
-W1sq = eye(9);
-W2sq = [
-    0.0100         0         0         0         0         0         0         0         0;
-         0    0.0100         0         0         0         0         0         0         0;
-         0         0    0.0100         0         0         0         0         0         0;
-         0         0         0    0.0100         0         0         0         0         0;
-         0         0         0         0    0.0100         0         0         0         0;
-         0         0         0         0         0    0.0100         0         0         0;
-         0         0         0         0         0         0    0.0100         0         0;
-         0         0         0         0         0         0         0    0.0100         0;
-         0         0         0         0         0         0         0         0    0.2500
-    ];
-S=[
-    0         0         0;
-         0   -0.0167   -0.0121;
-         0         0         0;
-         0    0.0167    0.0269;
-         0         0         0;
-         0   -0.0167    0.0269;
-         0         0         0;
-         0    0.0167   -0.0121;
-    0.3120         0         0
-];
-us = S*v;
-ud = (W1sq+W2sq)\(W1sq*us+W2sq*u);
-%================================
-% 加权系数
-gam=1e6;
-% 加权矩阵
-Wv=eye(3);
-Wu = sqrtm(W1sq+W2sq);
-% 迭代次数上限
-imax=100;
-  % Set default values of optional arguments  
+  % m = length(umin);
+  
+  % Set default values of optional arguments
+  % if nargin < 11
+  %   imax = 100; % Heuristic value
+  %   [k,m] = size(B);
+  %   if nargin < 10, u = (umin+umax)/2; W = zeros(m,1); end
+  %   if nargin < 8,  gam = 1e6;       end
+  %   if nargin < 7,  ud = zeros(m,1); end
+  %   if nargin < 6,  Wu = eye(m);     end
+  %   if nargin < 5,  Wv = eye(k);     end
+  % end
+      
   gam_sq = sqrt(gam);
   A = [gam_sq*Wv*B ; Wu];
   b = [gam_sq*Wv*v ; Wu*ud];

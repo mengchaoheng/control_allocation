@@ -27,7 +27,7 @@ function [u] = prioritized_alloc(B,v_high,v_low,last_u, p_limits)
 %
 % See also: DIR_SIM.
 
-    %====½ö·ùÖµÔ¼Êø================
+    %====ä»…å¹…å€¼çº¦æŸ================
         umin=[1;1;1;1]*(-p_limits)*pi/180;
         umax=[1;1;1;1]*p_limits*pi/180;
 

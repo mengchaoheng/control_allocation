@@ -64,20 +64,20 @@ if errout_all ~=0
     errout=errout_all;
     itlim=itlim_all;
 else
-    if rho>=1 %ÖÕ¶ËÔÚAMSÀï£¬Êä³ö
+    if rho>=1 %ç»ˆç«¯åœ¨AMSé‡Œï¼Œè¾“å‡º
         u=u_all;
         errout=errout_all;
         itlim=itlim_all;
-    else %ÖÕ¶ËÔÚAMSÍâ
+    else %ç»ˆç«¯åœ¨AMSå¤–
         [ue,itlime,erroute,rhoe] = DPscaled_LPCA(ye,B,uMin,uMax,itlim_all);
-        if rhoe>1 %yeÑÏ¸ñÔÚAMSÄÚ£¬×¢Òâ·ÖÅäydÊ±±ê³ÆÎ»ÖÃÒÑ¾­±äÎªue
+        if rhoe>1 %yeä¸¥æ ¼åœ¨AMSå†…ï¼Œæ³¨æ„åˆ†é…ydæ—¶æ ‡ç§°ä½ç½®å·²ç»å˜ä¸ºue
             uMin=uMin-ue;
             uMax=uMax-ue;
-            [ud,itlimd,erroutd,rhod] = DPscaled_LPCA(yd,B,uMin,uMax,itlime); % rhodÓ¦´óÓÚ1
+            [ud,itlimd,erroutd,rhod] = DPscaled_LPCA(yd,B,uMin,uMax,itlime); % rhodåº”å¤§äº1
             u=ud+ue; 
             errout=erroutd;
             itlim=itlimd;
-        else  %yeÑÏ¸ñÔÚAMSÉÏ»òÔÚÍâ,Èç¹ûÈÎÒâÓĞÏŞÓÅÏÈ¼¶£¬ÔÚÕâÀïµİ¹é£¬½øÒ»²½È¥µôµÍÓÅÏÈ¼¶¡£
+        else  %yeä¸¥æ ¼åœ¨AMSä¸Šæˆ–åœ¨å¤–,å¦‚æœä»»æ„æœ‰é™ä¼˜å…ˆçº§ï¼Œåœ¨è¿™é‡Œé€’å½’ï¼Œè¿›ä¸€æ­¥å»æ‰ä½ä¼˜å…ˆçº§ã€‚
             u=ue;
             errout=erroute;
             itlim=itlime;

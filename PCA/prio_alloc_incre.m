@@ -27,17 +27,17 @@ function [u,v_high,v_low] = prio_alloc_incre(B,v_high,v_low,last_v_high,last_v_l
 %
 % See also: DIR_SIM.
 %   ----
-    %====½ö·ùÖµÔ¼Êø================
+    %====ä»…å¹…å€¼çº¦æŸ================
 if(~v_limits)
         umin=[1;1;1;1]*(-p_limits)*pi/180-last_u;
         umax=[1;1;1;1]*p_limits*pi/180-last_u;
         del_v_high=v_high-last_v_high;
         del_v_low=v_low-last_v_low;
-%====·ùÖµ¡¢ËÙ¶ÈÔ¼Êø================ 
+%====å¹…å€¼ã€é€Ÿåº¦çº¦æŸ================ 
 else
         umin=max([1;1;1;1]*(-p_limits)*pi/180-last_u,-0.01*500*pi/180);
         umax=min([1;1;1;1]*p_limits*pi/180-last_u,0.01*500*pi/180);
-        del_v_high=v_high-last_v_high;%ÔöÁ¿
+        del_v_high=v_high-last_v_high;%å¢é‡
         del_v_low=v_low-last_v_low;
 end
 % Number of variables
@@ -73,7 +73,7 @@ end
       a = x(1);
       del_u = x(2:end);
         u=del_u+last_u;
-        v_high=del_v_high+last_v_high;% »Ö¸´Ê¸Á¿
+        v_high=del_v_high+last_v_high;% æ¢å¤çŸ¢é‡
         v_low=a*del_v_low+last_v_low;
       
   end

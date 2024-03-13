@@ -2,7 +2,7 @@
 function [B,A,b,c,z]=pivot_C(B, A, b, c, z, L, e,m,n)
 % (c) mengchaoheng
 % Last edited 2019-11
-%   min z=c*x   subj. to  A*x (=¡¢ >=¡¢ <=) b
+%   min z=c*x   subj. to  A*x (=ã€ >=ã€ <=) b
 %   x 
     %% Compute the coefficients of the equation for new basic variabLe x_e.
 %     [m, n] = size(A);

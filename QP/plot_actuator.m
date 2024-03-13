@@ -8,18 +8,18 @@ addpath D:\17master_mengchaoheng_data\qcat1_2_1\QCAT\qcat
 % function callqpact
 global B plim rlim umin umax vmin vmax a_c a_t com_t_wls com_t_inv com_t_dca dca_W2 com_c p_limits S dca_W1 select_test hf lf Am%Del
 % Del=diag([20*pi/180 20*pi/180 20*pi/180 20*pi/180 20*pi/180 20*pi/180 20*pi/180 20*pi/180 200],0);%
-% ×ªËÙ²î×÷ÎªĞÂ²Ù×İÃæ%ÂÛÎÄÊı¾İ
+% è½¬é€Ÿå·®ä½œä¸ºæ–°æ“çºµé¢%è®ºæ–‡æ•°æ®
 % p_limits=[20*pi/180 200];%[rad  rad/s]
 % v_limits=[400*pi/180 800];% [rad/s rad/s^2]
-% ×ªËÙ²î×÷ÎªĞÂ²Ù×İÃæ%Êµ²âÊı¾İ
+% è½¬é€Ÿå·®ä½œä¸ºæ–°æ“çºµé¢%å®æµ‹æ•°æ®
 % p_limits=[20*pi/180 200];%[rad  rad/s]
 % v_limits=[400*pi/180 466.6667];% [rad/s rad/s^2]
-% À­Á¦²î×÷ÎªĞÂ²Ù×İÃæ%ÂÛÎÄÊı¾İ
+% æ‹‰åŠ›å·®ä½œä¸ºæ–°æ“çºµé¢%è®ºæ–‡æ•°æ®
 % p_limits=[20*pi/180 4.89];%[rad  rad/s]
 % v_limits=[400*pi/180 19.56];% [rad/s rad/s^2]
-% À­Á¦²î×÷ÎªĞÂ²Ù×İÃæ%Êµ²âÊı¾İ
-p_limits=[20*pi/180 4.2513];%[rad  rad/s]% 2*k_TS*speed*200=4.2513 % 200ÎªÓÃÓÚÌá¹©¹ö×ªÁ¦¾ØµÄ×ªËÙ²î+-200
-v_limits=[400*pi/180 9.9197];% [rad/s rad/s^2]% Êµ²â×ªËÙ×î´ó±ä»¯ÂÊ466.6667rad/s^2£¬2*k_TS*speed*466.6667=9.9197
+% æ‹‰åŠ›å·®ä½œä¸ºæ–°æ“çºµé¢%å®æµ‹æ•°æ®
+p_limits=[20*pi/180 4.2513];%[rad  rad/s]% 2*k_TS*speed*200=4.2513 % 200ä¸ºç”¨äºæä¾›æ»šè½¬åŠ›çŸ©çš„è½¬é€Ÿå·®+-200
+v_limits=[400*pi/180 9.9197];% [rad/s rad/s^2]% å®æµ‹è½¬é€Ÿæœ€å¤§å˜åŒ–ç‡466.6667rad/s^2ï¼Œ2*k_TS*speed*466.6667=9.9197
 
 %===============================================================
 k_TS=9.9796018325697625989171178675552e-6;
@@ -38,8 +38,8 @@ I=[I_x 0 0;0 I_y 0;0 0 I_z];
 L=[-l_1 0 l_1 0 -l_1 0 l_1 0 l_2;
     0 -l_1 0 l_1 0 -l_1 0 l_1 0;
     l_3 -l_5 l_3 l_4 l_3 l_4 l_3 -l_5 0];
-% F=diag([kc kc kc kc kc kc kc kc 2*k_TS*speed],0);%% ×ªËÙ²î×÷ÎªĞÂ²Ù×İÃæ
-F=diag([kc kc kc kc kc kc kc kc 1],0);% À­Á¦²î×÷ÎªĞÂ²Ù×İÃæ
+% F=diag([kc kc kc kc kc kc kc kc 2*k_TS*speed],0);%% è½¬é€Ÿå·®ä½œä¸ºæ–°æ“çºµé¢
+F=diag([kc kc kc kc kc kc kc kc 1],0);% æ‹‰åŠ›å·®ä½œä¸ºæ–°æ“çºµé¢
 B=I\L*F;
 [m,k] = size(B);
 a_c=35;
@@ -57,7 +57,7 @@ dca_W2=1*diag([W2_c W2_c W2_c W2_c W2_c W2_c W2_c W2_c W2_t]);
 dca_W1=1*eye(9);% 
 % dca_W2=zeros(9,9);
 % dca_W2=diag([1 1 1 1 1 1 1 1 100]);
-% ÆµÂÊĞÅºÅ
+% é¢‘ç‡ä¿¡å·
 select_test=0;
 com_c=1/(1-exp(-90*0.01));% 90
 com_t_wls=1/(1-exp(-10*0.01));%11
@@ -100,7 +100,7 @@ vmax=[[1;1;1;1;1;1;1;1]*v_limits(1);v_limits(2)];
 % vmax=Del\[[1;1;1;1;1;1;1;1]*v_limits(1);v_limits(2)];
 plim=[umin umax];
 rlim=[vmin vmax];% [vmin vmax];
-sim('twin');%Ò»¡¢0.1-8HZ£¬·ùÖµ5.¶ş¡¢½×Ô¾6
+sim('twin');%ä¸€ã€0.1-8HZï¼Œå¹…å€¼5.äºŒã€é˜¶è·ƒ6
 in_x=input.Data(:,1);
 in_y=input.Data(:,2);
 in_z=input.Data(:,3);
@@ -144,7 +144,7 @@ tt=1:30:301;
 % plot(time,out_dca_x,'Color','g','LineStyle','-.','Marker','x','MarkerIndices',tt);hold on;grid on;
 % plot(time,out_wls_x,'Color','k','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
 % % axis([0 2 -20 20]);
-% title('Î±¿ØÖÆÖ¸ÁîÏìÓ¦ÇúÏß','FontSize',8);
+% title('ä¼ªæ§åˆ¶æŒ‡ä»¤å“åº”æ›²çº¿','FontSize',8);
 % xlabel('\itt \rm(s)','FontSize',8);ylabel('\it\Gamma_p \rm(N*m)','FontSize',8)
 % h1=legend('cmd','dca','wls');% ,'Location','EastOutside';,'\tau_{i}'
 % set(h1,'FontName','Times New Roman','FontSize',8,'NumColumns',4,'location','southwest');
@@ -216,12 +216,12 @@ h1=legend('cmd','dca','sca');% ,'Location','EastOutside';,'\tau_{i}'
 set(h1,'NumColumns',1,'location','southwest');
 set(gca, 'FontSize', 10,'FontName','Times New Roman')
 %------------------------------------------------------------------------------------------------------------------------
-% ½×Ô¾ĞÅºÅ
+% é˜¶è·ƒä¿¡å·
 select_test=1;
 com_c=1/(1-exp(-100*0.01));
 com_t_wls=1/(1-exp(-11*0.01));
 com_t_dca=1/(1-exp(-11*0.01));
-sim('twin');%Ò»¡¢0.1-8HZ£¬·ùÖµ5.¶ş¡¢½×Ô¾6
+sim('twin');%ä¸€ã€0.1-8HZï¼Œå¹…å€¼5.äºŒã€é˜¶è·ƒ6
 in_x=input.Data(:,1);
 in_y=input.Data(:,2);
 in_z=input.Data(:,3);
@@ -261,7 +261,7 @@ tt=1:10:201;
 % plot(time,out_dca_x,'Color','g','LineStyle','-.','Marker','x','MarkerIndices',tt);hold on;grid on;
 % plot(time,out_wls_x,'Color','k','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
 % % axis([0 2 -20 20]);
-% title('Î±¿ØÖÆÖ¸ÁîÏìÓ¦ÇúÏß','FontSize',8);
+% title('ä¼ªæ§åˆ¶æŒ‡ä»¤å“åº”æ›²çº¿','FontSize',8);
 % xlabel('\itt \rm(s)','FontSize',8,'FontName','Times New Roman');ylabel('\it\Gamma_p \rm(N*m)','FontSize',8,'FontName','Times New Roman')
 % h1=legend('\tau_{c}','\tau_{i}','\tau_{d}','\tau_{w}');% ,'Location','EastOutside';
 % set(h1,'FontName','Times New Roman','FontSize',8,'NumColumns',3,'location','East');
@@ -330,7 +330,7 @@ ylabel('$\dot p\ \rm(rad/s^2)$','interpreter','latex','FontSize',8)
 % h1=legend('cmd','dca','sca');% ,'Location','EastOutside';,'\tau_{i}'
 h1=legend('cmd','dca','sca');
 set(h1,'FontName','Times New Roman','FontSize',8,'NumColumns',1,'location','northwest');% southwest
-% --------------Ö´ĞĞÆ÷²¹³¥
+% --------------æ‰§è¡Œå™¨è¡¥å¿
 % 
 % select_test=0;
 % hf=10;
@@ -338,7 +338,7 @@ set(h1,'FontName','Times New Roman','FontSize',8,'NumColumns',1,'location','nort
 % com_t_wls=1/(1-exp(-10*0.01));
 % % com_c=1;
 % % com_t_wls=1;
-% sim('twin');%Ò»¡¢0.1-8HZ£¬·ùÖµ5.¶ş¡¢½×Ô¾6
+% sim('twin');%ä¸€ã€0.1-8HZï¼Œå¹…å€¼5.äºŒã€é˜¶è·ƒ6
 % in_x=input.Data(:,1);
 % in_y=input.Data(:,2);
 % in_z=input.Data(:,3);
@@ -397,7 +397,7 @@ set(h1,'FontName','Times New Roman','FontSize',8,'NumColumns',1,'location','nort
 % plot(time,out_wls_x_off,'Color','b','LineStyle','-.','Marker','x','MarkerIndices',tt);hold on;grid on;
 % plot(time,out_wls_x,'Color','r','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
 % axis([0 3 -10.5 6.6]);
-% % title('Î±¿ØÖÆÖ¸ÁîÏìÓ¦ÇúÏß','FontSize',8);
+% % title('ä¼ªæ§åˆ¶æŒ‡ä»¤å“åº”æ›²çº¿','FontSize',8);
 % xlabel('\itt \rm(s)','FontSize',8,'FontName','Times New Roman');
 % ylabel('$\dot p\ \rm(rad/s^2)$','interpreter','latex','FontSize',8)
 % h1=legend('cmd','dynamic','compensate');% ,'Location','EastOutside';,'\tau_{i}'

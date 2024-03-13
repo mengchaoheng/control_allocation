@@ -26,7 +26,7 @@ function [u,a] = dir_alloc(B,v,last_u, p_limits, v_limits,incre)
 % a     scaling factor
 %
 % See also: DIR_SIM.
-    %====½ö·ùÖµÔ¼Êø================
+    %====ä»…å¹…å€¼çº¦æŸ================
 if(~v_limits)
     if(incre)
         last_v=B*last_u;
@@ -37,7 +37,7 @@ if(~v_limits)
         umin=[1;1;1;1]*(-p_limits)*pi/180;
         umax=[1;1;1;1]*p_limits*pi/180;
     end
-%====·ùÖµ¡¢ËÙ¶ÈÔ¼Êø================ 
+%====å¹…å€¼ã€é€Ÿåº¦çº¦æŸ================ 
 else
     if(incre)
         last_v=B*last_u;

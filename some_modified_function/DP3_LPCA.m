@@ -69,7 +69,7 @@ tol = 1e-1;
 if norm(yd) < tol
     errout = -1;
     u = pinv(B)*yd;% zeros(m,1);
-    rho=2; % 大于1
+    rho=2; % 澶т簬1
     return;
 end
 %Construct an LP using scaling parameter to enforce direction preserving
@@ -90,7 +90,7 @@ A=[B -yd zeros(n,m) zeros(n,1);
    zeros(1,m) 1 zeros(1,m) 1];
 b=[-B*uMin;uMax-uMin; 1];
 c = [zeros(m,1);-1;zeros(m,1);0];
-% 换第三方解法
+% 鎹㈢涓夋柟瑙ｆ硶
 
 [x,~,exitflag,~,~] = linprog(c',[],[],A,b,zeros(size(A,2),1),[]);
 

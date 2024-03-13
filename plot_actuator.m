@@ -29,7 +29,7 @@ plot(time,out_inv_x,'Color','b','LineStyle','-.','Marker','+','MarkerIndices',tt
 plot(time,out_dir_x,'Color','g','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
 plot(time,out_prio1_x,'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;grid on;
 axis([0 3 -0.36 0.45]);
-title('Î±¿ØÖÆÖ¸ÁîÏìÓ¦ÇúÏß');
+title('ä¼ªæ§åˆ¶æŒ‡ä»¤å“åº”æ›²çº¿');
 xlabel('\itt \rm(s)');ylabel('\it\Gamma_p \rm(N*m)')
 set(gca,'FontSize', 12)%
 subplot(3,1,2)
@@ -50,6 +50,6 @@ plot(time,out_prio1_z,'Color','r','LineStyle','-','Marker','none','MarkerIndices
 axis([0 3 0 0.27]);
 xlabel('\itt \rm(s)');ylabel('\it\Gamma_r \rm(N*m)')
 % h=legend('\tau_{c}','\tau_{i}','\tau_{d}','\tau_{p}');% ,'Location','EastOutside'
-h=legend('Î±¿ØÖÆÖ¸Áî','Î±Äæ','Ö±½Ó·ÖÅä','ÓÅÏÈ¼¶·ÖÅä');
+h=legend('ä¼ªæ§åˆ¶æŒ‡ä»¤','ä¼ªé€†','ç›´æ¥åˆ†é…','ä¼˜å…ˆçº§åˆ†é…');
 set(h,'NumColumns',2,'location','south');
 set(gca,'FontSize', 12)%

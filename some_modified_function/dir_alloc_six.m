@@ -1,9 +1,9 @@
 function [u,z,iters] = dir_alloc_six(umin,umax,A,Ad7,Ad14,P_inv)
 % (c) mengchaoheng
 % Last edited 2019-11
-%   min z=c*x   subj. to  A*x (=¡¢ >=¡¢ <=) b
+%   min z=c*x   subj. to  A*x (=ã€ >=ã€ <=) b
 %   x 
-% Ô­ÎÊÌâ
+% åŸé—®é¢˜
 % Performs direct control allocation by solving the LP
 %   max z=a   subj. to  Bu = av
 %   a,u               umin <= u <= umax
@@ -19,38 +19,38 @@ function [u,z,iters] = dir_alloc_six(umin,umax,A,Ad7,Ad14,P_inv)
 %  -------
 % u     optimal control (m x 1)
 % a     scaling factor  
-%% ÕûÀí³É
+%% æ•´ç†æˆ
 %   min z=[0 -1]x   subj. to  [B -v]x = 0
 %   x                       [I 0;-I 0]x <= [umax; -umin]
-%   ÆäÖĞ x=[u; a]
-% ¶ÔÓ¦¡¶Í¹ÓÅ»¯¡·p139,¼ÇÎª
+%   å…¶ä¸­ x=[u; a]
+% å¯¹åº”ã€Šå‡¸ä¼˜åŒ–ã€‹p139,è®°ä¸º
 %   min z=c*x   subj. to  Aeq*x = beq
 %   x                     G*x <= h
-% ºÏ²¢
-%   min z=c*x   subj. to  [Aeq; G]*x (=¡¢<=) [beq;h]
+% åˆå¹¶
+%   min z=c*x   subj. to  [Aeq; G]*x (=ã€<=) [beq;h]
 %   x                     
-% ±£Ö¤x>=0£¬±äĞÎ
-%   min z=[c -c]*X   subj. to  [Aeq -Aeq;G -G]*X (=¡¢<=) [beq;h]
+% ä¿è¯x>=0ï¼Œå˜å½¢
+%   min z=[c -c]*X   subj. to  [Aeq -Aeq;G -G]*X (=ã€<=) [beq;h]
 %    X                                          
-% ÆäÖĞ X=[x^+; x^-]
+% å…¶ä¸­ X=[x^+; x^-]
 %%
 % Aeq=[B -v];
 beq=zeros(3,1);
 % G=[eye(7);-eye(7)];
 h=[umax; 20; -umin; 0];
-%bÇó½âÏßĞÔ¹æ»®
+%bæ±‚è§£çº¿æ€§è§„åˆ’
 b=[beq;h];
 
-%% ¹¹ÔìÏßĞÔ¹æ»®±ê×¼ĞÍ
+%% æ„é€ çº¿æ€§è§„åˆ’æ ‡å‡†å‹
 % Convert free variables to positively constrained variables
 % Ad=[Aeq -Aeq; G -G];
-% AdÖ»ÓĞµÚ7¡¢µÚ14ÁĞµÄÇ°ÈıĞĞ¸ù¾İv²»Í¬¶ø²»Í¬£¬ÆäËû¹Ì¶¨²»±ä
+% Adåªæœ‰ç¬¬7ã€ç¬¬14åˆ—çš„å‰ä¸‰è¡Œæ ¹æ®vä¸åŒè€Œä¸åŒï¼Œå…¶ä»–å›ºå®šä¸å˜
 % Ad=[B -v -B v; eye(7) -eye(7);-eye(7) eye(7)];
 % [mad,~]= size(Ad);
 mad=17;
 nad=28;
-% ÏÈ°ÑÇ°Èı¸öµÈÊ½µÄ»ùÕÒµ½£¬²¢»¯¼ò
-% P=[Ad(1:3,1:3) zeros(3,mad-3);Ad(4:mad,1:3) eye(mad-3)];% ³£Á¿
+% å…ˆæŠŠå‰ä¸‰ä¸ªç­‰å¼çš„åŸºæ‰¾åˆ°ï¼Œå¹¶åŒ–ç®€
+% P=[Ad(1:3,1:3) zeros(3,mad-3);Ad(4:mad,1:3) eye(mad-3)];% å¸¸é‡
 % P_inv=[ -2    -4     6     0     0     0     0     0     0     0     0     0     0     0     0     0     0;
 %          6     4    -6     0     0     0     0     0     0     0     0     0     0     0     0     0     0;
 %         -4     0     6     0     0     0     0     0     0     0     0     0     0     0     0     0     0;
@@ -69,11 +69,11 @@ nad=28;
 %          0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     1     0;
 %          0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     1];
          
-% ÇóÄæ
-% Ad_eye=P\Ad;% »¯¼ò
-% ÎŞ¹ØÁĞµÄÄæÕóP_invÊÇ³£¾ØÕó
+% æ±‚é€†
+% Ad_eye=P\Ad;% åŒ–ç®€
+% æ— å…³åˆ—çš„é€†é˜µP_invæ˜¯å¸¸çŸ©é˜µ
 
-% P_inv=inv_mch(P,mad,mad); % ³£Á¿
+% P_inv=inv_mch(P,mad,mad); % å¸¸é‡
 % Ad_eye=P_inv*Ad;
 % Ad_eye =[
 % 
@@ -131,7 +131,7 @@ nad=28;
 %               0         0         0         0         0    1.0000  ;
 %               0         0         0         0         0         0  ];
 
-% ¸ù¾İÒÔÉÏ·ÖÎö£¬P_inv*AdÖ»ÓĞµÚ5£¬µÚ10ÁĞÒÀv²»Í¬¶ø±ä»¯¡£
+% æ ¹æ®ä»¥ä¸Šåˆ†æï¼ŒP_inv*Adåªæœ‰ç¬¬5ï¼Œç¬¬10åˆ—ä¾vä¸åŒè€Œå˜åŒ–ã€‚
 Ak1=zeros(17,1);
 Ak2=zeros(17,1);
 for i=1:17
@@ -149,22 +149,22 @@ for i=1:17
     Ak2(i)=temp2;
 
 end
-% ¼ÓÉÏËÉ³Ú±äÁ¿¶ÔÓ¦µÄ»ù
+% åŠ ä¸Šæ¾å¼›å˜é‡å¯¹åº”çš„åŸº
 % A=[Ad_eye(1:3,1:14) zeros(3,14); Ad_eye(4:17,1:14) eye(14)];
 % A1=[zeros(3,14); eye(14)];
 % A=[Ad_eye1 Ak1 Ad_eye2 Ak2 A1]
-% AÊÇAd_eyeµÄÀ©³ä£¬µÚ7£¬µÚ14ÁĞÓëP_inv*Ad±ä»¯µÄ²¿·ÖÁĞÓĞ¹Ø£¬ÆäËûÊÇ³£Êı
+% Aæ˜¯Ad_eyeçš„æ‰©å……ï¼Œç¬¬7ï¼Œç¬¬14åˆ—ä¸P_inv*Adå˜åŒ–çš„éƒ¨åˆ†åˆ—æœ‰å…³ï¼Œå…¶ä»–æ˜¯å¸¸æ•°
 A(:,7)=Ak1;
 A(:,14)=Ak2;
 c=[0 0 0 0 0 0 -1 0 0 0 0 0 0 1 zeros(1,14)];
-basis=[1:3 15:28];% ×ªCĞèÒªÌØ±ğ×¢ÒâÏÂ±êµÄÇø±ğ
+basis=[1:3 15:28];% è½¬Céœ€è¦ç‰¹åˆ«æ³¨æ„ä¸‹æ ‡çš„åŒºåˆ«
 z = 0;
 %% Simplex algorithm
 %% Iterate through simplex algorithm main loop
-[x,z,iters]=Simplex_loop_C(basis, A, b, c, z,mad,nad); % ÏßĞÔ¹æ»®µ¥´¿ĞÎ·¨
+[x,z,iters]=Simplex_loop_C(basis, A, b, c, z,mad,nad); % çº¿æ€§è§„åˆ’å•çº¯å½¢æ³•
 % [x,z,iters]=Simplex_loop_mch(basis, A, b, c, z);
 u1=x(1:6)-x(8:13);
-if z>1  % ·Å´óÁË±¶Êı£¬ÔÙ»¹Ô­£¬ÈôĞ¡ÓÚ1£¬Ôò±íÊ¾ĞèÒªËõĞ¡£¬xÒÑ¾­×ÔÈ»µ½´ï±ß½ç
+if z>1  % æ”¾å¤§äº†å€æ•°ï¼Œå†è¿˜åŸï¼Œè‹¥å°äº1ï¼Œåˆ™è¡¨ç¤ºéœ€è¦ç¼©å°ï¼Œxå·²ç»è‡ªç„¶åˆ°è¾¾è¾¹ç•Œ
     u = u1./(z);
 else
     u=u1;

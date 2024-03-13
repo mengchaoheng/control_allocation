@@ -1,7 +1,7 @@
 function [ UK ] = getUperp( IN_MAT )
 %[ UK ] = getUperp( IN_MAT )
 % IN_MAT = [B
-%           deltaU+Unom+..  %Ê¹ÓÃÈ«¾ÖµÄu£¬ÎªÁËÔÚBµÄÁã¿Õ¼äÕÒµ½·¶Êý×îÐ¡u
+%           deltaU+Unom+..  %ä½¿ç”¨å…¨å±€çš„uï¼Œä¸ºäº†åœ¨Bçš„é›¶ç©ºé—´æ‰¾åˆ°èŒƒæ•°æœ€å°u
 %           INDX]
 %   calculates the the component of the direction towards the preferred
 %   solution which lies in the null-space of B
@@ -23,12 +23,12 @@ if norm(Wp_aca(INDX>0.5,INDX>0.5)-eye(sum(INDX>0.5)))<eps
     VV(n,1)=-2;
     Uperp=pinv(Bx)*VV;
     if all(abs(Uperp)<=eps)
-        Kopt=0; %·ÀÖ¹³ý0
+        Kopt=0; %é˜²æ­¢é™¤0
     else
         Kopt=2/(Uperp'*Uperp);
     end
     if Kopt>1
-        UK(INDX,1)=0*Uperp; %Ïû³ý¶¶¶¯
+        UK(INDX,1)=0*Uperp; %æ¶ˆé™¤æŠ–åŠ¨
     else
         UK(INDX,1)=Kopt*Uperp;
     end

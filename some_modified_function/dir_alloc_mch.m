@@ -1,9 +1,9 @@
 function [u,z,iters] = dir_alloc_mch(v, umin,umax)
 % (c) mengchaoheng
 % Last edited 2019-11
-%   min z=c*x   subj. to  A*x (=¡¢ >=¡¢ <=) b
+%   min z=c*x   subj. to  A*x (=ã€ >=ã€ <=) b
 %   x 
-% Ô­ÎÊÌâ
+% åŸé—®é¢˜
 % Performs direct control allocation by solving the LP
 %   max z=a   subj. to  Bu = av
 %   a,u               umin <= u <= umax
@@ -19,20 +19,20 @@ function [u,z,iters] = dir_alloc_mch(v, umin,umax)
 %  -------
 % u     optimal control (m x 1)
 % a     scaling factor  
-%% ÕûÀí³É
+%% æ•´ç†æˆ
 %   min z=[0 -1]x   subj. to  [B -v]x = 0
 %   x                       [I 0;-I 0]x <= [umax; -umin]
-%   ÆäÖĞ x=[u; a]
-% ¶ÔÓ¦¡¶Í¹ÓÅ»¯¡·p139,¼ÇÎª
+%   å…¶ä¸­ x=[u; a]
+% å¯¹åº”ã€Šå‡¸ä¼˜åŒ–ã€‹p139,è®°ä¸º
 %   min z=c*x   subj. to  Aeq*x = beq
 %   x                     G*x <= h
-% ºÏ²¢
-%   min z=c*x   subj. to  [Aeq; G]*x (=¡¢<=) [beq;h]
+% åˆå¹¶
+%   min z=c*x   subj. to  [Aeq; G]*x (=ã€<=) [beq;h]
 %   x                     
-% ±£Ö¤x>=0£¬±äĞÎ
-%   min z=[c -c]*X   subj. to  [Aeq -Aeq;G -G]*X (=¡¢<=) [beq;h]
+% ä¿è¯x>=0ï¼Œå˜å½¢
+%   min z=[c -c]*X   subj. to  [Aeq -Aeq;G -G]*X (=ã€<=) [beq;h]
 %    X                                          
-% ÆäÖĞ X=[x^+; x^-]
+% å…¶ä¸­ X=[x^+; x^-]
 %%
 % B=[-0.5   0       0.5   0;
 %      0  -0.5    0       0.5;
@@ -44,12 +44,12 @@ function [u,z,iters] = dir_alloc_mch(v, umin,umax)
 % beq=zeros(3,1);
 % G=[eye(5);-eye(5)];
 % h=[umax; 20; -umin; 0];
-% Çó½âÏßĞÔ¹æ»®
+% æ±‚è§£çº¿æ€§è§„åˆ’
 % b=[beq;h];
 % b=[zeros(3,1);umax; 20; -umin; 0];
 b=[[0;0;0];umax; 20; -umin; 0];
 tol=1e8;
-%% ¹¹ÔìÏßĞÔ¹æ»®±ê×¼ĞÍ
+%% æ„é€ çº¿æ€§è§„åˆ’æ ‡å‡†å‹
 % Convert free variables to positively constrained variables
 % Ad=[Aeq -Aeq; G -G];
 % Ad=[B -v -B v; eye(5) -eye(5);-eye(5) eye(5)];
@@ -66,20 +66,20 @@ tol=1e8;
 %           0         0   -1.0000         0         0         0         0    1.0000         0         0;
 %           0         0         0   -1.0000         0         0         0         0    1.0000         0;
 %           0         0         0         0   -1.0000         0         0         0         0    1.0000];
-% AdÖ»ÓĞµÚ5£¬µÚ10ÁĞ¸ù¾İv²»Í¬¶ø²»Í¬£¬ÆäËû¹Ì¶¨²»±ä
+% Adåªæœ‰ç¬¬5ï¼Œç¬¬10åˆ—æ ¹æ®vä¸åŒè€Œä¸åŒï¼Œå…¶ä»–å›ºå®šä¸å˜
 Ad5=[0 0 0 0 0 0 0 1 0 0 0 0 -1]';  
 Ad10=[0 0 0 0 0 0 0 -1 0 0 0 0 1]';  
 Ad5(1:3) =-v;
 Ad10(1:3) =v;
 % [mad,~]= size(Ad);
 % mad=13;
-% ÏÈ°ÑÇ°Èı¸öµÈÊ½µÄ»ùÕÒµ½£¬²¢»¯¼ò
+% å…ˆæŠŠå‰ä¸‰ä¸ªç­‰å¼çš„åŸºæ‰¾åˆ°ï¼Œå¹¶åŒ–ç®€
 % B_inv=[Ad(1:3,1:3) zeros(3,mad-3);Ad(4:mad,1:3) eye(mad-3)];
 % B_inv=[Ad(1:3,1:3) zeros(3,10);Ad(4:mad,1:3) eye(10)];
 % P=[Ad(1:3,1:3) zeros(3,10);Ad(4:13,1:3) eye(10)];
-% ÇóÄæ
-% Ad_eye=P\Ad;% »¯¼ò
-% ÎŞ¹ØÁĞµÄÄæÕóP_invÊÇ³£¾ØÕó
+% æ±‚é€†
+% Ad_eye=P\Ad;% åŒ–ç®€
+% æ— å…³åˆ—çš„é€†é˜µP_invæ˜¯å¸¸çŸ©é˜µ
 P_inv=[-1     1     2     0     0     0     0     0     0     0     0     0     0;
      0    -2     0     0     0     0     0     0     0     0     0     0     0;
      1     1     2     0     0     0     0     0     0     0     0     0     0;
@@ -108,7 +108,7 @@ P_inv=[-1     1     2     0     0     0     0     0     0     0     0     0     
 %         0     0     0     1     0     0     0     0    -1     0;
 %         0     0     0    -1     0     0     0     0     1     0;
 %         0     0     0     0     0     0     0     0     0     0];
-% ¸ù¾İÒÔÉÏ·ÖÎö£¬P_inv*AdÖ»ÓĞµÚ5£¬µÚ10ÁĞÒÀv²»Í¬¶ø±ä»¯¡£
+% æ ¹æ®ä»¥ä¸Šåˆ†æï¼ŒP_inv*Adåªæœ‰ç¬¬5ï¼Œç¬¬10åˆ—ä¾vä¸åŒè€Œå˜åŒ–ã€‚
 % for i=1:13
 %     temp1=0;
 %     temp2=0;
@@ -119,9 +119,9 @@ P_inv=[-1     1     2     0     0     0     0     0     0     0     0     0     
 %     Ad_eye(i,5)=temp1;
 %     Ad_eye(i,10)=temp2;
 % end
-% ¼ÓÉÏËÉ³Ú±äÁ¿¶ÔÓ¦µÄ»ù
+% åŠ ä¸Šæ¾å¼›å˜é‡å¯¹åº”çš„åŸº
 % A=[Ad_eye(1:3,1:10) zeros(3,10); Ad_eye(4:13,1:10) eye(10)];
-% AÊÇAd_eyeµÄÀ©³ä£¬µÚ5£¬µÚ10ÁĞÓëP_inv*Ad±ä»¯µÄ²¿·ÖÁĞÓĞ¹Ø£¬ÆäËûÊÇ³£Êı
+% Aæ˜¯Ad_eyeçš„æ‰©å……ï¼Œç¬¬5ï¼Œç¬¬10åˆ—ä¸P_inv*Adå˜åŒ–çš„éƒ¨åˆ†åˆ—æœ‰å…³ï¼Œå…¶ä»–æ˜¯å¸¸æ•°
 A=[1     0     0     1     0    -1     0     0    -1     0     0     0     0     0     0     0     0     0     0     0;
    0     1     0    -1     0     0    -1     0     1     0     0     0     0     0     0     0     0     0     0     0;
    0     0     1     1     0     0     0    -1    -1     0     0     0     0     0     0     0     0     0     0     0;
@@ -147,11 +147,11 @@ for i=1:13
 end
 
 c=[0 0 0 0 -1 0 0 0 0 1 zeros(1,10)];
-basis=[1:3 11:20];% ×ªCĞèÒªÌØ±ğ×¢ÒâÏÂ±êµÄÇø±ğ
+basis=[1:3 11:20];% è½¬Céœ€è¦ç‰¹åˆ«æ³¨æ„ä¸‹æ ‡çš„åŒºåˆ«
 z = 0;
 %% Simplex algorithm
 %% Iterate through simplex algorithm main loop
-% [x,z]=Simplex_loop_mch(basis, A, b, c, z); % ÏßĞÔ¹æ»®µ¥´¿ĞÎ·¨
+% [x,z]=Simplex_loop_mch(basis, A, b, c, z); % çº¿æ€§è§„åˆ’å•çº¯å½¢æ³•
 %% Initialization
 iters=0;
 e=0;
@@ -159,7 +159,7 @@ e=0;
 % m=13;
 % n=20;
 while ~all(c>=0)                      % 3.~isempty(c(c(N)<0))
-%     e = find(c < 0, 1, 'first'); % ½ø»ù±äÁ¿Ë÷Òı    % 4. e = N(find(c(N)<0,1))
+%     e = find(c < 0, 1, 'first'); % è¿›åŸºå˜é‡ç´¢å¼•    % 4. e = N(find(c(N)<0,1))
     for i=1:20
         if(c(i)<0)
             e=i;
@@ -172,15 +172,15 @@ while ~all(c>=0)                      % 3.~isempty(c(c(N)<0))
     if ~isempty(ip)
         delta(ip)=b(ip)./(a_ie(ip));
     end
-    [~,L]=min(delta);%Ñ¡ÔñÀë»ù ĞĞË÷Òı
-%         li = basis(L);    % Àë»ù±äÁ¿Ë÷Òı               
+    [~,L]=min(delta);%é€‰æ‹©ç¦»åŸº è¡Œç´¢å¼•
+%         li = basis(L);    % ç¦»åŸºå˜é‡ç´¢å¼•               
     if delta(L) >= tol                         
         % disp('System is unbounded!');
         break;  % 11.
     else
         %% Perform pivot operation, exchanging L-row with e-coLumn variabLe
 %         [basis,A,b,c,z] = pivot_mch(basis,A,b,c,z,L,e);
-%         %»»»ù£¬¼´½øĞĞ³õµÈĞĞ±ä»»£¬×ªCÒªÌØ±ğ×¢Òâ£¬Òª°ÑÏµÊıÏÈ±£´æÔÙ½øĞĞforÑ­»·
+%         %æ¢åŸºï¼Œå³è¿›è¡Œåˆç­‰è¡Œå˜æ¢ï¼Œè½¬Cè¦ç‰¹åˆ«æ³¨æ„ï¼Œè¦æŠŠç³»æ•°å…ˆä¿å­˜å†è¿›è¡Œforå¾ªç¯
         % Compute the coefficients of the equation for new basic variabLe x_e.
         a_Le=A(L,e);% 4.    
         b(L) = b(L)/a_Le;                 
@@ -203,9 +203,9 @@ while ~all(c>=0)                      % 3.~isempty(c(c(N)<0))
 end
 x = zeros(20,1);                               % [13,16].
 x(basis) = b; 
-% ×ª»¯½â
+% è½¬åŒ–è§£
 u1=x(1:4)-x(6:9);
-if z>1  % ·Å´óÁË±¶Êı£¬ÔÙ»¹Ô­£¬ÈôĞ¡ÓÚ1£¬Ôò±íÊ¾ĞèÒªËõĞ¡£¬xÒÑ¾­×ÔÈ»µ½´ï±ß½ç
+if z>1  % æ”¾å¤§äº†å€æ•°ï¼Œå†è¿˜åŸï¼Œè‹¥å°äº1ï¼Œåˆ™è¡¨ç¤ºéœ€è¦ç¼©å°ï¼Œxå·²ç»è‡ªç„¶åˆ°è¾¾è¾¹ç•Œ
     u = u1./(z);
 else
     u=u1;

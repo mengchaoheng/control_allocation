@@ -1,11 +1,11 @@
 function u= qp_ca_mch(arg,B,plim,rlim,T,Wv,Wu,ud,imax,gam,only_plim)
-  % ĞŞ¸Äqp_ca_slÔ´ÎÄ¼şµÃµ½£¬É¾³ıÆäËûËã·¨µÄ·ÖÖ§¡£¾ØÕóÔÚmatlab×ªcÓïÑÔºó»á±ä³ÉÊı×é£¬¶ÔÓ¦¹ØÏµÎª£º
-  % Êı×éµÄÔªËØÒÀ´ÎÎª¾ØÕóµÚÒ»ÁĞ¡¢µÚ¶şÁĞ¡¢¡£¡£¡£¡¢Ö±µ½×îºóÒ»ÁĞ¡£
+  % ä¿®æ”¹qp_ca_slæºæ–‡ä»¶å¾—åˆ°ï¼Œåˆ é™¤å…¶ä»–ç®—æ³•çš„åˆ†æ”¯ã€‚çŸ©é˜µåœ¨matlabè½¬cè¯­è¨€åä¼šå˜æˆæ•°ç»„ï¼Œå¯¹åº”å…³ç³»ä¸ºï¼š
+  % æ•°ç»„çš„å…ƒç´ ä¾æ¬¡ä¸ºçŸ©é˜µç¬¬ä¸€åˆ—ã€ç¬¬äºŒåˆ—ã€ã€‚ã€‚ã€‚ã€ç›´åˆ°æœ€åä¸€åˆ—ã€‚
 % Wrapper used in the QP control allocation Simulink block.
   
 % Dimensions
-  k=3; %BĞĞÊı
-  m=4; %BÁĞÊı
+  k=3; %Bè¡Œæ•°
+  m=4; %Båˆ—æ•°
   % Extract nonconstant input arguments
   v = arg(1:k);
   uprev = arg(k+1:end);

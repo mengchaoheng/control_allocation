@@ -91,7 +91,7 @@ c = -Bt'*ydt;
 h = uMax-uMin;
 
 
-% ½â·½³Ì
+% è§£æ–¹ç¨‹
 [xout,~,exitflag,~,~] = linprog(c',[],[],A,b,zeros(size(A,2),1),h);
 
 

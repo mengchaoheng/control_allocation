@@ -62,22 +62,22 @@ function [u,errout,error,errore,errord] = DPnewprio_LPCA(yd,ye,B,uMin,uMax)
 errore=[0;0;0];
 errord=[0;0;0];
 [u_all,rho,errout_all] = dir_alloc_sim(yd+ye, uMin,uMax,B);
-if rho>=1 %ÖÕ¶ËÔÚAMSÀï£¬Êä³ö
+if rho>=1 %ç»ˆç«¯åœ¨AMSé‡Œï¼Œè¾“å‡º
     u=u_all;
     errout=errout_all;
-else %ÖÕ¶ËÔÚAMSÍâ
+else %ç»ˆç«¯åœ¨AMSå¤–
 %     [ue,erroute,rhoe] = DP3_LPCA(ye,B,uMin,uMax);
     [ue,rhoe,erroute] = dir_alloc_sim(ye, uMin,uMax,B);
     errore=ye-B*ue;
-    if rhoe>1 %yeÑÏ¸ñÔÚAMSÄÚ£¬×¢Òâ·ÖÅäydÊ±±ê³ÆÎ»ÖÃÒÑ¾­±äÎªue
+    if rhoe>1 %yeä¸¥æ ¼åœ¨AMSå†…ï¼Œæ³¨æ„åˆ†é…ydæ—¶æ ‡ç§°ä½ç½®å·²ç»å˜ä¸ºue
         uMin=uMin-ue;
         uMax=uMax-ue;
-%         [ud,erroutd,rhod] = DP3_LPCA(yd,B,uMin,uMax); % rhodÓ¦´óÓÚ1
+%         [ud,erroutd,rhod] = DP3_LPCA(yd,B,uMin,uMax); % rhodåº”å¤§äº1
         [ud,rhod,erroutd] = dir_alloc_sim(yd, uMin,uMax,B);
         errord=yd-B*ud;
         u=ud+ue; 
         errout=erroutd;
-    else  %yeÑÏ¸ñÔÚAMSÉÏ»òÔÚÍâ,Èç¹ûÈÎÒâÓĞÏŞÓÅÏÈ¼¶£¬ÔÚÕâÀïµİ¹é£¬½øÒ»²½È¥µôµÍÓÅÏÈ¼¶¡£
+    else  %yeä¸¥æ ¼åœ¨AMSä¸Šæˆ–åœ¨å¤–,å¦‚æœä»»æ„æœ‰é™ä¼˜å…ˆçº§ï¼Œåœ¨è¿™é‡Œé€’å½’ï¼Œè¿›ä¸€æ­¥å»æ‰ä½ä¼˜å…ˆçº§ã€‚
         u=ue;
         errout=erroute;
     end

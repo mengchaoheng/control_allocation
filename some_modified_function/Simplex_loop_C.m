@@ -1,9 +1,9 @@
 %% Iterate through simplex algorithm main loop
 function [x,z,iters,f]=Simplex_loop_C(B, A, b, c, z,m,n)
 % (c) mengchaoheng
-% ²»¿¼ÂÇÎŞ½âµÄÇéĞÎ
+% ä¸è€ƒè™‘æ— è§£çš„æƒ…å½¢
 % Last edited 2019-11
-%   min z=c*x   subj. to  A*x (=¡¢ >=¡¢ <=) b
+%   min z=c*x   subj. to  A*x (=ã€ >=ã€ <=) b
 %   x 
     %% Initialization
     tol=1e6;   
@@ -13,7 +13,7 @@ function [x,z,iters,f]=Simplex_loop_C(B, A, b, c, z,m,n)
     f=0;
 %     [m,n] = size(A);
 %     while ~all(c>=0)                      % 3.~isempty(c(c(N)<0))
-%     e = find(c < 0, 1, 'first'); % ½ø»ù±äÁ¿Ë÷Òı    % 4. e = N(find(c(N)<0,1))
+%     e = find(c < 0, 1, 'first'); % è¿›åŸºå˜é‡ç´¢å¼•    % 4. e = N(find(c(N)<0,1))
     while(1)
         flag=false;
         e=0;
@@ -46,18 +46,18 @@ function [x,z,iters,f]=Simplex_loop_C(B, A, b, c, z,m,n)
                     MIN=delta(i);
                 end
             end
-%             [~,L]=min(delta);%Ñ¡ÔñÀë»ù (Àë»ùÔÚBÊı×éÖĞµÄĞĞË÷Òı)
-    %         li = B(L);    % Àë»ù±äÁ¿Ë÷Òı               
+%             [~,L]=min(delta);%é€‰æ‹©ç¦»åŸº (ç¦»åŸºåœ¨Bæ•°ç»„ä¸­çš„è¡Œç´¢å¼•)
+    %         li = B(L);    % ç¦»åŸºå˜é‡ç´¢å¼•               
 %             if delta(L) >= tol    
             if MIN >= tol
-                return;  % ÎŞ½ç½â
-            else % ´ËÊ±Ò»¶¨ÓĞÒ»¸öL
-                [B,A,b,c,z] = pivot_C(B,A,b,c,z,L,e,m,n); %»»»ù£¬¼´½øĞĞ³õµÈĞĞ±ä»»
+                return;  % æ— ç•Œè§£
+            else % æ­¤æ—¶ä¸€å®šæœ‰ä¸€ä¸ªL
+                [B,A,b,c,z] = pivot_C(B,A,b,c,z,L,e,m,n); %æ¢åŸºï¼Œå³è¿›è¡Œåˆç­‰è¡Œå˜æ¢
             end
             iters = iters + 1;
         else
             f=1;
-            break;% ÒÑ¾­ÕÒµ½½â£¬»òÕßÎŞ½â
+            break;% å·²ç»æ‰¾åˆ°è§£ï¼Œæˆ–è€…æ— è§£
         end
     end
     x(B) = b; 

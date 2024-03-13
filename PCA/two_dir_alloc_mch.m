@@ -4,20 +4,20 @@ function [u]=two_dir_alloc_mch(v_T, v_D,p_limits,v_limits,u)
 v=v_T+v_D;
 umin=[1;1;1;1]*(-p_limits)*pi/180;
 umax=[1;1;1;1]*p_limits*pi/180;
-% uv = dir_alloc_mch(v,umin,umax); % wls_alloc_mch(v,u);% ÏÈ¼ÆËãºÏÁ¦¾ØËùÐè¶æÁ¿
+% uv = dir_alloc_mch(v,umin,umax); % wls_alloc_mch(v,u);% å…ˆè®¡ç®—åˆåŠ›çŸ©æ‰€éœ€èˆµé‡
 uv =wls_alloc_mul(v, u,p_limits, v_limits);
-if(check(uv,p_limits)) % Èô¶æÁ¿¿ÉÒÔÂú×ãÔòÖ±½ÓÂú×ã
+if(check(uv,p_limits)) % è‹¥èˆµé‡å¯ä»¥æ»¡è¶³åˆ™ç›´æŽ¥æ»¡è¶³
     u=uv;
-else  % ·ñÔòÔÙ¼ÆËãÈÅ¶¯ËùÐè
+else  % å¦åˆ™å†è®¡ç®—æ‰°åŠ¨æ‰€éœ€
 %     uv1 = dir_alloc_mch(v_T,umin,umax); % wls_alloc_mch(v1,u);
     uv1 =wls_alloc_mul(v_T,u, p_limits, v_limits);
-    if(check(uv1,p_limits))  % ÈôÈÅ¶¯¿ÉÂú×ã£¬ºÏÁ¦¾Ø²»ÄÜÂú×ã£¬Ôò½øÐÐÁ½´Î·ÖÅä
+    if(check(uv1,p_limits))  % è‹¥æ‰°åŠ¨å¯æ»¡è¶³ï¼ŒåˆåŠ›çŸ©ä¸èƒ½æ»¡è¶³ï¼Œåˆ™è¿›è¡Œä¸¤æ¬¡åˆ†é…
         umin1=umin-uv1;
         umax1=umax-uv1;
         uv2 = dir_alloc_mch(v_D,umin1,umax1);
 %         uv2 =wls_alloc_mul(v_D,uv1, umin1, umax1);
         u=uv1+uv2;
-    else  % ÈÅ¶¯Ò²²»ÄÜÂú×ã£¬ÔòÖ±½Ó°´ÕÕºÏÁ¦¾Ø½øÐÐ·ÖÅä
+    else  % æ‰°åŠ¨ä¹Ÿä¸èƒ½æ»¡è¶³ï¼Œåˆ™ç›´æŽ¥æŒ‰ç…§åˆåŠ›çŸ©è¿›è¡Œåˆ†é…
         u=uv;
     end
 end

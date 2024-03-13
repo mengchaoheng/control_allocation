@@ -1,15 +1,15 @@
 % function Ad_eye=inv_mvh(B_inv,Ad)
-% Ad_eye=B_inv\Ad;% »¯¼ò
+% Ad_eye=B_inv\Ad;% åŒ–ç®€
 function A_inv = inv_mvh(A)
-% ¶Ô¾ØÕó½øĞĞ³õµÈĞĞ±ä»»ÇóÆäÄæ
+% å¯¹çŸ©é˜µè¿›è¡Œåˆç­‰è¡Œå˜æ¢æ±‚å…¶é€†
 
 [row, col] = size(A);
 
-% BÎªµ¥Î»¾ØÕó
+% Bä¸ºå•ä½çŸ©é˜µ
 B = eye(row);
 
 for i = 1 : row
-    % ÒÀ´Î½«¶Ô½ÇĞĞµÄÔªËØ¹éÒ»»¯
+    % ä¾æ¬¡å°†å¯¹è§’è¡Œçš„å…ƒç´ å½’ä¸€åŒ–
     div_i = A(i, i);
     for j = 1 : col
        A(i, j) = A(i, j) / div_i;
@@ -22,7 +22,7 @@ for i = 1 : row
            tmp_ii = 0;
        end
        
-       % ³õµÈĞĞ±ä»»
+       % åˆç­‰è¡Œå˜æ¢
        for jj = 1 : col
            A(ii, jj) = A(ii, jj) + tmp_ii * A(i, jj);
            B(ii, jj) = B(ii, jj) + tmp_ii * B(i, jj);

@@ -4,8 +4,9 @@ function u= qp_ca_mch(arg,B,plim,rlim,T,Wv,Wu,ud,imax,gam,only_plim)
 % Wrapper used in the QP control allocation Simulink block.
   
 % Dimensions
-  k=3; %B行数
-  m=4; %B列数
+  % k=3; %B行数
+  % m=4; %B列数
+  [k,m] = size(B);
   % Extract nonconstant input arguments
   v = arg(1:k);
   uprev = arg(k+1:end);

@@ -98,16 +98,10 @@ u1=zeros(k,1);
 for i=1:(N+1)^2%length(X)
 v=50*[X(i);Y(i);Z(i)];% 虚拟指令
 %==================有效集=====================
-% [u] = wls_alloc_mch(v, u, p_limits, false);
-%  [u] =wls_alloc_m(v, u,false);
-%  [u,~,~] = wls_alloc(B,v,umin,umax);
-[u,~,~] =wls_alloc(B,v,umin,umax,eye(3),eye(9),zeros(9,1),1e6,zeros(9,1),zeros(9,1),100);
-% u= qp_ca_mch([v;u],B,plim,rlim,0.01,eye(3),eye(9),zeros(9,1),100,1e6,true);
-% [u] = wls_alloc_m(B,v,u,p_limits,v_limits,0.01,eye(3),eye(9),zeros(9,1),100,1e6,true);
-% u=dyn_alloc_m(B,v,u,p_limits,v_limits,0.01,eye(3),dca_W1,dca_W2,S,imax,gam,true);
-% u = dyn_alloc_m(v,u,false);
+
+% [u,~,~] =wls_alloc(B,v,umin,umax,eye(3),eye(9),zeros(9,1),1e6,zeros(9,1),zeros(9,1),100);
+u= qp_ca_mch([v;u],B,plim,rlim,0.01,eye(3),eye(9),zeros(9,1),100,1e6,true);
 x(:,i)=u;
-% [u1] = wls_alloc_mch(v, u1, p_limits, true);
 u1=pinv(B)*v;
 x1(:,i)=Constrain(u1,umin,umax);
 end

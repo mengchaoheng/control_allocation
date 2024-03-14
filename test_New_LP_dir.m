@@ -15,9 +15,9 @@ B=[-0.5     0       0.5     0;
 % m=4;
 umin=ones(m,1)*(-20)*pi/180;
 umax=ones(m,1)*20*pi/180;
-use_date=0;
+use_date=1;
 if(use_date)
-    load 'variables.mat'; % run '/New_LP_dir/allocation_log/plot_states.m' for y_all and u_px4
+    load 'hover.mat'; % run '/New_LP_dir/allocation_log/plot_states.m' for y_all and u_px4
     [N,~]=size(y_all);  
     x1=zeros(4,N);
     u1=zeros(4,1);
@@ -40,8 +40,8 @@ end
 % setup LPwrap
 % global NumU 
 NumU=m; % Number of controls
-%========抖动：0, 1, 2, 
-LPmethod=0; % LPmethod should be an integer between 0 and 5
+%=======对悬停控制量进行分配时抖动：0, 1, 2, 
+LPmethod=3; % LPmethod should be an integer between 0 and 5
 INDX=ones(1,m);  % active effectors
 IN_MAT = [B     zeros(k,1)
           umin' 0
@@ -57,27 +57,23 @@ for i=1:N% (N+1)^2  for  sphere %length(M_des(1:1000,1))%%length(X)
 if(use_date)
     v=y_all(i,:)';
 else
-    v=0.2*[X(i);Y(i);Z(i)];
+    v=0.5*[X(i);Y(i);Z(i)];
 end
 
-IN_MAT(1:3,end) = v; u1 = LPwrap(IN_MAT); % function of ACA lib
-% u1=pinv(B)*v;
+% IN_MAT(1:3,end) = v; u1 = LPwrap(IN_MAT); % function of ACA lib
+u1=pinv(B)*v;
 x1(:,i) = Constrain(u1,umin,umax);
 
 % [u2,~] = dir_linprog_ca_4df(B,v, umin, umax);
 
-% [u2,~,~] = dir_alloc_sim_new(single(v), single(umin),single(umax), single(B));
+[u2,~,~] = dir_alloc_sim_new(single(v), single(umin),single(umax), single(B)); 
 % u2 = dir_ca_4df(v, umin,umax); 
 % u2 = dir_alloc_simplex(B, v, umin,umax, m); % -- mch
 
 % [u2,~,~] =wls_alloc(B,v,umin,umax,eye(3),eye(4),zeros(4,1),1e6,zeros(4,1),zeros(4,1),100);
 % u2 = wls_ca_4df(v, u2);
-% [u2, ~,~] = DP3_LPCA(v,B,umin,umax);
-% [u2, ~] = DParm_LPCA(v,B,umin,umax,5e2, k,m);
-% [u2,~,~,~] = DPscalednew_LPCA(v,B,umin,umax,5e2);
-% [u2, ~] = DPprio_LPCA(v,zeros(3,1),B,umin,umax,5e2);
-% [u2,~,~,~] = DPscaled_LPCA(v,B,umin,umax,5e2);
-u2=pinv(B)*v;
+
+% u2=pinv(B)*v;
 x2(:,i)=Constrain(u2,umin,umax);
 end
 U1=B*x1;

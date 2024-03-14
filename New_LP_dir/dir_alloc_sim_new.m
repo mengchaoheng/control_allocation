@@ -41,7 +41,7 @@ function [u,z,iters] = dir_alloc_sim_new(v, umin,umax,B)
 Aeq=[B -v];
 beq=zeros(3,1);
 G=[eye(5);-eye(5)];
-h=[umax; 20; -umin; 0];
+h=[umax; Inf; -umin; 0]; % a 的范围越小越容易抖动。取Inf
 %b求解线性规划
 b=[beq;h];
 

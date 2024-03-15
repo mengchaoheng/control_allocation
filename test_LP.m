@@ -15,7 +15,7 @@ B=[-0.5     0       0.5     0;
 % m=4;
 umin=ones(m,1)*(-20)*pi/180;
 umax=ones(m,1)*20*pi/180;
-use_date=1;
+use_date=0;
 if(use_date)
     load 'hover.mat'; % run '/New_LP_dir/allocation_log/plot_states.m' for y_all and u_px4
     [N,~]=size(y_all);  
@@ -54,9 +54,9 @@ u(INDX>0.5)
 for i=1:N% (N+1)^2  for  sphere %length(M_des(1:1000,1))%%length(X)
 % 
 if(use_date)
-    v=y_all(i,:)';
+    v=single(y_all(i,:)');
 else
-    v=0.5*[X(i);Y(i);Z(i)];
+    v=single(0.5*[X(i);Y(i);Z(i)]);
 end
 
 IN_MAT(1:3,end) = v; u1 = LPwrap(IN_MAT); % function of ACA lib
@@ -65,7 +65,8 @@ x1(:,i) = Constrain(u1,umin,umax);
 
 % [u2,~] = dir_alloc_linprog(B,v, umin, umax);
 % u2 =     dir_alloc_simplex(B, v, umin,umax, m); % -- mch
-u2 =     allocator_dir_simplex_4(v, umin,umax); 
+% u2 =     allocator_dir_simplex_4(v, umin,umax); 
+u2 =     allocator_dir_simplex_4(single(v), single(umin),single(umax)); 
 % u2=pinv(B)*v;
 x2(:,i)=Constrain(u2,umin,umax);
 end
@@ -124,5 +125,6 @@ if(use_date)
     % plot(t,y_all(:,3),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
 else
     figure,
-    plot3(U1(1,:),U1(2,:),U1(3,:),'g*');
+    % plot3(U1(1,:),U1(2,:),U1(3,:),'g*');
+    plot3(U2(1,:),U2(2,:),U2(3,:),'g*');
 end

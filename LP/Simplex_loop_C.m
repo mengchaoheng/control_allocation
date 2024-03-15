@@ -6,18 +6,18 @@ function [x,z,iters,f]=Simplex_loop_C(B, A, b, c,m,n)
 %   min z=c*x   subj. to  A*x (=、 >=、 <=) b
 %   x 
     %% Initialization
-    tol=1e6;   
-    x = zeros(n,1);
-    iters=0;
-    z=0;
-    f=0;
+    tol=single(1e6);   
+    x = single(zeros(n,1));
+    iters=uint32(0);
+    z=single(0);
+    f=false;
 %     [m,n] = size(A);
 %     while ~all(c>=0)                      % 3.~isempty(c(c(N)<0))
 %     e = find(c < 0, 1, 'first'); % 进基变量索引    % 4. e = N(find(c(N)<0,1))
     while(1)
         flag=false;
-        e=0;
-        L=0;
+        e=uint8(0);
+        L=uint8(0);
         for i=1:n
             if c(i)< -1/tol % <0
                 flag=true;
@@ -33,7 +33,7 @@ function [x,z,iters,f]=Simplex_loop_C(B, A, b, c,m,n)
 %                 delta(ip)=b(ip)./a_ie(ip);
 %             end
             MIN=tol;
-            delta=tol*ones(m,1);
+            delta=tol*single(ones(m,1));
             for i=1:m
                 a_ie=A(i,e);
                 if a_ie>(1/tol)
@@ -54,9 +54,9 @@ function [x,z,iters,f]=Simplex_loop_C(B, A, b, c,m,n)
             else % 此时一定有一个L
                 [B,A,b,c,z] = pivot_C(B,A,b,c,z,L,e,m,n); %换基，即进行初等行变换
             end
-            iters = iters + 1;
+            iters = iters + uint32(1);
         else
-            f=1;
+            f=true;
             break;% 已经找到解，或者无解
         end
     end

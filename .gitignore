@@ -1,6 +1,7 @@
 *.DS_Store
-
 */codegen/
+*/*.prj
+*/*.mexmaca64
 /LP/allocation_log/*.mat
 /LP/allocation_log/*.ulg
 */*.asv

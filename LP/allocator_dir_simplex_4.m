@@ -46,7 +46,7 @@ function [u,z,iters] = allocator_dir_simplex_4(v, umin,umax)
 % h=[umax; 20; -umin; 0];
 % 求解线性规划
 % b=[beq;h];
-b=[zeros(3,1);umax; 1e4; -umin; 0];
+b=single([zeros(3,1);umax; 1e4; -umin; 0]);
 %% 构造线性规划标准型
 % Convert free variables to positively constrained variables
 % Ad=[Aeq -Aeq; G -G];
@@ -65,13 +65,13 @@ b=[zeros(3,1);umax; 1e4; -umin; 0];
 %           0         0         0   -1.0000         0         0         0         0    1.0000         0;
 %           0         0         0         0   -1.0000         0         0         0         0    1.0000];
 % Ad只有第5，第10列根据v不同而不同，其他固定不变
-Ad5=[0 0 0 0 0 0 0 1 0 0 0 0 -1]';  
-Ad10=[0 0 0 0 0 0 0 -1 0 0 0 0 1]';  
+Ad5=single([0 0 0 0 0 0 0 1 0 0 0 0 -1]');  
+Ad10=single([0 0 0 0 0 0 0 -1 0 0 0 0 1]');  
 Ad5(1:3) =-v;
 Ad10(1:3) =v;
 % [mad,~]= size(Ad);
-mad=13;
-nad=20;
+mad=uint8(13);
+nad=uint8(20);
 % 先把前三个等式的基找到，并化简
 % B_inv=[Ad(1:3,1:3) zeros(3,mad-3);Ad(4:mad,1:3) eye(mad-3)];
 % B_inv=[Ad(1:3,1:3) zeros(3,10);Ad(4:mad,1:3) eye(10)];
@@ -79,7 +79,7 @@ nad=20;
 % 求逆
 % Ad_eye=P\Ad;% 化简
 % 无关列的逆阵P_inv是常矩阵
-P_inv=[-1     1     2     0     0     0     0     0     0     0     0     0     0;
+P_inv=single([-1     1     2     0     0     0     0     0     0     0     0     0     0;
      0    -2     0     0     0     0     0     0     0     0     0     0     0;
      1     1     2     0     0     0     0     0     0     0     0     0     0;
      1    -1    -2     1     0     0     0     0     0     0     0     0     0;
@@ -91,7 +91,7 @@ P_inv=[-1     1     2     0     0     0     0     0     0     0     0     0     
      0    -2     0     0     0     0     0     0     0     1     0     0     0;
      1     1     2     0     0     0     0     0     0     0     1     0     0;
      0     0     0     0     0     0     0     0     0     0     0     1     0;
-     0     0     0     0     0     0     0     0     0     0     0     0     1];
+     0     0     0     0     0     0     0     0     0     0     0     0     1]);
 % P_inv=inv_mch(P);
 % Ad_eye=P_inv*Ad;
 % Ad_eye=[1     0     0     1     0    -1     0     0    -1     0;
@@ -121,7 +121,7 @@ P_inv=[-1     1     2     0     0     0     0     0     0     0     0     0     
 % 加上松弛变量对应的基
 % A=[Ad_eye(1:3,1:10) zeros(3,10); Ad_eye(4:13,1:10) eye(10)];
 % A是Ad_eye的扩充，第5，第10列与P_inv*Ad变化的部分列有关，其他是常数
-A=[1     0     0     1     0    -1     0     0    -1     0     0     0     0     0     0     0     0     0     0     0;
+A=single([1     0     0     1     0    -1     0     0    -1     0     0     0     0     0     0     0     0     0     0     0;
    0     1     0    -1     0     0    -1     0     1     0     0     0     0     0     0     0     0     0     0     0;
    0     0     1     1     0     0     0    -1    -1     0     0     0     0     0     0     0     0     0     0     0;
    0     0     0    -1     0     0     0     0     1     0     1     0     0     0     0     0     0     0     0     0;
@@ -133,10 +133,10 @@ A=[1     0     0     1     0    -1     0     0    -1     0     0     0     0    
    0     0     0    -1     0     0     0     0     1     0     0     0     0     0     0     0     1     0     0     0;
    0     0     0     1     0     0     0     0    -1     0     0     0     0     0     0     0     0     1     0     0;
    0     0     0    -1     0     0     0     0     1     0     0     0     0     0     0     0     0     0     1     0;
-   0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     1];
+   0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     1]);
 for i=1:13
-    temp1=0;
-    temp2=0;
+    temp1=single(0);
+    temp2=single(0);
     for k=1:13
         temp1=temp1 + P_inv(i,k)*Ad5(k);
         temp2=temp2 + P_inv(i,k)*Ad10(k);
@@ -145,8 +145,8 @@ for i=1:13
     A(i,10)=temp2;
 end
 
-c=[0 0 0 0 -1 0 0 0 0 1 zeros(1,10)];
-basis=[1:3 11:20];% 转C需要特别注意下标的区别
+c=single([0 0 0 0 -1 0 0 0 0 1 zeros(1,10)]);
+basis=uint8([1:3 11:20]);% 转C需要特别注意下标的区别
 %% Simplex algorithm
 %% Iterate through simplex algorithm main loop
 [x,z,iters,~]=Simplex_loop_C(basis, A, b, c,mad,nad); % 线性规划单纯形法

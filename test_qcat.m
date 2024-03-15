@@ -47,7 +47,7 @@ else
     time = zeros(1,N);
 end
 
-% setup alloc_sim
+% setup alloc_sim, see alloc_sim.m
 % method   -control allocation method: 'qp'   l2-optimal allocation
 %				                       'dyn'  dynamic allocation
 %				                       'dir'  direct allocation

@@ -44,7 +44,7 @@ vv=1*[XX(i);YY(i);ZZ(i)];
 % xx(:,i)=uu;
 % umin=max([1;1;1;1]*(-20)*pi/180,-0.01*400*pi/180+uu);
 % umax=min([1;1;1;1]*20*pi/180,0.01*400*pi/180+uu);
-% uu = dir_ca_4df(vv, umin,umax);
+% uu = allocator_dir_simplex_4(vv, umin,umax);
 uu = wls_ca_4df_pv_limit(vv, uu,p_limits, 0);
 xx(:,i)=uu;
 end
@@ -53,13 +53,13 @@ v1=1*[X1(i);Y1(i);Z1(i)]; % 虚拟指令
 v2=1*[X2(i);Y2(i);Z2(i)];
 v=1*[X(i);Y(i);Z(i)];
 % % %==================有效集=====================
-% u = dir_ca_4df(v, umin,umax);  
+% u = allocator_dir_simplex_4(v, umin,umax);  
 u =wls_ca_4df_pv_limit(v, u, p_limits, 1);
 x(:,i)=u;
-% u1 = dir_ca_4df(v1, umin,umax); 
+% u1 = allocator_dir_simplex_4(v1, umin,umax); 
 u1 =wls_ca_4df_pv_limit(v1, u1, p_limits, 1);
 x1(:,i)=u1;
-u2 = dir_ca_4df(v2, umin,umax);
+u2 = allocator_dir_simplex_4(v2, umin,umax);
 % u2 =wls_ca_4df_pv_limit(v2, u2, umin,umax);
 x2(:,i)=u2;
 % 改进

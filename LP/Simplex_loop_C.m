@@ -1,5 +1,5 @@
 %% Iterate through simplex algorithm main loop
-function [x,z,iters,f]=Simplex_loop_C(B, A, b, c, z,m,n)
+function [x,z,iters,f]=Simplex_loop_C(B, A, b, c,m,n)
 % (c) mengchaoheng
 % 不考虑无解的情形
 % Last edited 2019-11

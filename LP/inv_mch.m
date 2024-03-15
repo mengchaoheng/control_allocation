@@ -1,9 +1,9 @@
-% function Ad_eye=inv_mch(B_inv,Ad)
+% function Ad_eye=inv_mvh(B_inv,Ad)
 % Ad_eye=B_inv\Ad;% 化简
-function A_inv = inv_mch(A)
+function A_inv = inv_mch(A,row, col)
 % 对矩阵进行初等行变换求其逆
 
-[row, col] = size(A);
+% [row, col] = size(A);
 
 % B为单位矩阵
 B = eye(row);

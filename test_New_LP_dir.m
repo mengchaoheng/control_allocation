@@ -40,7 +40,6 @@ end
 % setup LPwrap
 % global NumU 
 NumU=m; % Number of controls
-%=======对悬停控制量进行分配时抖动：0, 1, 2, 
 LPmethod=3; % LPmethod should be an integer between 0 and 5
 INDX=ones(1,m);  % active effectors
 IN_MAT = [B     zeros(k,1)
@@ -60,8 +59,8 @@ else
     v=0.5*[X(i);Y(i);Z(i)];
 end
 
-% IN_MAT(1:3,end) = v; u1 = LPwrap(IN_MAT); % function of ACA lib
-u1=pinv(B)*v;
+IN_MAT(1:3,end) = v; u1 = LPwrap(IN_MAT); % function of ACA lib
+% u1=pinv(B)*v;
 x1(:,i) = Constrain(u1,umin,umax);
 
 % [u2,~] = dir_linprog_ca_4df(B,v, umin, umax);
@@ -109,7 +108,7 @@ if(use_date)
     figure,
     subplot(3,1,1)
     plot(t,error1(1,:),'Color','r','LineStyle','-','Marker','+','MarkerIndices',tt);hold on;
-    plot(t,error2(1,:),'Color','b','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
+    % plot(t,error2(1,:),'Color','b','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
     % plot(t,error1(1,:)-error2(1,:),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
     % plot(t,U1(1,:),'Color','b','LineStyle','-.','Marker','+','MarkerIndices',tt);hold on;
     % plot(t,U2(1,:),'Color','g','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
@@ -117,14 +116,14 @@ if(use_date)
 
     subplot(3,1,2)
     plot(t,error1(2,:),'Color','r','LineStyle','-','Marker','+','MarkerIndices',tt);hold on;
-    plot(t,error2(2,:),'Color','b','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
+    % plot(t,error2(2,:),'Color','b','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
     % plot(t,error1(2,:)-error2(2,:),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
     % plot(t,U1(2,:),'Color','b','LineStyle','-.','Marker','+','MarkerIndices',tt);hold on;
     % plot(t,U2(2,:),'Color','g','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
     % plot(t,y_all(:,2),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
     subplot(3,1,3)
     plot(t,error1(3,:),'Color','r','LineStyle','-','Marker','+','MarkerIndices',tt);hold on;
-    plot(t,error2(3,:),'Color','b','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
+    % plot(t,error2(3,:),'Color','b','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
     % plot(t,error1(3,:)-error2(3,:),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
     % plot(t,U1(3,:),'Color','b','LineStyle','-.','Marker','+','MarkerIndices',tt);hold on;
     % plot(t,U2(3,:),'Color','g','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;

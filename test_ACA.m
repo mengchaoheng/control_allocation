@@ -14,9 +14,9 @@ B=[-0.5     0       0.5     0;
 % m=4;
 umin=ones(m,1)*(-20)*pi/180;
 umax=ones(m,1)*20*pi/180;
-use_date=0;
+use_date=1;
 if(use_date)
-    load 'variables.mat'; % run '/New_LP_dir/allocation_log/plot_states.m' for y_all and u_px4
+    load 'hover.mat'; % run '/New_LP_dir/allocation_log/plot_states.m' for y_all and u_px4
     [N,~]=size(y_all);  
     x1=zeros(4,N);
     u1=zeros(4,1);
@@ -36,20 +36,33 @@ else
 end
 
 % ========
-% setup LPwrap
-% global NumU 
+% LPwrap
+% Testing using hover flight data, 
+% -Effectors jitter appears when LPmethod=0, 1. 
+% -Effectors saturation when LPmethod=2
+% tests in any unit direction：
+% -All tests passed but have warning when LPmethod=0, 1, 4.
+LPmethod=3; % LPmethod should be an integer between 0 and 5.
+% ========
+% CGIwrap
+% All tests passed
+% ========
+% DAwrap
+% All tests passed
+
+
+% setup ACA
 NumU=m; % Number of controls
-%========抖动：0, 1, 2（饱和）, 4(无输出)
-%========幅值测试报错：0, 1, 4, 5(缺失部分分配值)
-LPmethod=5; % LPmethod should be an integer between 0 and 5
 INDX=ones(1,m);  % active effectors
 IN_MAT = [B     [0;0;-0.3]% zeros(k,1)
           umin' 0
           umax' 0
           INDX  LPmethod];
+
+
 % test for LPwrap
-u = LPwrap(IN_MAT);      
-u(INDX>0.5)
+% u = LPwrap(IN_MAT);      
+% u(INDX>0.5);
 % ========
 for i=1:N% (N+1)^2  for  sphere %length(M_des(1:1000,1))%%length(X)
     if(use_date)
@@ -57,8 +70,11 @@ for i=1:N% (N+1)^2  for  sphere %length(M_des(1:1000,1))%%length(X)
     else
         v=0.4*[X(i);Y(i);Z(i)];
     end
-    IN_MAT(1:3,end) = v; u1 = LPwrap(IN_MAT); % function of ACA lib
-
+    IN_MAT(1:3,end) = v; 
+    % u1 = LPwrap(IN_MAT); % function of ACA lib
+    % u1= CGIwrap(IN_MAT);
+    % u1 = DAwrap(IN_MAT);
+    u1 = VJAwrap(IN_MAT);
     x1(:,i) = Constrain(u1,umin,umax);
     
     u2=pinv(B)*v;

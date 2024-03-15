@@ -3,7 +3,7 @@
 % clear all;
 % close all;
 load f18data
-[u,W,time,iter]=qp_sim(B,v,plim,rlim,T1);
+[u,W,time,iter]=qp_sim(B,v,plim,rlim,T1,'alg','sls');
 figure,
 plot(tn,u);
 figure,

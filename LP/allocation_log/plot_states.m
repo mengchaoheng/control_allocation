@@ -35,7 +35,7 @@ rmpath(folder) % remove old version
 d2r=pi/180;
 r2d=180/pi;
 %% two offline can be use, something different. px4 v12.3.0
-ulgFileName = '13_10_50'; % the ulog file name  17_48_41
+ulgFileName = '13_10_50'; % the ulog file name  17_48_41, have to in the same folder
 tmp=[ ulgFileName '.mat'];
 % exist tmp var
 if exist(tmp,"file")

@@ -1,4 +1,4 @@
-function [u]=two_dir_alloc_mch(v_T, v_D,p_limits,v_limits,u)
+ function [u]=two_dir_alloc_mch(v_T, v_D,p_limits,v_limits,u)
 % (c) mengchaoheng
 % Last edited 2019-11
 v=v_T+v_D;

@@ -1,0 +1,11 @@
+*.DS_Store
+
+*/codegen/
+/LP/allocation_log/*.mat
+/LP/allocation_log/*.ulg
+*/*.asv
+*/*.a
+*.asv
+
+*/slprj/
+slprj/

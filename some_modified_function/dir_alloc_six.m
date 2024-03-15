@@ -162,7 +162,7 @@ z = 0;
 %% Simplex algorithm
 %% Iterate through simplex algorithm main loop
 [x,z,iters]=Simplex_loop_C(basis, A, b, c, z,mad,nad); % 线性规划单纯形法
-% [x,z,iters]=Simplex_loop_mch(basis, A, b, c, z);
+% [x,z,iters]=Simplex_loop_matlab(basis, A, b, c, z);
 u1=x(1:6)-x(8:13);
 if z>1  % 放大了倍数，再还原，若小于1，则表示需要缩小，x已经自然到达边界
     u = u1./(z);

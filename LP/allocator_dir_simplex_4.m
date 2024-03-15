@@ -46,7 +46,7 @@ function [u,z,iters] = allocator_dir_simplex_4(v, umin,umax)
 % h=[umax; 20; -umin; 0];
 % 求解线性规划
 % b=[beq;h];
-b=[zeros(3,1);umax; 20; -umin; 0];
+b=[zeros(3,1);umax; 1e4; -umin; 0];
 %% 构造线性规划标准型
 % Convert free variables to positively constrained variables
 % Ad=[Aeq -Aeq; G -G];

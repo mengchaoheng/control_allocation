@@ -338,7 +338,7 @@ void dir_alloc_mch(const double v[3], const double umin[4], const double umax[4]
 
   /*  Simplex algorithm */
   /*  Iterate through simplex algorithm main loop */
-  /*  [x,z]=Simplex_loop_mch(basis, A, b, c, z); % ���Թ滮�����η� */
+  /*  [x,z]=Simplex_loop_matlab(basis, A, b, c, z); % ���Թ滮�����η� */
   /*  Initialization */
   e = -1;
 
@@ -415,7 +415,7 @@ void dir_alloc_mch(const double v[3], const double umin[4], const double umax[4]
         exitg1 = 1;
       } else {
         /*         %% Perform pivot operation, exchanging L-row with e-coLumn variabLe */
-        /*          [basis,A,b,c,z] = pivot_mch(basis,A,b,c,z,L,e); %�����������г����б任 */
+        /*          [basis,A,b,c,z] = pivot_matlab(basis,A,b,c,z,L,e); %�����������г����б任 */
         /*  Compute the coefficients of the equation for new basic variabLe x_e. */
         b[idx] /= A[idx + 13 * e];
 

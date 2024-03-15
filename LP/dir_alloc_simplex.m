@@ -40,24 +40,25 @@ k=3;
 Aeq=[B -v]; % k x (m+1)
 beq=zeros(k,1); % k x1
 G=[eye(m+1);-eye(m+1)]; % 2(m+1) x (m+1)
-h=[umax; 20; -umin; 0]; % 20 is the max value of a  % 2(m+1) x1
+h=[umax; 1e4; -umin; 0]; % 20 is the max value of a  % 2(m+1) x1
 b=[beq;h];
 %% 构造线性规划标准型
 % Convert free variables to positively constrained variables
 Ad=[Aeq -Aeq; G -G]; % k+2(m+1) x 2(m+1)
-% [mad,~]= size(Ad); %mad=k+2*(m+1)
+
 % 先把前三个等式的基找到，并化简
 P=[Ad(1:k,1:k) zeros(k,2*(m+1));Ad(k+1:k+2*(m+1),1:k) eye(2*(m+1))];
 Ad_eye=P\Ad;% 化简 P_inv=inv_mch(P);Ad_eye=P_inv*Ad;
 A=[Ad_eye(1:k,1:2*(m+1)) zeros(k,2*(m+1)); Ad_eye(k+1:k+2*(m+1),1:2*(m+1)) eye(2*(m+1))];
+[mad,nad]= size(A);% [mad,~]= size(Ad); %mad=k+2*(m+1)
 c =[zeros(1,m) -1]; 
 C=[c -c zeros(1,2*(m+1))]; % 1 x 2(m+1)
 basis=[1:k 2*(m+1)+1:2*(m+1)+2*(m+1)];% 转C需要特别注意下标的区别 % k
 z = 0;
 %% Simplex algorithm
 %% Iterate through simplex algorithm main loop
-[x,z]=Simplex_loop_mch(basis, A, b, C, z); % 线性规划单纯形法
-
+% [x,z]=Simplex_loop_matlab(basis, A, b, C, z); % a上界小时会抖动
+[x,z,~,~]=Simplex_loop_C(basis, A, b, C,mad,nad); % 线性规划单纯形法
 % 转化解
 u1=x(1:m)-x(m+1+1:m+1+m);
 if z>1  % 放大了倍数，再还原，若小于1，则表示需要缩小，x已经自然到达边界

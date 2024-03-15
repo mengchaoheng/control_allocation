@@ -69,7 +69,7 @@ function [u,a] = dir_alloc_linprog(B,v, umin, umax)
   beq = zeros(k,1);
   % a >= 0, umin <= u <= umax
   lb = [0 umin']';
-  ub = [1e4 umax']'; % 1e4 should be infty but error if too large.
+  ub = [1e4 umax']'; % 1e4 should be infty but error if too large. but will jitter when too small
   
   % Solve linear program
   options = optimset('Display', 'iter');% ,'Algorithm','interior-point-legacy'

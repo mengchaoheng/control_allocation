@@ -65,9 +65,7 @@ x1(:,i) = Constrain(u1,umin,umax);
 
 % [u2,~] = dir_alloc_linprog(B,v, umin, umax);
 % u2 =     dir_alloc_simplex(B, v, umin,umax, m); % -- mch
-% u2 =     allocator_dir_simplex_4(v, umin,umax); 
-
-
+u2 =     allocator_dir_simplex_4(v, umin,umax); 
 % u2=pinv(B)*v;
 x2(:,i)=Constrain(u2,umin,umax);
 end

@@ -28,8 +28,7 @@ new algorithm
 
 simulink test and some test:
 * `ac.slx` and `twin.slx`
-* test_qcat_wls.m
-* test_vview.m
+* test_xxx.m
 
 come from the old version modified `aircraft-control-allocation-book-simulation`:
 * some_modified_function 

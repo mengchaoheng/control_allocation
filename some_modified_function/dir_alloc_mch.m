@@ -151,7 +151,7 @@ basis=[1:3 11:20];% 转C需要特别注意下标的区别
 z = 0;
 %% Simplex algorithm
 %% Iterate through simplex algorithm main loop
-% [x,z]=Simplex_loop_mch(basis, A, b, c, z); % 线性规划单纯形法
+% [x,z]=Simplex_loop_matlab(basis, A, b, c, z); % 线性规划单纯形法
 %% Initialization
 iters=0;
 e=0;
@@ -179,7 +179,7 @@ while ~all(c>=0)                      % 3.~isempty(c(c(N)<0))
         break;  % 11.
     else
         %% Perform pivot operation, exchanging L-row with e-coLumn variabLe
-%         [basis,A,b,c,z] = pivot_mch(basis,A,b,c,z,L,e);
+%         [basis,A,b,c,z] = pivot_matlab(basis,A,b,c,z,L,e);
 %         %换基，即进行初等行变换，转C要特别注意，要把系数先保存再进行for循环
         % Compute the coefficients of the equation for new basic variabLe x_e.
         a_Le=A(L,e);% 4.    

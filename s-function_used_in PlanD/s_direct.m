@@ -234,7 +234,7 @@ v=[u(1);u(2);u(3)];%
 % v_D=[u(1);u(2);u(3)];% 
 % v_C=[u(4);u(5);u(6)];
 last_u=[u(4);u(5);u(6);u(7)];   
-% uu=two_dir_alloc_mch(v_D, v_C,last_u,20,1);% 
+% uu=two_dir_alloc_df4(v_D, v_C,last_u,20,1);% 
 B=[-0.5   0       0.5   0;
     0  -0.5    0       0.5;
     0.25   0.25   0.25   0.25];

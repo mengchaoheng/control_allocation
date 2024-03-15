@@ -55,7 +55,7 @@ x1(:,i)=u1;
 u2 = allocator_dir_simplex_4(v2, umin,umax);
 x2(:,i)=u2;
 % 改进
-u3=two_dir_alloc_mch(v1, v2, umin,umax);
+u3=two_dir_alloc_df4(v1, v2, umin,umax);
 x3(:,i)=u3;
 % u4=wls_ca_4df_pv_limit(v, u4, p_limits, 1);
 % x4(:,i)=u4;

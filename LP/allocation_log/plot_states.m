@@ -1,14 +1,6 @@
 clear all;
 close all;
 clc;
-format long g;
-clear all;
-close all;
-addpath(genpath(pwd))
-folder ='some_modified_function'; 
-rmpath(folder) % remove old version
-folder ='s-function_used_in PlanD'; 
-rmpath(folder) % remove old version
 
 % addpath(genpath(pwd));
 % addpath '/Users/mch/Proj/akstuki-PX4-ECL/PX4-ECL/EKF/matlab/EKF_replay/Common'
@@ -35,7 +27,7 @@ rmpath(folder) % remove old version
 d2r=pi/180;
 r2d=180/pi;
 %% two offline can be use, something different. px4 v12.3.0
-ulgFileName = '13_10_50'; % the ulog file name  17_48_41, have to in the same folder
+ulgFileName = '14_29_39'; % the ulog file name  17_48_41, have to in the same folder
 tmp=[ ulgFileName '.mat'];
 % exist tmp var
 if exist(tmp,"file")

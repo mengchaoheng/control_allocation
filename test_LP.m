@@ -99,19 +99,19 @@ if(use_date)
     subplot(4,1,1)
     plot(t,x1(1,:),'r.');hold on;
     plot(t,x2(1,:),'b--');hold on;
-    % plot(t,u_px4(:,1),'g-');hold on;
+    plot(t,u_px4(:,1),'g-');hold on;
     subplot(4,1,2)
     plot(t,x1(2,:),'r.');hold on;
     plot(t,x2(2,:),'b--');hold on;
-    % plot(t,u_px4(:,2),'g-');hold on;
+    plot(t,u_px4(:,2),'g-');hold on;
     subplot(4,1,3)
     plot(t,x1(3,:),'r.');hold on;
     plot(t,x2(3,:),'b--');hold on;
-    % plot(t,u_px4(:,3),'g-');hold on;
+    plot(t,u_px4(:,3),'g-');hold on;
     subplot(4,1,4)
     plot(t,x1(4,:),'r.');hold on;
     plot(t,x2(4,:),'b--');hold on;
-    % plot(t,u_px4(:,4),'g-');hold on;
+    plot(t,u_px4(:,4),'g-');hold on;
     figure,
     subplot(3,1,1)
     plot(t,error1(1,:),'Color','r','LineStyle','-','Marker','+','MarkerIndices',tt);hold on;

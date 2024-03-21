@@ -27,7 +27,7 @@ clc;
 d2r=pi/180;
 r2d=180/pi;
 %% two offline can be use, something different. px4 v12.3.0
-ulgFileName = '14_29_39'; % the ulog file name  17_48_41, have to in the same folder
+ulgFileName = '11_39_09'; % the ulog file name  17_48_41, have to in the same folder
 tmp=[ ulgFileName '.mat'];
 % exist tmp var
 if exist(tmp,"file")
@@ -185,7 +185,7 @@ ylabel('V_z (m/s)')
 y_all=log.data.actuator_controls_0_0{:,3:5};
 u_px4=log.data.allocation_value_0{:,11:14};  
 % 指定保存路径及文件名
-filename = '../variables.mat';
+filename = '../fly.mat';
  
 % 调用 save 函数进行保存
 save(filename, 'y_all','u_px4');

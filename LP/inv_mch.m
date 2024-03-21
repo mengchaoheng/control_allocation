@@ -6,7 +6,7 @@ function A_inv = inv_mch(A,row, col)
 % [row, col] = size(A);
 
 % B为单位矩阵
-B = eye(row);
+B = single(eye(row));
 
 for i = 1 : row
     % 依次将对角行的元素归一化
@@ -19,7 +19,7 @@ for i = 1 : row
     for ii = 1 : row
        tmp_ii = - A(ii, i) / A(i, i);
        if i == ii
-           tmp_ii = 0;
+           tmp_ii = single(0);
        end
        
        % 初等行变换

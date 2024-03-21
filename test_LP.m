@@ -6,18 +6,25 @@ rmpath(folder) % remove old version
 folder ='s-function_used_in PlanD'; 
 rmpath(folder) % remove old version
 
+% 注意B不同
+% B=[-0.5     0       0.5     0;
+%      0      -0.5     0       0.5;
+%      0.25    0.25    0.25    0.25];
 
-B=[-0.5     0       0.5     0;
-     0      -0.5     0       0.5;
-     0.25    0.25    0.25    0.25];
+l1=0.148;l2=0.069;k=3;
+B=k*[-l1     0       l1     0;
+     0      -l1     0       l1;
+     l2    l2    l2    l2]
 
+B_inv=pinv(B)
 [k,m] = size(B);
 % m=4;
 umin=ones(m,1)*(-20)*pi/180;
 umax=ones(m,1)*20*pi/180;
-use_date=0;
+use_date=1;
 if(use_date)
-    load 'hover.mat'; % run '/New_LP_dir/allocation_log/plot_states.m' for y_all and u_px4
+    % load 'hover.mat'; % run '/New_LP_dir/allocation_log/plot_states.m' for y_all and u_px4
+    load 'fly.mat';
     [N,~]=size(y_all);  
     x1=zeros(4,N);
     u1=zeros(4,1);
@@ -58,15 +65,20 @@ if(use_date)
 else
     v=single(0.5*[X(i);Y(i);Z(i)]);
 end
-
+if i==1255
+    i
+end
 IN_MAT(1:3,end) = v; u1 = LPwrap(IN_MAT); % function of ACA lib
 % u1=pinv(B)*v;
 x1(:,i) = Constrain(u1,umin,umax);
 
+[u2,~,~] = allocator_dir_simplex_4_v3(single(v), single(umin),single(umax));
+% [u2,~,~] =allocator_dir_LPwrap_4(B, v, umin,umax);
 % [u2,~] = dir_alloc_linprog(B,v, umin, umax);
-% u2 =     dir_alloc_simplex(B, v, umin,umax, m); % -- mch
+% [u2,~,~] =     allocator_dir_simplex_4_v2(single(B),single(v), single(umin),single(umax)); % -- mchdir_alloc_simplex_C(B, v, umin,umax,m)
+% [u2,~,~] =     dir_alloc_simplex(B,v,umin,umax); % -- mch 
 % u2 =     allocator_dir_simplex_4(v, umin,umax); 
-u2 =     allocator_dir_simplex_4(single(v), single(umin),single(umax)); 
+% u2 =     allocator_dir_simplex_4(single(v), single(umin),single(umax)); 
 % u2=pinv(B)*v;
 x2(:,i)=Constrain(u2,umin,umax);
 end
@@ -85,21 +97,21 @@ if(use_date)
     error2=U2-y_all_new;
     figure,
     subplot(4,1,1)
-    plot(t,x1(1,:),'r-');hold on;
+    plot(t,x1(1,:),'r.');hold on;
     plot(t,x2(1,:),'b--');hold on;
-    % plot(t,u_px4(:,1),'g.');hold on;
+    % plot(t,u_px4(:,1),'g-');hold on;
     subplot(4,1,2)
-    plot(t,x1(2,:),'r-');hold on;
+    plot(t,x1(2,:),'r.');hold on;
     plot(t,x2(2,:),'b--');hold on;
-    % plot(t,u_px4(:,2),'g.');hold on;
+    % plot(t,u_px4(:,2),'g-');hold on;
     subplot(4,1,3)
-    plot(t,x1(3,:),'r-');hold on;
+    plot(t,x1(3,:),'r.');hold on;
     plot(t,x2(3,:),'b--');hold on;
-    % plot(t,u_px4(:,3),'g.');hold on;
+    % plot(t,u_px4(:,3),'g-');hold on;
     subplot(4,1,4)
-    plot(t,x1(4,:),'r-');hold on;
+    plot(t,x1(4,:),'r.');hold on;
     plot(t,x2(4,:),'b--');hold on;
-    % plot(t,u_px4(:,4),'g.');hold on;
+    % plot(t,u_px4(:,4),'g-');hold on;
     figure,
     subplot(3,1,1)
     plot(t,error1(1,:),'Color','r','LineStyle','-','Marker','+','MarkerIndices',tt);hold on;

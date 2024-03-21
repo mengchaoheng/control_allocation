@@ -1,5 +1,5 @@
 %% Perform pivot operation, exchanging L-row with e-coLumn variabLe
-function [B,A,b,C,z]=pivot_matlab(B, A, b, C, z, L, e)
+function [B,A,b,C,z]=pivot_mch(B, A, b, C, z, L, e)
 % (c) mengchaoheng
 % Last edited 2019-11
 %   min z=C*x   subj. to  A*x (=、 >=、 <=) b

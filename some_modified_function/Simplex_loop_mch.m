@@ -1,5 +1,5 @@
 %% Iterate through simplex algorithm main loop
-function [x,z,iters]=Simplex_loop_matlab(B, A, b, C, z)
+function [x,z,iters]=Simplex_loop_mch(B, A, b, C, z)
 % (c) mengchaoheng
 % Last edited 2019-11
 %   min z=C*x   subj. to  A*x (=、 >=、 <=) b
@@ -22,7 +22,7 @@ function [x,z,iters]=Simplex_loop_matlab(B, A, b, C, z)
         disp('System is unbounded!');
         return;  % 11.
     else
-        [B,A,b,C,z] = pivot_matlab(B,A,b,C,z,L,e); %换基，即进行初等行变换
+        [B,A,b,C,z] = pivot_mch(B,A,b,C,z,L,e); %换基，即进行初等行变换
     end
     iters = iters + 1;
        

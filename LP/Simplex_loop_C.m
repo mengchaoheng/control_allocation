@@ -1,25 +1,25 @@
 %% Iterate through simplex algorithm main loop
-function [x,z,iters,f]=Simplex_loop_C(B, A, b, c,m,n)
+function [x,z,iters,f]=Simplex_loop_C(B, A, b, C,m,n)
 % (c) mengchaoheng
 % 不考虑无解的情形
 % Last edited 2019-11
-%   min z=c*x   subj. to  A*x (=、 >=、 <=) b
+%   min z=C*x   subj. to  A*x (=、 >=、 <=) b
 %   x 
     %% Initialization
-    tol=single(1e6);   
+    tol=single(1e8);   % 调参1e6 1e8 抖动原因。使用预设值版本allocator_dir_simplex_4及其衍生版后不再抖动
     x = single(zeros(n,1));
     iters=uint32(0);
     z=single(0);
     f=false;
 %     [m,n] = size(A);
-%     while ~all(c>=0)                      % 3.~isempty(c(c(N)<0))
-%     e = find(c < 0, 1, 'first'); % 进基变量索引    % 4. e = N(find(c(N)<0,1))
+%     while ~all(C>=0)                      % 3.~isempty(C(C(N)<0))
+%     e = find(C < 0, 1, 'first'); % 进基变量索引    % 4. e = N(find(C(N)<0,1))
     while(1)
         flag=false;
         e=uint8(0);
         L=uint8(0);
         for i=1:n
-            if c(i)< -1/tol % <0
+            if C(i)< -single(1)/tol % <0
                 flag=true;
                 e=i;
                 break;
@@ -36,7 +36,7 @@ function [x,z,iters,f]=Simplex_loop_C(B, A, b, c,m,n)
             delta=tol*single(ones(m,1));
             for i=1:m
                 a_ie=A(i,e);
-                if a_ie>(1/tol)
+                if a_ie>(single(1)/tol)
                     delta(i)=b(i)./a_ie;
                 else
                     delta(i)=tol;
@@ -52,7 +52,7 @@ function [x,z,iters,f]=Simplex_loop_C(B, A, b, c,m,n)
             if MIN >= tol
                 return;  % 无界解
             else % 此时一定有一个L
-                [B,A,b,c,z] = pivot_C(B,A,b,c,z,L,e,m,n); %换基，即进行初等行变换
+                [B,A,b,C,z] = pivot_C(B,A,b,C,z,L,e,m,n); %换基，即进行初等行变换
             end
             iters = iters + uint32(1);
         else

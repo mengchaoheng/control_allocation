@@ -21,7 +21,7 @@ function [u,z,iters] = dir_alloc_sim(v, umin,umax,B)
 % a     scaling factor  
 %% 整理成
 %   min z=[0 -1]x   subj. to  [B -v]x = 0
-%   x                       [I 0;-I 0]x <= [umax; -umin]
+%   x                       [I ;-I ]x <= [umax; Inf; -umin; 0]
 %   其中 x=[u; a]
 % 对应《凸优化》p139,记为
 %   min z=c*x   subj. to  Aeq*x = beq

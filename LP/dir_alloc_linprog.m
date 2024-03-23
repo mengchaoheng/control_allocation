@@ -1,4 +1,4 @@
-function [u,a] = dir_alloc_linprog(B,v, umin, umax)
+function [u,a] = dir_alloc_linprog(B,v, umin, umax, lam)
   
 % DIR_ALLOC - Direct control allocation.
 %
@@ -8,9 +8,10 @@ function [u,a] = dir_alloc_linprog(B,v, umin, umax)
 %
 %   max a   subj. to  Bu = av
 %   a,u               umin <= u <= umax
-%
-% If a > 1, set u = u/a.
-%
+%                        0 <= a <= lam
+% lam >= 1,if lam = 1, it will at limit, but the allocation error is close to 0.
+% when lam > 1, if a > 1, set u = u/a. 
+% lam can be set to Inf, set to a large number is close to the Inf.
 % Note: This function has not been optimized for speed.
 %
 %  Inputs:
@@ -69,14 +70,16 @@ function [u,a] = dir_alloc_linprog(B,v, umin, umax)
   beq = zeros(k,1);
   % a >= 0, umin <= u <= umax
   lb = [0 umin']';
-  ub = [1e4 umax']'; % 1e4 should be infty but error if too large. but will jitter when too small
+  ub = [lam umax']'; % 1e4 should be infty but error if too large. but will jitter when too small
   
   % Solve linear program
-  options = optimset('Display', 'iter');% ,'Algorithm','interior-point-legacy'
+  options = optimset('Display', 'off');% ,'Algorithm','interior-point-legacy'
   [x,fval,exitflag,output,lambda]= linprog(f,A,b,Aeq,beq,lb,ub,options);
   if(exitflag~=1)
       a=0;
       u=[0;0;0;0];
+      disp('stop!');
+      
   else
       a = x(1);
       u = x(2:end);

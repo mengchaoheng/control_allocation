@@ -55,9 +55,9 @@ function [u,a] = dir_alloc_linprog(B,v, umin, umax, lam)
   
   % Reformulate problem to fit linprog format:
   %
-  % min f'x subj. to A*x <=b
-  %                  Aeq*b = beq
-  %		     lb <= x <= ub
+  % min f'x    s.t.   A*x <=b
+  %                  Aeq*x = beq
+  %		             lb <= x <= ub
   
   % x = [a ; u]
   % f' = [-1 0 ... 0] (min -a <-> max a)

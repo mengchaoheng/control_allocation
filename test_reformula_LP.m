@@ -21,7 +21,7 @@ B_inv=pinv(B)
 umin=ones(m,1)*(-20)*pi/180;
 umax=ones(m,1)*20*pi/180;
 use_date=1; % test use px4 fly data.
-test_lam=1; % for dir_alloc_linprog and dir_alloc_linprog_re_bound. lam > 1 will get u close to limits, but allocation error is 0
+test_lam=0; % for dir_alloc_linprog and dir_alloc_linprog_re_bound. lam > 1 will get u close to limits, but allocation error is 0
 if(use_date)
     % load 'hover.mat'; % run '/New_LP_dir/allocation_log/plot_states.m' for y_all and u_px4
     load 'fly.mat';
@@ -47,7 +47,11 @@ end
 % setup LPwrap
 % global NumU 
 NumU=m; % Number of controls
-LPmethod=2; % LPmethod should be an integer between 0 and 5
+
+% LPmethod=2 is the same as lam = 1 in dir_alloc_linprog_re_bound and dir_alloc_linprog
+% LPmethod=3 is the same as dir_alloc_linprog_re
+LPmethod=3; % LPmethod should be an integer between 0 and 5. 
+
 INDX=ones(1,m);  % active effectors
 IN_MAT = [B     zeros(k,1)
           umin' 0
@@ -72,14 +76,16 @@ for i=1:N% (N+1)^2  for  sphere %length(M_des(1:1000,1))%%length(X)
         [u2,~] = dir_alloc_linprog(B,v, umin, umax, inf);
         % [u2,~] = dir_alloc_linprog_re_bound(B,v, umin, umax, 1e4);
         x2(:,i)=Constrain(u2,umin,umax);
-    else
-        % IN_MAT(1:3,end) = v; u1 = LPwrap(IN_MAT); % function of ACA lib
+    else % test different method
+        IN_MAT(1:3,end) = v; u1 = LPwrap(IN_MAT); % function of ACA lib
         % u1=pinv(B)*v;
         x1(:,i) = Constrain(u1,umin,umax);
         
         % [u2,~] = dir_alloc_linprog_re(B,v, umin, umax);
-        [u2,~] = dir_alloc_linprog_re_bound(B,v, umin, umax, 1);
+        % [u2,~] = dir_alloc_linprog_re_bound(B,v, umin, umax, 1);
         % [u2,~] = dir_alloc_linprog(B,v, umin, umax, 1);
+
+        [u2,~] = dir_alloc_simplex_re(B,v, umin, umax);
         x2(:,i)=Constrain(u2,umin,umax);
     end
 end

@@ -5,3 +5,6 @@
 	path = aircraft-control-allocation-book-simulation
 	url = https://github.com/mengchaoheng/aircraft-control-allocation-book-simulation.git
 
+[submodule "linear-programming-using-MATLAB"]
+	path = linear-programming-using-MATLAB
+	url = https://github.com/mengchaoheng/linear-programming-using-MATLAB.git

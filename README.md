@@ -22,9 +22,10 @@ submodules used sa lib:
 * qcat
 
 new algorithm
-* LP
+* LP (the simplex method have some problem)
 * PCA
 * QP
+* reformula_QP (want to replace the)
 
 simulink test and some test:
 * `ac.slx` and `twin.slx`

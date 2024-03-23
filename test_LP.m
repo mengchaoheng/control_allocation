@@ -72,7 +72,7 @@ IN_MAT(1:3,end) = v; u1 = LPwrap(IN_MAT); % function of ACA lib
 % u1=pinv(B)*v;
 x1(:,i) = Constrain(u1,umin,umax);
 
-[u2,~,~] = allocator_dir_simplex_4_v3(single(v), single(umin),single(umax));
+% [u2,~,~] = allocator_dir_simplex_4_v3(single(v), single(umin),single(umax));
 % [u2,~,~] =allocator_dir_LPwrap_4(B, v, umin,umax);
 % [u2,~] = dir_alloc_linprog(B,v, umin, umax);
 % [u2,~,~] =     allocator_dir_simplex_4_v2(single(B),single(v), single(umin),single(umax)); % -- mchdir_alloc_simplex_C(B, v, umin,umax,m)
@@ -80,7 +80,7 @@ x1(:,i) = Constrain(u1,umin,umax);
 % u2 =     allocator_dir_simplex_4(v, umin,umax); 
 % u2 =     allocator_dir_simplex_4(single(v), single(umin),single(umax)); 
 % u2=pinv(B)*v;
-x2(:,i)=Constrain(u2,umin,umax);
+% x2(:,i)=Constrain(u2,umin,umax);
 end
 U1=B*x1;
 U2=B*x2;

@@ -61,17 +61,17 @@ function [u,a] = dir_alloc_simplex_re(B,v, umin, umax)
     %             'off' 或 'none' 不显示输出。
     % 
     %             'iter' 在每次迭代时显示输出。
-    % options = optimset('Display', 'off');
-    % [X,fval,exitflag,output,lambda]= linprog(c,A,b,Aeq,beq,zeros(m+1,1),[],options);
-    % if(exitflag~=1)
-    %     u=zeros(m,1);
-    %     a=0;
-    %     disp('stop!');
-    % else
-    %     % x=u-umin, x = X(1:m)
-    %     u = X(1:m)+umin;
-    %     a = X(m+1);
-    % end
+    options = optimset('Display', 'off');
+    [X,fval,exitflag,output,lambda]= linprog(c,A,b,Aeq,beq,zeros(m+1,1),[],options);
+    if(exitflag~=1)
+        u=zeros(m,1);
+        a=0;
+        disp('stop!');
+    else
+        % x=u-umin, x = X(1:m)
+        u = X(1:m)+umin;
+        a = X(m+1);
+    end
     %% ToDo: use LP lib (git@github.com-mch:mengchaoheng/control_allocation.git)
     
     u = X(1:m)+umin;

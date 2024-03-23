@@ -1,4 +1,4 @@
-function [u,a] = dir_alloc_linprog_re(B,v, umin, umax)
+function [u,a] = test_LP_lib(B,v, umin, umax)
   
     % DIR_ALLOC - Direct control allocation.
     %
@@ -27,7 +27,7 @@ function [u,a] = dir_alloc_linprog_re(B,v, umin, umax)
     %
     % Reformulate problem to fit linprog format:
     % In matlab, the forms of problem is:
-    % min f'x subj. to A*x <=b
+    % min f'x subj. to A*x <= b
     %                  Aeq*b = beq
     %		           lb <= x <= ub
     %% but we use the Standard Forms for Linear Programming Problems
@@ -40,8 +40,9 @@ function [u,a] = dir_alloc_linprog_re(B,v, umin, umax)
     %                                   0 <= a
     % and set x=u-umin, then
     % min z=[0; -1]'[x; a]   s.t.  [B -v][x; a] = -B*umin
-    %                                0 <= x <= umax-umin
-    %                                0 <= a
+    %                                        x <= umax-umin
+    %                                        0 <= x 
+    %                                        0 <= a
     % add slack to converted inequalities into equalities of x:
     % min z=[0; -1]'[x; a]   s.t.  [B -v][x; a] = -B*umin
     %                                     x + s = umax-umin
@@ -53,37 +54,61 @@ function [u,a] = dir_alloc_linprog_re(B,v, umin, umax)
     %                                         0 <= x 
     %                                         0 <= a
     %                                         0 <= s
-    % A=[B -v 0; I 0 I]; b=[-B*umin; umax-umin]; c=[0; -1; 0];
-    
+    % A=[B -v 0; I 0 I]; b=[-B*umin; umax-umin]; c=[0; -1; 0]; X=[x; a; s]
     
     % Number of variables
     [k,m] = size(B);
-    Aeq=[B -v zeros(k,m); eye(m) zeros(m,1) eye(m)]; 
-    beq=[-B*umin; umax-umin]; 
-    c=[zeros(m,1); -1; zeros(m,1)];
-    
-    % Solve linear program
-    % Algorithm = 'dual-simplex'（默认值）
-    % 
-    %              'interior-point-legacy'
-    % 
-    %              'interior-point'
-    % Display = 'final'（默认值）仅显示最终输出。
-    % 
-    %             'off' 或 'none' 不显示输出。
-    % 
-    %             'iter' 在每次迭代时显示输出。
 
-    options = optimset('Display', 'off');
-    [X,fval,exitflag,output,lambda]= linprog(c,[],[],Aeq,beq,zeros(2*m+1,1),[],options);
+    %% 1. use the standard form, error!
+    A=[B -v zeros(k,m); eye(m) zeros(m,1) eye(m)]; 
+    b=[-B*umin; umax-umin]; 
+    c=[zeros(m,1); -1; zeros(m,1)];
+    Eqin=zeros(k+m,1);
+    %% 2. use the general form (LP lib)
+    % min c'x subj. to A*x (Eqin) b
+    %                     0 <= x
+    % [1] N. Ploskas and N. Samaras, Linear Programming Using MATLAB®, vol. 127. in Springer Optimization and Its Applications, vol. 127. Cham: Springer International Publishing, 2017. doi: 10.1007/978-3-319-65919-0.
+    % So the param of this lib is: A=[B -v; I 0]; b=[-B*umin; umax-umin]; c=[0; -1]; X=[x; a]
+    % A=[B -v; eye(m) zeros(m,1)]; 
+    % b=[-B*umin; umax-umin];
+    % c=[zeros(m,1); -1];
+    % Eqin=[zeros(k,1); -ones(m,1)];
+
+
+    %% Use LP lib to analysis. 
+    % MinMaxLP=[];
+    % c0=[];
+    % reinv=[];
+    % tole1=[];
+    % tole2=[];
+    % tole3=[];
+    % scalingTechnique=[];
+    % pivotingRule=[];
+    % basisUpdateMethod=[];
+    % 
+    % maxIterations=[];
+    % tol=[];
+    % etaMin=[];
+    % Revised Primal Simplex Algorithm
+    [xsol, fval, exitflag, iterations] = rsa(A, c, b, Eqin);
+    % % Revised Dual Simplex Algorithm
+    % [xsol, fval, exitflag, iterations] = rdsa(A, c, b, Eqin);
+    % % Exterior Point Simplex Algorithm
+    % [xsol, fval, exitflag, iterations] = epsa(A, c, b, Eqin);
+    % % Interior Point Methods
+    % [xsol, fval, exitflag, iterations] = ipdipm(A, c, b, Eqin);
+
+     % [xsol, fval, exitflag, iterations] = linprogSolver(A, c, b, Eqin,-1,0, 'dual-simplex');
+    % sensitivity Analysis
+
     if(exitflag~=1)
         u=zeros(m,1);
         a=0;
         disp('stop!');
     else
-        % x=u-umin, x = X(1:m)
-        u = X(1:m)+umin;
-        a = X(m+1);
+        % x=u-umin, x = xsol(1:m)
+        u = xsol(1:m)+umin;
+        a = xsol(m+1);
     end
     % Scale down u if a>1
     if a>1

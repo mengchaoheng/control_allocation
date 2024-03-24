@@ -1,5 +1,5 @@
 
-function [y0, inB, e,itlim,errout] = simplxuprevsol_C(A,ct,b,inB,h,e,varargin)
+function [y0, inB, e,itlim,errout] = simplxuprevsol_C(A,ct,b,inB,h,e,m,n,itlim)
 %  Bounded Revised Simplex
 %
 %function [yout, inBout,bout, itout,errout] = simplxuprevsol(A,ct,b,inB,inD,h,e,m,n,itlim)
@@ -35,32 +35,48 @@ function [y0, inB, e,itlim,errout] = simplxuprevsol_C(A,ct,b,inB,h,e,varargin)
 %   8/2014    Roger Beck  Update for use
 %   9/2014    Roger Beck  Added anti-cycling rule
 
-%Optional Inputs
-switch  length(varargin)
-    case 0
-    itlim = inf;
-    [m,n] = size(A);
-    case 1
-    itlim = varargin{1};
-    [m,n] = size(A);
-    case 2
-    itlim = inf;
-    m = varargin{1};
-    n = varargin{2};
-    case 3
-    itlim =varargin{3};
-    m = varargin{1};
-    n = varargin{2};
- end    	
+%Optional Inputs  	
     	
 %Tolerance for unknown == 0
-tol = 1e-10;
+tol=single(1e-8);
 
 %Index list for non-basic variables
-nind = 1:(n-m);
+nind = (1:(n-m));
 
 %Partition A
-inD = setdiff(1:n, inB);
+% #include <iostream>
+% #include <set>
+% #include <vector>
+% 
+% std::vector<int> setdiff(const std::vector<int>& a, const std::vector<int>& b) {
+%     std::set<int> a_set(a.begin(), a.end());
+%     std::set<int> b_set(b.begin(), b.end());
+%     std::vector<int> result;
+% 
+%     for (int elem : a_set) {
+%         if (b_set.find(elem) == b_set.end()) {
+%             result.push_back(elem);
+%         }
+%     }
+% 
+%     return result;
+% }
+% 
+% int main() {
+%     std::vector<int> array1 = {1, 2, 3, 4, 5};
+%     std::vector<int> array2 = {4, 5, 6, 7, 8};
+% 
+%     std::vector<int> diff = setdiff(array1, array2);
+% 
+%     for (int elem : diff) {
+%         std::cout << elem << " ";
+%     }
+% 
+%     return 0;
+% }
+% inD = setdiff(uint8(1:n), inB);
+tmp=uint8(1:n);
+ inD = tmp(~ismember(tmp, inB));
 
 %Adjust signs problem if variables are initialized at upper
 % bounds.
@@ -75,18 +91,19 @@ done = false;
 unbounded = false;
 
 %Main Simplex loop
-while (~done  || ~unbounded ) && (itlim > 0)
-    itlim = itlim-1;
+while (~done  || ~unbounded ) && (itlim > uint16(0))
+    itlim = itlim-uint16(1);
 
     %Calculate transpose of relative cost vector based on current basis
     lamt = ct(inB)/A(:,inB);
     rdt = ct(inD)-lamt*A(:,inD);
     %Find minimum relative cost
     [minr, qind] = min(rdt);
-    if minr >=0  % If all relative costs are positive then the solution is optimal
+    qind=uint8(qind);
+    if minr >= single(0)  % If all relative costs are positive then the solution is optimal
         done = true;
         break;
-    end;
+    end
     qel = inD(qind);  % Unknown to Enter the basis minimizes relative cost
     yq = A(:,inB)\A(:,qel); %Vector to enter in terms of the current Basis vector
     
@@ -94,7 +111,7 @@ while (~done  || ~unbounded ) && (itlim > 0)
       unbounded = true;
       disp(' Solution is unbounded');  % Check this condition
       break
-    end;
+    end
 
     %Compute ratio how much each current basic variable will have to move for the entering
     % variable.
@@ -103,7 +120,7 @@ while (~done  || ~unbounded ) && (itlim > 0)
     
     % If yq < 0 then increasing variable when it leaves the basis will minimize cost
     hinB = h(inB);
-    indm = yq<0;
+    indm = yq<single(0);
     rat(indm) = rat(indm) - hinB(indm)./yq(indm);
     % If an element yq ~=0 then it doesn't change for the entering variable and shouldn't
     %  be chosen
@@ -118,7 +135,7 @@ while (~done  || ~unbounded ) && (itlim > 0)
    %   cycling.
     if (abs(minrat) <= tol)
        % Find negative relative cost
-       indm = nind(rdt<0); %Note that since minr <0 indm is not empty   
+       indm = nind(rdt<single(0)); %Note that since minr <0 indm is not empty   
        qind = indm(1);
        qel = inD(qind);  % Unknown to Enter the basis is first indexed to avoid cycling
        yq = A(:,inB)\A(:,qel); %Vector to enter in terms of the current Basis vector
@@ -126,12 +143,12 @@ while (~done  || ~unbounded ) && (itlim > 0)
            unbounded = true;
            disp(' Solution is unbounded');  % Check this condition
            break
-       end;
+       end
        % Recompute rations and determine variable to leave
        rat = y0./yq; 
         % If yq < 0 then increasing variable when it leaves the basis will minimize cost
         hinB = h(inB);
-        indm = yq<0;
+        indm = yq<single(0);
         rat(indm) = rat(indm) - hinB(indm)./yq(indm);
         % If an element yq ~=0 then it doesn't change for the entering variable and shouldn't
         %  be chosen
@@ -150,7 +167,7 @@ while (~done  || ~unbounded ) && (itlim > 0)
             A(:,qel) = -A(:,qel);
              b = b + A(:,qel)*h(qel);
              ct(qel) = -ct(qel);
-    elseif yq(p) > 0
+    elseif yq(p) > single(0)
            %Case 2: Leaving variable returns to lower bound (0)	
            pel = inB(p);
            inB(p)= qel;
@@ -167,6 +184,6 @@ while (~done  || ~unbounded ) && (itlim > 0)
      end
         
     y0 = A(:,inB)\b; % Compute new Basic solution;
-end;
+end
 errout = unbounded;     
 end

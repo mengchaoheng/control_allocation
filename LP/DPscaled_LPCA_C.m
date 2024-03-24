@@ -1,5 +1,5 @@
 
-function [u,itlim,errout,rho] = DPscaled_LPCA_C(yd,B,uMin,uMax,itlim);
+function [u,itlim,errout,rho] = DPscaled_LPCA_C(yd,B,uMin,uMax,itlim,m)
 % Direction Preserving Control Allocation Linear Program
 %     Reduced formulation (Solution Scaled from Boundary)
 %
@@ -62,59 +62,61 @@ function [u,itlim,errout,rho] = DPscaled_LPCA_C(yd,B,uMin,uMax,itlim);
 
 
 %Initialize error code to zero
-errout = 0;
-
+errout = int8(0);
+rho=single(0);
 %Figure out how big the problem is (use standard CA definitions for m & n)
-[n,m] = size(B);
+% [n,m] = size(B);
+n=uint8(3);
+tol=single(1e-8);
 
 % Locate the maximum magnitude element in the desired objective
 [my,iy]=max(abs(yd));
 
 %Trivial solution, if desired moment is close to zero
 %  May want to adjust the tolerance to improve numerics of later steps
-if (my < eps),    %yd = 0 ==> u=0
-    errout = -1;  %Set flag to let caller know that it wasn't solved
-    u = zeros(m,1);
+if (my < tol)    %yd = 0 ==> u=0
+    errout = int8(-1);  %Set flag to let caller know that it wasn't solved
+    u = single(zeros(m,1));
     return;
-end;
+end
 
 %Transform Problem by Reordering Objectives with maximum first
 Bt = B([iy setdiff(1:n,iy)],:);
 ydt = yd([iy setdiff(1:n,iy)]);
 ydt(2:3) = ydt([3 2]);Bt([2 3],:) = Bt([3 2],:);
 %%Convert into a LP problem
-M = [ydt(2:n) -ydt(1)*eye(n-1)];
+M = [ydt(2:n) -ydt(1)*single(eye(n-1))];
 A = M*Bt;
 b = -A*uMin;
 c = -Bt'*ydt;
 h = uMax-uMin;
 
 %To find Feasible solution construct problem with appended slack variables
-sb = 2*(b > 0)-1;
+sb = single(2*(b > single(0))-1);
 Ai = [A diag(sb)];
-ci = [zeros(m,1);ones(n-1,1)];
-inBi = [m+1:m+n-1];
-ei = true(m+n-1,1);
+ci = single([zeros(m,1);ones(n-1,1)]);
+inBi = uint8(m+1:m+n-1);
+ei = int8(true(m+n-1,1));
 hi = [h;2*abs(b)];
 %Use Bounded Revised Simplex to find initial basic feasible point
 [y1, inB1, e1,itlim,errsimp] = simplxuprevsol_C(Ai,ci',b,inBi,hi,ei,n-1,m+n-1,itlim);
 
 %Check that Feasible Solution was found
-if itlim<=0
-    errout = -3;
+if itlim<=uint16(0)
+    errout = int8(-3);
     disp('Too Many Iterations Finding initial Solution');
 end
 if any(inB1>m)
-    errout = -2;
+    errout = int8(-2);
     disp('No Initial Feasible Solution found');
 end
-	if errsimp
-	    errout = -1;
-		disp('Solver error');
-	end;
+if errsimp
+    errout = int8(-1);
+	disp('Solver error');
+end
 
-if errout ~=0  % Construct an incorrect solution to accompany error flags
-    xout = zeros(m,1);
+if errout ~=int8(0)  % Construct an incorrect solution to accompany error flags
+    xout = single(zeros(m,1));
     xout(inB1(1:m)) = y1(1:m);
     xout(~e1(1:m)) = -xout(~e1(1:m))+h(~e1(1:m));
     
@@ -128,20 +130,18 @@ else  % No Error continue to solve problem
     %Construct solution to original LP problem from bounded simplex output
     %  Set non-basic variables to 0 or h based on e2
     %  Set basic variables to y2 or h-y2.
-    xout = zeros(m,1);
+    xout = single(zeros(m,1));
     xout(inB2) = y2;
     xout(~e2) = -xout(~e2)+h(~e2);
     
-    if itlim<=0
-        errout = 3;
+    if itlim<=uint16(0)
+        errout = int8(3);
         disp('Too Many Iterations Finding Final Solution');
     end
-	if errsimp
-	    errout = 1;
-		disp('Solver error');
-	end;
-    
-    
+    if errsimp
+        errout = int8(1);
+	    disp('Solver error');
+    end
 end
 
 %Transform Solution Back Into control variables
@@ -149,10 +149,9 @@ end
 u = xout+uMin;
 %Rescale controls so solution is not on boundary of Omega.
 rho = ydt'*Bt*u/(ydt'*ydt);
-if rho > 1,
+if rho > 1
     u = u/rho;
-end;
-
+end
 
 return;
 end

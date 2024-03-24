@@ -10,10 +10,10 @@ rmpath(folder) % remove old version
 %      0      -0.5     0       0.5;
 %      0.25    0.25    0.25    0.25];
 
-l1=0.148;l2=0.069;k=3;
-B=k*[-l1     0       l1     0;
+l1=0.148;l2=0.069;k_v=3;
+B=k_v*[-l1     0       l1     0;
      0      -l1     0       l1;
-     l2    l2    l2    l2]
+     l2    l2    l2    l2];
 
 B_inv=pinv(B)
 [k,m] = size(B);
@@ -48,7 +48,7 @@ for i=1:N% (N+1)^2  for  sphere %length(M_des(1:1000,1))%%length(X)
     if(use_date)
         v=(y_all(i,:)');
     else
-        v=(0.5*[X(i);Y(i);Z(i)]);
+        v=(0.2*[X(i);Y(i);Z(i)]);
     end
     [u1,~] = dir_alloc_linprog_re(B,v, umin, umax);
     x1(:,i) = Constrain(u1,umin,umax);

@@ -11,3 +11,6 @@
 [submodule "alglib_demo"]
 	path = alglib_demo
 	url = https://github.com/mengchaoheng/alglib_demo.git
+[submodule "SDLP"]
+	path = SDLP
+	url = https://github.com/mengchaoheng/SDLP.git

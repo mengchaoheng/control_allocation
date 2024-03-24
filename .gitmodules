@@ -8,3 +8,6 @@
 [submodule "linear-programming-using-MATLAB"]
 	path = linear-programming-using-MATLAB
 	url = https://github.com/mengchaoheng/linear-programming-using-MATLAB.git
+[submodule "alglib_demo"]
+	path = alglib_demo
+	url = https://github.com/mengchaoheng/alglib_demo.git

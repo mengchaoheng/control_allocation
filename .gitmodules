@@ -14,3 +14,6 @@
 [submodule "SDLP"]
 	path = SDLP
 	url = https://github.com/mengchaoheng/SDLP.git
+[submodule "lp_tiny"]
+	path = lp_tiny
+	url = https://github.com/mengchaoheng/lp_tiny.git

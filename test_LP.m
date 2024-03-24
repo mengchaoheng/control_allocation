@@ -11,8 +11,8 @@ rmpath(folder) % remove old version
 %      0      -0.5     0       0.5;
 %      0.25    0.25    0.25    0.25];
 
-l1=0.148;l2=0.069;k=3;
-B=k*[-l1     0       l1     0;
+l1=0.148;l2=0.069;k_v=3;
+B=k_v*[-l1     0       l1     0;
      0      -l1     0       l1;
      l2    l2    l2    l2]
 
@@ -21,7 +21,7 @@ B_inv=pinv(B)
 % m=4;
 umin=ones(m,1)*(-20)*pi/180;
 umax=ones(m,1)*20*pi/180;
-use_date=0;
+use_date=1;
 if(use_date)
     % load 'hover.mat'; % run '/New_LP_dir/allocation_log/plot_states.m' for y_all and u_px4
     load 'fly.mat';

@@ -2,10 +2,6 @@ clc;
 clear;
 
 addpath(genpath(pwd))
-folder ='some_modified_function'; 
-rmpath(folder) % remove old version
-folder ='s-function_used_in PlanD'; 
-rmpath(folder) % remove old version
 
 
 % 拉力差作为新操纵面

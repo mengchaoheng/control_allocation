@@ -2,10 +2,7 @@ clc;
 clear all;
 close all;
 addpath(genpath(pwd))
-folder ='some_modified_function'; 
-rmpath(folder) % remove old version
-folder ='s-function_used_in PlanD'; 
-rmpath(folder) % remove old version
+
 
 % setup 4df
 B=[-0.5     0       0.5     0;
@@ -159,8 +156,6 @@ for i=1:N% (N+1)^2  for  sphere %length(M_des(1:1000,1))%%length(X)
       ud = invWusq*(W1sq*us+W2sq*uprev);
     end
     tic;
-    % [u1,~,~] = wls_alloc(B,v,umin,umax,eye(3),eye(4),zeros(4,1),1e6,zeros(4,1),zeros(4,1),100); % function of qcat lib
-    % u1 = dir_alloc(B,v(:,i),plim(:,1),plim(:,2)); % just support position limit.
     %============================qcat===================================
     switch alg
         case 'sls'
@@ -183,7 +178,7 @@ for i=1:N% (N+1)^2  for  sphere %length(M_des(1:1000,1))%%length(X)
             error(sprintf('Unknown allocation algorithm: %s',alg));
     end
     % Register elapsed time
-    time(i) = toc/M;
+    time(i) = toc;
     % Limit control (only necessary with rate limits and direct alloc)
     u(:,i) = max(umin,min(umax,u(:,i)));
     % Determine active constraints in the final point.
@@ -200,10 +195,11 @@ for i=1:N% (N+1)^2  for  sphere %length(M_des(1:1000,1))%%length(X)
 	      W0 = W;
       end
     end
-    
+    %============================qcat===================================
+    u1(:,i)  = pinv(B)*v(:,i);
+    u1(:,i) = max(umin,min(umax,u1(:,i)));
 end
 %============================inv===================================
-u1=Constrain(pinv(B)*v,umin,umax);
 % moment by effector
 U=B*u;
 U1=B*u1;
@@ -216,45 +212,47 @@ if(use_hover_date)
     error1=U1-v;
     figure,
     subplot(4,1,1)
-    plot(t,x1(1,:),'r-');hold on;
-    plot(t,x2(1,:),'b--');hold on;
+    plot(t,u(1,:),'r-');hold on;
+    plot(t,u1(1,:),'b--');hold on;
     % plot(t,u_px4(:,1),'g.');hold on;
     subplot(4,1,2)
-    plot(t,x1(2,:),'r-');hold on;
-    plot(t,x2(2,:),'b--');hold on;
+    plot(t,u(2,:),'r-');hold on;
+    plot(t,u1(2,:),'b--');hold on;
     % plot(t,u_px4(:,2),'g.');hold on;
     subplot(4,1,3)
-    plot(t,x1(3,:),'r-');hold on;
-    plot(t,x2(3,:),'b--');hold on;
+    plot(t,u(3,:),'r-');hold on;
+    plot(t,u1(3,:),'b--');hold on;
     % plot(t,u_px4(:,3),'g.');hold on;
     subplot(4,1,4)
-    plot(t,x1(4,:),'r-');hold on;
-    plot(t,x2(4,:),'b--');hold on;
+    plot(t,u(4,:),'r-');hold on;
+    plot(t,u1(4,:),'b--');hold on;
     % plot(t,u_px4(:,4),'g.');hold on;
-    % figure,
-    % subplot(3,1,1)
-    % plot(t,error(1,:),'Color','r','LineStyle','-','Marker','+','MarkerIndices',tt);hold on;
-    % plot(t,error1(1,:),'Color','b','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
-    % % plot(t,error(1,:)-error1(1,:),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
-    % % plot(t,U1(1,:),'Color','b','LineStyle','-.','Marker','+','MarkerIndices',tt);hold on;
-    % % plot(t,U2(1,:),'Color','g','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
-    % % plot(t,y_all(:,1),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
-    % 
-    % subplot(3,1,2)
-    % plot(t,error(2,:),'Color','r','LineStyle','-','Marker','+','MarkerIndices',tt);hold on;
-    % plot(t,error1(2,:),'Color','b','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
-    % % plot(t,error(2,:)-error1(2,:),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
-    % % plot(t,U1(2,:),'Color','b','LineStyle','-.','Marker','+','MarkerIndices',tt);hold on;
-    % % plot(t,U2(2,:),'Color','g','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
-    % % plot(t,y_all(:,2),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
-    % subplot(3,1,3)
-    % plot(t,error(3,:),'Color','r','LineStyle','-','Marker','+','MarkerIndices',tt);hold on;
-    % plot(t,error1(3,:),'Color','b','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
-    % % plot(t,error(3,:)-error1(3,:),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
-    % % plot(t,U1(3,:),'Color','b','LineStyle','-.','Marker','+','MarkerIndices',tt);hold on;
-    % % plot(t,U2(3,:),'Color','g','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
-    % % plot(t,y_all(:,3),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
+    figure,
+    subplot(3,1,1)
+    plot(t,error(1,:),'Color','r','LineStyle','-','Marker','+','MarkerIndices',tt);hold on;
+    plot(t,error1(1,:),'Color','b','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
+    % plot(t,error(1,:)-error1(1,:),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
+    % plot(t,U1(1,:),'Color','b','LineStyle','-.','Marker','+','MarkerIndices',tt);hold on;
+    % plot(t,U2(1,:),'Color','g','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
+    % plot(t,y_all(:,1),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
+
+    subplot(3,1,2)
+    plot(t,error(2,:),'Color','r','LineStyle','-','Marker','+','MarkerIndices',tt);hold on;
+    plot(t,error1(2,:),'Color','b','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
+    % plot(t,error(2,:)-error1(2,:),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
+    % plot(t,U1(2,:),'Color','b','LineStyle','-.','Marker','+','MarkerIndices',tt);hold on;
+    % plot(t,U2(2,:),'Color','g','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
+    % plot(t,y_all(:,2),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
+    subplot(3,1,3)
+    plot(t,error(3,:),'Color','r','LineStyle','-','Marker','+','MarkerIndices',tt);hold on;
+    plot(t,error1(3,:),'Color','b','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
+    % plot(t,error(3,:)-error1(3,:),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
+    % plot(t,U1(3,:),'Color','b','LineStyle','-.','Marker','+','MarkerIndices',tt);hold on;
+    % plot(t,U2(3,:),'Color','g','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
+    % plot(t,y_all(:,3),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
 else
     figure,
     plot3(U(1,:),U(2,:),U(3,:),'g*');
+    figure,
+    plot3(U1(1,:),U1(2,:),U1(3,:),'g*');
 end

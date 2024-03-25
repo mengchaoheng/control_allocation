@@ -1,5 +1,5 @@
-function [u,a] = test_LP_lib(B,v, umin, umax)
-  
+function [u,a] = use_LP_lib(B,v, umin, umax)
+% we just convert the origin problem and then use the LP lib.
     % DIR_ALLOC - Direct control allocation.
     %
     %  [u,a] = dir_alloc(B,v,umin,umax)

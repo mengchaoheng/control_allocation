@@ -1,10 +1,7 @@
 clear all;
 close all;
 addpath(genpath(pwd))
-folder ='some_modified_function'; 
-rmpath(folder) % remove old version
-folder ='s-function_used_in PlanD'; 
-rmpath(folder) % remove old version
+
 % function callqpact
 %=====================B of DF4==========================================
 B=[-0.5   0       0.5   0;
@@ -40,7 +37,8 @@ u4=[0;0;0;0];
 p_limits=20;
 for i=1:(N+1)^2%
 vv=1*[XX(i);YY(i);ZZ(i)];
-uu = allocator_dir_simplex_4(vv, umin,umax);
+% [u,z,iters] = allocator_dir_LPwrap_4(B, v, umin,umax)
+uu = allocator_dir_LPwrap_4(B,vv, umin,umax);
 xx(:,i)=uu;
 end
 for i=1:length(X1)  %(N+1)^2%
@@ -48,14 +46,14 @@ v1=1*[X1(i);Y1(i);Z1(i)]; % 虚拟指令
 v2=1*[X2(i);Y2(i);Z2(i)];
 v=1*[X(i);Y(i);Z(i)];
 % % %==================有效集=====================
-u = allocator_dir_simplex_4(v, umin,umax);  
+u = allocator_dir_LPwrap_4(B,v, umin,umax);  
 x(:,i)=u;
-u1 = allocator_dir_simplex_4(v1, umin,umax); 
+u1 = allocator_dir_LPwrap_4(B,v1, umin,umax); 
 x1(:,i)=u1;
-u2 = allocator_dir_simplex_4(v2, umin,umax);
+u2 = allocator_dir_LPwrap_4(B,v2, umin,umax);
 x2(:,i)=u2;
 % 改进
-u3=two_dir_alloc_df4(v1, v2, umin,umax);
+u3=two_dir_alloc_df4(B,v1, v2, umin,umax);
 x3(:,i)=u3;
 % u4=wls_ca_4df_pv_limit(v, u4, p_limits, 1);
 % x4(:,i)=u4;

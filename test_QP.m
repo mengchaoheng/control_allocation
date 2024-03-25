@@ -1,10 +1,7 @@
 clear all;
 close all;
 addpath(genpath(pwd))
-folder ='some_modified_function'; 
-rmpath(folder) % remove old version
-folder ='s-function_used_in PlanD'; 
-rmpath(folder) % remove old version
+
 
 B=[-0.5   0       0.5   0;
     0  -0.5    0       0.5;
@@ -33,7 +30,7 @@ v=0.5*[X(i);Y(i);Z(i)];% 虚拟指令
 %==================有效集=====================
 % test core function
 % [u,~,~] =wls_alloc(B,v,umin,umax,eye(3),eye(4),zeros(4,1),1e6,zeros(4,1),zeros(4,1),100);
-% u =wls_alloc_gen(B,v,umin,umax,eye(3),eye(4),zeros(4,1),1e6,zeros(4,1),zeros(4,1),100,4);
+u =wls_alloc_gen(B,v,umin,umax,eye(3),eye(4),zeros(4,1),1e6,zeros(4,1),zeros(4,1),100,4);
 % test old version, maybe use for a simulink block
 % u= qp_ca_mch([v;u],B,[umin umax],[],0.01,eye(3),eye(4),zeros(4,1),100,1e6,true);
 % test 4df allocation

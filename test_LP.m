@@ -1,12 +1,7 @@
 clear all;
 close all;
 addpath(genpath(pwd))
-folder ='some_modified_function'; 
-rmpath(folder) % remove old version
-folder ='s-function_used_in PlanD'; 
-rmpath(folder) % remove old version
 
-% 注意B不同
 % B=[-0.5     0       0.5     0;
 %      0      -0.5     0       0.5;
 %      0.25    0.25    0.25    0.25];
@@ -14,14 +9,12 @@ rmpath(folder) % remove old version
 l1=0.148;l2=0.069;k_v=3;
 B=k_v*[-l1     0       l1     0;
      0      -l1     0       l1;
-     l2    l2    l2    l2]
-
-B_inv=pinv(B)
+     l2    l2    l2    l2];
 [k,m] = size(B);
 % m=4;
 umin=ones(m,1)*(-20)*pi/180;
 umax=ones(m,1)*20*pi/180;
-use_date=1;
+use_date=0;
 if(use_date)
     % load 'hover.mat'; % run '/New_LP_dir/allocation_log/plot_states.m' for y_all and u_px4
     load 'fly.mat';
@@ -30,6 +23,7 @@ if(use_date)
     u1=zeros(4,1);
     x2=zeros(4,N);
     u2=zeros(4,1);
+    v=zeros(3,N);
 else
     M=50;
     x=zeros(4,(M+1)^2);
@@ -39,9 +33,11 @@ else
     u1=zeros(4,1);
     x2=zeros(4,(M+1)^2);
     u2=zeros(4,1);
-
+    v=zeros(3,(M+1)^2);
     N=(M+1)^2;
 end
+
+
 
 % ========
 % setup LPwrap
@@ -60,34 +56,35 @@ u(INDX>0.5)
 
 for i=1:N% (N+1)^2  for  sphere %length(M_des(1:1000,1))%%length(X)
 % 
-if(use_date)
-    v=single(y_all(i,:)');
-else
-    v=single(0.5*[X(i);Y(i);Z(i)]);
-end
-if i==1255
-    i
-end
-IN_MAT(1:3,end) = v; u1 = LPwrap(IN_MAT); % function of ACA lib
-% u1=pinv(B)*v;
-x1(:,i) = Constrain(u1,umin,umax);
+    if(use_date)
+        v(:,i)=single(y_all(i,:)');
+    else
+        v(:,i)=single(0.5*[X(i);Y(i);Z(i)]);
+    end
+    
+    IN_MAT(1:3,end) = v(:,i); u1 = LPwrap(IN_MAT); % function of ACA lib
+    x1(:,i) = Constrain(u1,umin,umax);
 
-% [u2,~,~] = allocator_dir_simplex_4_v3(single(v), single(umin),single(umax));
-[u2,~,~] =allocator_dir_LPwrap_4(single(B), single(v), single(umin),single(umax));
-% [u2,~] = dir_alloc_linprog(B,v, umin, umax);
-% [u2,~,~] =     allocator_dir_simplex_4_v2(single(B),single(v), single(umin),single(umax)); % -- mchdir_alloc_simplex_C(B, v, umin,umax,m)
-% [u2,~,~] =     dir_alloc_simplex(B,v,umin,umax); % -- mch 
-% u2 =     allocator_dir_simplex_4(v, umin,umax); 
-% u2 =     allocator_dir_simplex_4(single(v), single(umin),single(umax)); 
-% u2=pinv(B)*v;
-x2(:,i)=Constrain(u2,umin,umax);
+    [u2,~,~] =allocator_dir_LPwrap_4(single(B), single( v(:,i)), single(umin),single(umax));
+    x2(:,i) = Constrain(u2,umin,umax);
+    
 end
 U1=B*x1;
+filename = 'data.csv';
+writematrix(v',filename);
+% run test_LPWrap in alglib
+% ```Console
+% $ g++ -I ../src/alglib-cpp/src/ -o LPWrap_test.out  ../src/LPWrap/*.cpp ../src/LPWrap/*.c ../src/alglib-cpp/src/*.cpp -w  -O3
+% $ ./LPWrap_test.out
+% ```
+% output = readmatrix('output.csv');
+% x2=output';
 U2=B*x2;
 
 
 dt=0.01;
 t=0:dt:dt*(N-1);
+
 
 tt=1:1:(N-1);
 
@@ -95,23 +92,25 @@ if(use_date)
     y_all_new=y_all';
     error1=U1-y_all_new;
     error2=U2-y_all_new;
+    [L,~]=size(u_px4);
+    t_px4=0:dt:dt*(L-1);
     figure,
     subplot(4,1,1)
     plot(t,x1(1,:),'r.');hold on;
     plot(t,x2(1,:),'b--');hold on;
-    plot(t,u_px4(:,1),'g-');hold on;
+    plot(t_px4,u_px4(:,1),'g-');hold on;
     subplot(4,1,2)
     plot(t,x1(2,:),'r.');hold on;
     plot(t,x2(2,:),'b--');hold on;
-    plot(t,u_px4(:,2),'g-');hold on;
+    plot(t_px4,u_px4(:,2),'g-');hold on;
     subplot(4,1,3)
     plot(t,x1(3,:),'r.');hold on;
     plot(t,x2(3,:),'b--');hold on;
-    plot(t,u_px4(:,3),'g-');hold on;
+    plot(t_px4,u_px4(:,3),'g-');hold on;
     subplot(4,1,4)
     plot(t,x1(4,:),'r.');hold on;
     plot(t,x2(4,:),'b--');hold on;
-    plot(t,u_px4(:,4),'g-');hold on;
+    plot(t_px4,u_px4(:,4),'g-');hold on;
     figure,
     subplot(3,1,1)
     plot(t,error1(1,:),'Color','r','LineStyle','-','Marker','+','MarkerIndices',tt);hold on;

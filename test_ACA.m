@@ -2,10 +2,7 @@ clc;
 clear all;
 close all;
 addpath(genpath(pwd))
-folder ='some_modified_function'; 
-rmpath(folder) % remove old version
-folder ='s-function_used_in PlanD'; 
-rmpath(folder) % remove old version
+
 B=[-0.5     0       0.5     0;
      0      -0.5     0       0.5;
      0.25    0.25    0.25    0.25];
@@ -14,15 +11,15 @@ B=[-0.5     0       0.5     0;
 % m=4;
 umin=ones(m,1)*(-20)*pi/180;
 umax=ones(m,1)*20*pi/180;
-use_date=0;
+use_date=1; % use the fly data or not.
 if(use_date)
-    load 'hover.mat'; % run '/New_LP_dir/allocation_log/plot_states.m' for y_all and u_px4
+    load 'fly.mat'; % run '/New_LP_dir/allocation_log/plot_states.m' for y_all and u_px4
     [N,~]=size(y_all);  
     x1=zeros(4,N);
     u1=zeros(4,1);
     x2=zeros(4,N);
     u2=zeros(4,1);
-else
+else % test Use the moments in all directions on the unit sphere as output and test the output
     M=20;
     x=zeros(4,(M+1)^2);
     u=zeros(4,1);

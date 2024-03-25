@@ -1,10 +1,7 @@
 clear all;
 close all;
 addpath(genpath(pwd))
-folder ='some_modified_function'; 
-rmpath(folder) % remove old version
-folder ='s-function_used_in PlanD'; 
-rmpath(folder) % remove old version
+
 % 注意B不同
 % B=[-0.5     0       0.5     0;
 %      0      -0.5     0       0.5;
@@ -84,8 +81,7 @@ for i=1:N% (N+1)^2  for  sphere %length(M_des(1:1000,1))%%length(X)
         % [u2,~] = dir_alloc_linprog_re(B,v, umin, umax);
         % [u2,~] = dir_alloc_linprog_re_bound(B,v, umin, umax, 1);
         % [u2,~] = dir_alloc_linprog(B,v, umin, umax, 1);
-
-        [u2,~] = dir_alloc_simplex_re(B,v, umin, umax);
+        [u2,~] = use_LP_lib(B,v, umin, umax);
         x2(:,i)=Constrain(u2,umin,umax);
     end
 end
@@ -151,24 +147,26 @@ else
         U_px4=B*u_px4';
         error1=U1-y_all_new;
         error2=U2-y_all_new;
-        error3=U_px4-y_all_new;
+        % error3=U_px4-y_all_new;
+        [L,~]=size(u_px4);
+        t_px4=0:dt:dt*(L-1);
         figure,
         subplot(4,1,1)
         plot(t,x1(1,:),'r.');hold on;
         plot(t,x2(1,:),'b--');hold on;
-        plot(t,u_px4(:,1),'g-');hold on;
+        plot(t_px4,u_px4(:,1),'g-');hold on;
         subplot(4,1,2)
         plot(t,x1(2,:),'r.');hold on;
         plot(t,x2(2,:),'b--');hold on;
-        plot(t,u_px4(:,2),'g-');hold on;
+        plot(t_px4,u_px4(:,2),'g-');hold on;
         subplot(4,1,3)
         plot(t,x1(3,:),'r.');hold on;
         plot(t,x2(3,:),'b--');hold on;
-        plot(t,u_px4(:,3),'g-');hold on;
+        plot(t_px4,u_px4(:,3),'g-');hold on;
         subplot(4,1,4)
         plot(t,x1(4,:),'r.');hold on;
         plot(t,x2(4,:),'b--');hold on;
-        plot(t,u_px4(:,4),'g-');hold on;
+        plot(t_px4,u_px4(:,4),'g-');hold on;
         figure,
         subplot(3,1,1)
         plot(t,error1(1,:),'Color','r','LineStyle','-','Marker','+','MarkerIndices',tt);hold on;

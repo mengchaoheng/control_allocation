@@ -1,9 +1,0 @@
-{
-    "files.associations": {
-        "*.m": "matlab",
-        "*.jinja": "xml",
-        "*.sdf": "xml",
-        "stdio.h": "c",
-        "vector": "cpp"
-    }
-}

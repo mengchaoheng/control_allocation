@@ -52,7 +52,7 @@ method='qp';
 % Set default values of optional arguments
 switch method
     case {'qp','dyn'}
-% 'alg'    -numerical algorithm: 'sls'    SLS_ALLOC
+% in this case 'alg'    -numerical algorithm: 'sls'    SLS_ALLOC
 %                                'wls'    WLS_ALLOC (default)
 %                                'wlsc'   WLSC_ALLOC (need lib)
 %                                'mls'    MLS_ALLOC

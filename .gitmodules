@@ -1,19 +1,18 @@
-[submodule "qcat"]
+[submodule "control_allocation_lib/qcat"]
 	path = control_allocation_lib/qcat
 	url = https://github.com/mengchaoheng/qcat.git
-[submodule "aircraft-control-allocation-book-simulation"]
+[submodule "control_allocation_lib/aircraft-control-allocation-book-simulation"]
 	path = control_allocation_lib/aircraft-control-allocation-book-simulation
 	url = https://github.com/mengchaoheng/aircraft-control-allocation-book-simulation.git
-
-[submodule "linear-programming-using-MATLAB"]
+[submodule "LP_lib/linear-programming-using-MATLAB"]
 	path = LP_lib/linear-programming-using-MATLAB
 	url = https://github.com/mengchaoheng/linear-programming-using-MATLAB.git
-[submodule "alglib_demo"]
+[submodule "LP_lib/alglib_demo"]
 	path = LP_lib/alglib_demo
 	url = https://github.com/mengchaoheng/alglib_demo.git
-[submodule "SDLP"]
+[submodule "LP_lib/SDLP"]
 	path = LP_lib/SDLP
 	url = https://github.com/mengchaoheng/SDLP.git
-[submodule "lp_tiny"]
+[submodule "LP_lib/lp_tiny"]
 	path = LP_lib/lp_tiny
 	url = https://github.com/mengchaoheng/lp_tiny.git

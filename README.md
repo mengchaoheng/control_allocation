@@ -40,5 +40,44 @@ For matlab usage:
 
 3. Run `test.m` or `test_xxx.m` file to test the allocator and plot some figure.
 
+4. ToDo: fix the bug of `LP_lib/linear-programming-using-MATLAB`.
+
 For C/C++ project:
-1. ToDo: 
+1. `LP_lib/alglib_demo`: cd to build folder and run 
+```Console
+$ cd build
+$ g++ -I ../src/alglib-cpp/src/ -o LPWrap_test.out  ../src/LPWrap/*.cpp ../src/LPWrap/*.c ../src/alglib-cpp/src/*.cpp -w  -O3
+
+$ ./LPWrap_test.out
+```
+For test alglib-based vs `allocator_dir_LPwrap_4` dir allocator. we can see that running time of the allocator. alglib-based is 1.1416e-05s and `allocator_dir_LPwrap_4` is 3.75e-07s. after get the output.csv data file, run `test.m` for compare with the offline version.
+
+2. `LP_lib/lp_tiny`: cd to path, and run the following command, allocator running time is 0.0002s. 
+```sh
+$ 
+$ mkdir build
+$ cd build
+$ cmake ..
+$ make
+$ ./test_input_alloc
+```
+The following lib have some bug, maybe the lib can't solve the problem. 
+
+1. `LP_lib/SDLP`: Build and run by:
+```Console
+mkdir build && cd build
+
+cmake .. && make
+
+./sdlp_example 
+```
+the output is 
+```sh
+➜  build git:(main) ./sdlp_example 
+optimal sol: 0.155327 0.426713   0.6981   0.6981  1.20496
+u: -0.193773 0.0776133     0.349     0.349
+optimal obj: -1.20496
+```
+It is not the right u but optimal is right.
+
+

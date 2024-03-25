@@ -20,5 +20,5 @@ filename = 'input.mat';
 % 调用 save 函数进行保存
 save(filename, 'v',"len_command_px4",'u_px4','delta_t_s');
 
-filename = 'intput.csv';
+filename = 'input.csv';
 writematrix(v',filename);

@@ -96,11 +96,13 @@ end
 
 %% Determine the variables to use for comparison.
 % run lp_tiny and run test_input_alloc to generate output.csv
-% output = readmatrix('output.csv');
+output = readmatrix('output.csv')';
 % just use the flight data to compare.
 command_px4=v(:,1:len_command_px4);
-x1=x_inv(:,1:len_command_px4);
+% x1=x_inv(:,1:len_command_px4);
+x1=output(:,1:len_command_px4);
 x2=x_allocator_dir_LPwrap_4(:,1:len_command_px4);
+
 % actual moments produced. The B matrix have to be the same.
 U1=B*x1;
 U2=B*x2;

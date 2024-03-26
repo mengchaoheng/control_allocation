@@ -20,7 +20,7 @@ load 'input.mat'; % get unit_vector and the len_command_px4 (len_command_px4 is 
 %% setup ACA
 global NumU
 NumU=m;
-LPmethod=3; % LPmethod should be an integer between 0 and 5
+LPmethod=3; % LPmethod should be an integer between 0 and 5. when LPmethod=2 set upper of lambda to Inf can't save this method!!!
 INDX=ones(1,m);  % active effectors
 IN_MAT = [B     zeros(k,1)
           umin' 0
@@ -56,8 +56,8 @@ for i=1:N
     
     IN_MAT(1:3,end) = v(:,i); 
 
-    % u = LPwrap(IN_MAT); % function of ACA lib
-    % x_LPwrap(:,i) = Constrain(u,umin,umax);
+    u = LPwrap(IN_MAT); % function of ACA lib
+    x_LPwrap(:,i) = Constrain(u,umin,umax);
     % 
     % u= CGIwrap(IN_MAT);
     % x_CGIwrapp(:,i) = Constrain(u,umin,umax);
@@ -86,8 +86,8 @@ for i=1:N
     % [u,~] = dir_alloc_linprog_re_bound(B,v(:,i), umin, umax, 1e4);
     % x_dir_alloc_linprog_re_bound(:,i) = Constrain(u,umin,umax);
     % 
-    [u,~] = use_LP_lib(B,v(:,i), umin, umax); % ToDo: use the LP lib
-    x_use_LP_lib(:,i)=Constrain(u,umin,umax);
+    % [u,~] = use_LP_lib(B,v(:,i), umin, umax); % ToDo: use the LP lib
+    % x_use_LP_lib(:,i)=Constrain(u,umin,umax);
     % 
     % [u,~,~] =allocator_dir_LPwrap_4(single(B), single( v(:,i)), single(umin),single(umax)); % ToDo: 警告: 矩阵接近奇异值，或者缩放不良。结果可能不准确。RCOND =  1.914283e-09。 
     % x_allocator_dir_LPwrap_4(:,i) = Constrain(u,umin,umax);
@@ -101,7 +101,7 @@ output = readmatrix('output.csv')';
 command_px4=v(:,1:len_command_px4);
 x1=x_inv(:,1:len_command_px4);
 % x1=output(:,1:len_command_px4);
-x2=x_use_LP_lib(:,1:len_command_px4);
+x2=x_LPwrap(:,1:len_command_px4);
 
 % actual moments produced. The B matrix have to be the same.
 U1=B*x1;

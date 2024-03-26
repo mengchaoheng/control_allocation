@@ -1,23 +1,15 @@
+## download alglib
+Unzip to the root folder of this project. rename as `alglib`.
+
 ## build and run
 ```sh
-mkdir build
 cd build
-
-```
-
-```sh
 cmake ..
+make
 
 ```
 
-build:
+cd to build path, and run
 ```sh
-cmake --build .
-# or 
-make 
-```
-
-Run
-```sh
-./main
+./MyExecutable
 ```

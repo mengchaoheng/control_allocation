@@ -2,6 +2,7 @@
 This is a repos. for test new control allocation algorithm developed from [ simulation of the book "aircraft control allocation"](https://github.com/mengchaoheng/aircraft-control-allocation) and [qcat](https://github.com/mengchaoheng/qcat).
 
 The new algorithm will used by a ductedfan UAV. The structure of a modern flight control system is as shown below
+
 <img src="./system.png" width="60%" height="60%" />
 
 The function of control allocation is to return a control effector command that satisfies the constraints for a point in the moment space. Due to the presence of constraints, only limited moments are attainable.

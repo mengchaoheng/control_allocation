@@ -86,11 +86,11 @@ for i=1:N
     % [u,~] = dir_alloc_linprog_re_bound(B,v(:,i), umin, umax, 1e4);
     % x_dir_alloc_linprog_re_bound(:,i) = Constrain(u,umin,umax);
     % 
-    % [u,~] = use_LP_lib(B,v(:,i), umin, umax); % ToDo: use the LP lib
-    % x_use_LP_lib(:,i)=Constrain(u,umin,umax);
+    [u,~] = use_LP_lib(B,v(:,i), umin, umax); % ToDo: use the LP lib
+    x_use_LP_lib(:,i)=Constrain(u,umin,umax);
     % 
-    [u,~,~] =allocator_dir_LPwrap_4(single(B), single( v(:,i)), single(umin),single(umax)); % ToDo: 警告: 矩阵接近奇异值，或者缩放不良。结果可能不准确。RCOND =  1.914283e-09。 
-    x_allocator_dir_LPwrap_4(:,i) = Constrain(u,umin,umax);
+    % [u,~,~] =allocator_dir_LPwrap_4(single(B), single( v(:,i)), single(umin),single(umax)); % ToDo: 警告: 矩阵接近奇异值，或者缩放不良。结果可能不准确。RCOND =  1.914283e-09。 
+    % x_allocator_dir_LPwrap_4(:,i) = Constrain(u,umin,umax);
     
 end
 
@@ -99,9 +99,9 @@ end
 output = readmatrix('output.csv')';
 % just use the flight data to compare.
 command_px4=v(:,1:len_command_px4);
-% x1=x_inv(:,1:len_command_px4);
-x1=output(:,1:len_command_px4);
-x2=x_allocator_dir_LPwrap_4(:,1:len_command_px4);
+x1=x_inv(:,1:len_command_px4);
+% x1=output(:,1:len_command_px4);
+x2=x_use_LP_lib(:,1:len_command_px4);
 
 % actual moments produced. The B matrix have to be the same.
 U1=B*x1;

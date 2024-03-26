@@ -55,30 +55,41 @@ function [u,a] = use_LP_lib(B,v, umin, umax)
     %                                         0 <= a
     %                                         0 <= s
     % A=[B -v 0; I 0 I]; b=[-B*umin; umax-umin]; c=[0; -1; 0]; X=[x; a; s]
-    
+
+    tol=(1e-8);
     % Number of variables
     [k,m] = size(B);
+    % Locate the maximum magnitude element in the desired objective
+    [my,~]=max(abs(v));
+    
+    %Trivial solution, if desired moment is close to zero
+    %  May want to adjust the tolerance to improve numerics of later steps
+    if (my < tol)    %yd = 0 ==> u=0
+        u = (zeros(m,1));
+        a=0;
+        return;
+    end
 
     %% 1. use the standard form, error!
-    % A=[B -v zeros(k,m); eye(m) zeros(m,1) eye(m)]; 
-    % b=[-B*umin; umax-umin]; 
-    % c=[zeros(m,1); -1; zeros(m,1)];
-    % Eqin=zeros(k+m,1);
+    A=[B -v zeros(k,m); eye(m) zeros(m,1) eye(m)]; 
+    b=[-B*umin; umax-umin]; 
+    c=[zeros(m,1); -1; zeros(m,1)];
+    Eqin=zeros(k+m,1);
     %% 2. use the general form (LP lib)
     % min c'x subj. to A*x (Eqin) b
     %                     0 <= x
     % [1] N. Ploskas and N. Samaras, Linear Programming Using MATLAB®, vol. 127. in Springer Optimization and Its Applications, vol. 127. Cham: Springer International Publishing, 2017. doi: 10.1007/978-3-319-65919-0.
     % So the param of this lib is: A=[B -v; I 0]; b=[-B*umin; umax-umin]; c=[0; -1]; X=[x; a]
-    A=[B -v; eye(m) zeros(m,1)]; 
-    b=[-B*umin; umax-umin];
-    c=[zeros(m,1); -1];
-    Eqin=[zeros(k,1); -ones(m,1)];
+    % A=[B -v; eye(m) zeros(m,1)]; 
+    % b=[-B*umin; umax-umin];
+    % c=[zeros(m,1); -1];
+    % Eqin=[zeros(k,1); -ones(m,1)];
 
     % [A1, c1, b1, Eqin1, MinMaxLP1] =  general2standard(A, c, b, Eqin, -1);
 
 % [A2, c2, b2, Eqin2, MinMaxLP2] =  standard2canonical(A1, c1, b1, Eqin1, MinMaxLP1);
 
-    %% Use LP lib to analysis. 
+    %% Use LP lib to analysis.  
     % MinMaxLP=[];
     % c0=[];
     % reinv=[];
@@ -92,16 +103,20 @@ function [u,a] = use_LP_lib(B,v, umin, umax)
     % maxIterations=[];
     % tol=[];
     % etaMin=[];
+    %% rsa, rdsa and epsa is error allocation
     % Revised Primal Simplex Algorithm
     % [xsol, fval, exitflag, iterations] = rsa(A, c, b, Eqin);
     % % Revised Dual Simplex Algorithm
-    % [xsol, fval, exitflag, iterations] = rdsa(A, c, b, Eqin,-1,0,80,1e-7,1e-9,1e-9,0,1);
+    % [xsol, fval, exitflag, iterations] = rdsa(A, c, b, Eqin;
     % % Exterior Point Simplex Algorithm
-    % [xsol, fval, exitflag, iterations] = epsa(A, c, b, Eqin,-1,0,80,1e-7,1e-9,1e-9,0,1)
+    % [xsol, fval, exitflag, iterations] = epsa(A, c, b, Eqin)
+
+    %% successful !!!
     % % Interior Point Methods
     % [xsol, fval, exitflag, iterations] = ipdipm(A, c, b, Eqin);
 
      [xsol, fval, exitflag, iterations] = linprogSolver(A, c, b, Eqin,-1,0, 'dual-simplex')
+     %%
     % sensitivity Analysis
 
     % if(exitflag~=1)

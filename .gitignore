@@ -4,11 +4,14 @@ PCA/codegen/
 QP/codegen/
 */*.prj
 */*.mexmaca64
-/LP/allocation_log/*.mat
-/LP/allocation_log/*.ulg
+handle_fly_log/*.mat
+handle_fly_log/*.ulg
 */*.asv
 */*.a
 *.asv
 
 */slprj/
 slprj/
+
+alloc_based_LP_cpp/build
+

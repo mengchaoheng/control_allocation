@@ -149,6 +149,7 @@ int main(int argc, char **argv)
 
 
     // // to BoundedRevisedSimplex
+    int err=0;
     int m_A=3;
     int n_A=5;
 
@@ -176,9 +177,7 @@ int main(int argc, char **argv)
     // std::cout << "Here is the MatrixXf A_ac:\n" << A_ac << std::endl;
 
     ct_ac=e_ac.select(ct_ac,-ct_ac);
-    Eigen::RowVectorXf ct_ac_re = e_ac.select(0,ct_ac);
     std::cout << "Here is the RowVectorXf ct_ac:\n" << ct_ac << std::endl;
-    // std::cout << "Here is the RowVectorXf ct_ac_re:\n" << ct_ac_re << std::endl;
     
     Eigen::VectorXf h_ac_reduce = e_ac.transpose().select(0,h_ac);
     // std::cout << "Here is the VectorXf h_ac_reduce:\n" << h_ac_reduce << std::endl;
@@ -343,7 +342,50 @@ int main(int argc, char **argv)
         // 在这里添加你的代码
         std::cout << " loop "<< std::endl; 
     }
+    
+    
+    bool errout = unbounded;
+
+    // outside
     std::cout << "itlim:\n" << itlim << std::endl;
+    bool errsimp = errout;
+    Eigen::RowVector<bool, Eigen::Dynamic> e_ac_out = e_ac;
+    std::cout << "Here is the e_ac_out:\n" << e_ac_out  << std::endl;
+    Eigen::VectorXf y_out =y0;
+    std::cout << "Here is the y_out:\n" << y_out  << std::endl;
+    Eigen::VectorXi inB_out=inB;
+    std::cout << "Here is the inB_out:\n" << inB_out  << std::endl;
+    Eigen::VectorXf xout(n_A);
+    xout.setZero();
+    xout(inB_out)=y_out;
+    std::cout << "Here is the xout:\n" << xout  << std::endl;
+
+    xout=e_ac_out.transpose().select(xout,-xout+h_ac);
+    std::cout << "reverse xout:\n" << xout  << std::endl;
+
+
+    if (itlim<=0){
+        err = 3;
+        std::cout << " Too Many Iterations Finding Final Solution "<< std::endl; 
+    }
+
+    if(errsimp){
+        err = 1;
+        std::cout << " Solver error "<< std::endl; 
+    }
+       
+    Eigen::VectorXf u_simplxuprevsol = xout(Eigen::seq(0,n_A-2))+uMin_ac;
+    std::cout << "reverse xout(Eigen::seq(0,n_A-2)):\n" << xout(Eigen::seq(0,n_A-2)) << std::endl;
+
+    Eigen::VectorXf u_finally = u_simplxuprevsol;
+    std::cout << "reverse u_simplxuprevsol:\n" << u_simplxuprevsol  << std::endl;
+    if(xout(n_A-1)>1){ //Use upper_lam to prevent control surfaces from approaching position limits
+        u_finally =u_simplxuprevsol /xout(n_A-1);
+    }
+    std::cout << "reverse u_finally:\n" << u_finally  << std::endl;
+
+
+
 
 
 

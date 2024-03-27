@@ -161,7 +161,7 @@ int main(int argc, char **argv)
 
     Eigen::VectorXi ind_all {{0, 1, 2, 3, 4}}; // 1:n_A
     // std::cout << "Here is the VectorXi ind_all:\n" << ind_all << std::endl;
-    Eigen::VectorXi inB(3); // inB 是一个整型向量
+    Eigen::VectorXi inB(m_A); // inB 是一个整型向量
     inB << 0, 1, 3;
     // std::cout << "Here is the VectorXi inB:\n" << inB << std::endl;
 
@@ -169,7 +169,7 @@ int main(int argc, char **argv)
     // std::cout << "Here is the VectorXi inD:\n" << inD << std::endl;
 
     // // Initialize the matrix with replicated rows
-    Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic> e_matrix(3, 5);
+    Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic> e_matrix(m_A, n_A);
     e_matrix.rowwise() = e_ac;
     // Output the initialized matrix
     // std::cout << "Initialized e_matrix with every row the same:\n" << e_matrix << std::endl;
@@ -391,6 +391,14 @@ int main(int argc, char **argv)
 
 
 
+    // 定义索引数量
+    int n = 3;
+
+    // 使用 LinSpaced() 创建等间隔序列，并转换为整数向量
+    Eigen::VectorXi ind = Eigen::VectorXi::LinSpaced(n, 1, n);
+
+    // 输出索引向量
+    std::cout << "Indices vector:\n" << ind.transpose() << std::endl;
 
     
 

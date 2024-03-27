@@ -20,8 +20,10 @@ add_subdirectory(alglib)
 add_executable(MyExecutable src/main.cpp)
 add_executable(minlp_basic src/minlp_basic.cpp)
 add_executable(LPwrap_test src/LPWrap/LPwrap_test.cpp src/LPWrap/allocator_dir_LPwrap_4.c src/LPWrap/rt_nonfinite.c)
+add_executable(new_simplex src/LPWrap/new_simplex.cpp src/LPWrap/allocator_dir_LPwrap_4.c src/LPWrap/rt_nonfinite.c)
 
 # 添加链接的库
 target_link_libraries(MyExecutable Eigen3::Eigen alglib)
 target_link_libraries(minlp_basic alglib)
 target_link_libraries(LPwrap_test alglib)
+target_link_libraries(new_simplex Eigen3::Eigen alglib)

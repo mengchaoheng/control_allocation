@@ -1,3 +1,4 @@
+#include <Eigen/Dense>
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -178,6 +179,11 @@ int main(int argc, char **argv)
             outFile << u_all[i] << (i < array_size - 1 ? "," : "\n");
         }
     }
+    // 使用Eigen库
+    Eigen::MatrixXd mat(2, 2);
+    mat << 1, 2,
+           3, 4;
+    std::cout << "Matrix mat:\n" << mat << std::endl;
     // 关闭文件
     outFile.close();
 

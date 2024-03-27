@@ -20,7 +20,7 @@ load 'input.mat'; % get unit_vector and the len_command_px4 (len_command_px4 is 
 %% setup ACA
 global NumU
 NumU=m;
-LPmethod=3; % LPmethod should be an integer between 0 and 5. when LPmethod=2 set upper of lambda to Inf can't save this method!!!
+LPmethod=2; % LPmethod should be an integer between 0 and 5. when LPmethod=2 set upper of lambda to Inf can't save this method!!! but big number is the same as that based linprog
 INDX=ones(1,m);  % active effectors
 IN_MAT = [B     zeros(k,1)
           umin' 0
@@ -77,13 +77,15 @@ for i=1:N
     % u =wls_alloc_gen(B,v(:,i),umin,umax,eye(k),eye(m),zeros(m,1),1e6,zeros(m,1),zeros(m,1),100,4);
     % x_wls_gen(:,i) = Constrain(u,umin,umax);
     % 
-    % [u,~] = dir_alloc_linprog(B,v(:,i), umin, umax, 1e4);
+    % [u,~] = dir_alloc_linprog(B,v(:,i), umin, umax, 1e4); % LPmethod=2 and lam=1 of dir_alloc_linprog is lager but similar
     % x_dir_alloc_linprog(:,i) = Constrain(u,umin,umax);
     % 
     % [u,~] = dir_alloc_linprog_re(B,v(:,i), umin, umax);
     % x_dir_alloc_linprog_re(:,i) = Constrain(u,umin,umax);
     % 
-    % [u,~] = dir_alloc_linprog_re_bound(B,v(:,i), umin, umax, 1e4);
+    % [u,~] = dir_alloc_linprog_re_bound(B,v(:,i), umin, umax, 1e4);% the
+    % same as dir_alloc_linprog for any lam >=1, lam have to be >1 when use
+    % linprog, that will be the same as LPmethod=3
     % x_dir_alloc_linprog_re_bound(:,i) = Constrain(u,umin,umax);
     % 
     % [u,~] = use_LP_lib(B,v(:,i), umin, umax); % ToDo: use the LP lib
@@ -99,9 +101,9 @@ end
 output = readmatrix('output.csv')';
 % just use the flight data to compare.
 command_px4=v(:,1:len_command_px4);
-x1=x_inv(:,1:len_command_px4);
+x1=x_LPwrap(:,1:len_command_px4);
 % x1=output(:,1:len_command_px4);
-x2=x_LPwrap(:,1:len_command_px4);
+x2=x_inv(:,1:len_command_px4);
 
 % actual moments produced. The B matrix have to be the same.
 U1=B*x1;

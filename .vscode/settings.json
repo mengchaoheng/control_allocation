@@ -103,6 +103,15 @@
         "vec4ub": "cpp",
         "vec4ui": "cpp",
         "vec4us": "cpp",
-        "viewport": "cpp"
+        "viewport": "cpp",
+        "timer": "cpp",
+        "iostream": "cpp",
+        "core": "cpp",
+        "vertexarraystate": "cpp",
+        "deque": "cpp",
+        "list": "cpp",
+        "mixinvector": "cpp",
+        "fast_back_stack": "cpp",
+        "primitiveset": "cpp"
     }
 }

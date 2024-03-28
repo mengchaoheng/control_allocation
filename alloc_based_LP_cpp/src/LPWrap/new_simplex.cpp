@@ -31,11 +31,11 @@ Eigen::VectorXi setdiff(const Eigen::VectorXi& a, const Eigen::VectorXi& b) {
 
     return result;
 }
-void BoundedRevisedSimplex( Eigen::MatrixXf A,
-                            Eigen::RowVectorXf ct,
+void BoundedRevisedSimplex( Eigen::MatrixXf& A,
+                            Eigen::RowVectorXf& ct,
                             Eigen::VectorXf b,
                             Eigen::VectorXi& inB,
-                            Eigen::VectorXf h,
+                            Eigen::VectorXf& h,
                             Eigen::RowVector<bool, Eigen::Dynamic>& e,
                             int m, int n, int& itlim,
                             Eigen::VectorXf& y0,
@@ -346,6 +346,7 @@ void DP_LPCA(const Eigen::VectorXf& yd, const Eigen::MatrixXf& B, const Eigen::V
     ci.head(m + 1).setZero(); // 设置前 m+1 个元素为零
     ci.tail(n).setOnes();     // 设置后 n 个元素为 1
     // std::cout << "ci:\n" << ci << std::endl;
+    Eigen::RowVectorXf cit=ci.transpose();
     // 构建 inBi
     Eigen::VectorXi inBi = Eigen::VectorXi::LinSpaced(n, m + 1, m + n);
     // 构建 ei
@@ -364,7 +365,7 @@ void DP_LPCA(const Eigen::VectorXf& yd, const Eigen::MatrixXf& B, const Eigen::V
     Eigen::VectorXf y1(n);
     y1.setZero();
     // [y1, inB1, e1,itlim, errsimp] = simplxuprevsol(Ai,ci',b,inBi,hi,ei,n,m+n+1,itlim);
-    BoundedRevisedSimplex(Ai, ci.transpose(), b, inBi, hi, ei, n, m+1+n, itlim, y1, errsimp);
+    BoundedRevisedSimplex(Ai, cit, b, inBi, hi, ei, n, m+1+n, itlim, y1, errsimp);
     // heck that Feasible Solution was found
     if (itlim<=0)
     {   
@@ -509,18 +510,8 @@ void DPscaled_LPCA(const Eigen::VectorXf& yd, const Eigen::MatrixXf& B, const Ei
         errout = -1; 
         return;
     }
-    Eigen::Vector<int, 1> ind_max_yd;
-    ind_max_yd << iy; 
-    std::cout << "Here is the ind_max_yd :\n" << ind_max_yd << std::endl;
-    Eigen::VectorXi ind_all = Eigen::VectorXi::LinSpaced(n, 0, n-1);
-    Eigen::VectorXi ind_other_yd = setdiff(ind_all, ind_max_yd);
-    std::cout << "Here is the ind_other_yd:\n" << ind_other_yd << std::endl;
-    Eigen::VectorXi ind_reorder(n);
-    ind_reorder << ind_max_yd, ind_other_yd;
-    std::cout << "Here is the ind_reorder:\n" << ind_reorder << std::endl;
-    std::cout << "Here is the B:\n" << B << std::endl;
-    std::cout << "Here is the yd:\n" << yd << std::endl;
-    // 应用PermutationMatrix
+    // std::cout << "Here is the B:\n" << B << std::endl;
+    // std::cout << "Here is the yd:\n" << yd << std::endl;
     Eigen::MatrixXf Bt =  B;
     Eigen::VectorXf ydt = yd;
     Eigen::RowVectorXf rowToMove = Bt.row(iy);
@@ -531,44 +522,44 @@ void DPscaled_LPCA(const Eigen::VectorXf& yd, const Eigen::MatrixXf& B, const Ei
     }
     Bt.row(0) = rowToMove;
     ydt(0)=eleToMove;
-    std::cout << "Here is the Bt:\n" << Bt << std::endl;
-    std::cout << "Here is the ydt:\n" << ydt << std::endl;
-
+    // std::cout << "Here is the Bt:\n" << Bt << std::endl;
+    // std::cout << "Here is the ydt:\n" << ydt << std::endl;
     // 交换第2行和第3行的内容
     std::swap(ydt(1), ydt(2));
-    std::cout << "Here is the ydt:\n" << ydt << std::endl;
+    // std::cout << "Here is the ydt:\n" << ydt << std::endl;
     Bt.row(1).swap(Bt.row(2));
-    std::cout << "Here is the Bt:\n" << Bt << std::endl;
+    // std::cout << "Here is the Bt:\n" << Bt << std::endl;
     // Convert into a LP problem
     Eigen::MatrixXf M(n-1,n);
     M.setZero();
     M << ydt(Eigen::seq(1,n-1)), -ydt(0)*Eigen::MatrixXf::Identity(n-1, n-1);
-    std::cout << "Here is the ydt(Eigen::seq(1,n-1)):\n" << ydt(Eigen::seq(1,n-1)) << std::endl;
-    std::cout << "Here is the M:\n" << M << std::endl;
+    // std::cout << "Here is the ydt(Eigen::seq(1,n-1)):\n" << ydt(Eigen::seq(1,n-1)) << std::endl;
+    // std::cout << "Here is the M:\n" << M << std::endl;
     Eigen::MatrixXf A = M*Bt;
     Eigen::VectorXf b = -A*uMin;
     Eigen::VectorXf c = -Bt.transpose()*ydt;
     Eigen::VectorXf h = uMax-uMin;
-    std::cout << "Here is the MatrixXf A:\n" << A << std::endl;
-    std::cout << "Here is the VectorXf b:\n" << b.transpose() << std::endl;
-    std::cout << "Here is the VectorXf c:\n" << c.transpose() << std::endl;
+    // std::cout << "Here is the MatrixXf A:\n" << A << std::endl;
+    // std::cout << "Here is the VectorXf b:\n" << b.transpose() << std::endl;
+    // std::cout << "Here is the VectorXf c:\n" << c.transpose() << std::endl;
     Eigen::RowVectorXf ct=c.transpose();
-    std::cout << "Here is the VectorXf h:\n" << h.transpose() << std::endl;
+    // std::cout << "Here is the VectorXf h:\n" << h.transpose() << std::endl;
     // To find Feasible solution construct problem with appended slack variables
     // A.6.4 Initialization of the Simplex Algorithm of <Aircraft control allocation>
     // 计算 diag(sb)，即将 b 中大于 0 的元素设为 1，小于等于 0 的元素设为 -1
     Eigen::VectorXf sb = 2.0f * (b.array() > 0).cast<float>() - 1.0f;
-    std::cout << "sb:\n" << sb << std::endl;
-    std::cout << "sb.asDiagonal():\n" <<  Eigen::MatrixXf(sb.asDiagonal()) << std::endl;
+    // std::cout << "sb:\n" << sb << std::endl;
+    // std::cout << "sb.asDiagonal():\n" <<  Eigen::MatrixXf(sb.asDiagonal()) << std::endl;
     // 构建 Ai，先将 A 和 diag(sb) 水平拼接
     Eigen::MatrixXf Ai(A.rows(), A.cols() + n-1);
     Ai << A, Eigen::MatrixXf(sb.asDiagonal());
-    std::cout << "Ai:\n" << Ai << std::endl;
+    // std::cout << "Ai:\n" << Ai << std::endl;
     // 构建 ci
     Eigen::VectorXf ci(m - 1 + n);
     ci.head(m).setZero(); // 设置前 m+1 个元素为零
     ci.tail(n-1).setOnes();     // 设置后 n 个元素为 1
-    std::cout << "ci:\n" << ci.transpose() << std::endl;
+    // std::cout << "ci:\n" << ci.transpose() << std::endl;
+    Eigen::RowVectorXf cit=ci.transpose();
     // 构建 inBi
     Eigen::VectorXi inBi = Eigen::VectorXi::LinSpaced(n-1, m, m + n-2);
     // 构建 ei
@@ -579,16 +570,16 @@ void DPscaled_LPCA(const Eigen::VectorXf& yd, const Eigen::MatrixXf& B, const Ei
     hi.head(m) = h;
     hi.tail(n-1) = 2 * b.array().abs();
     // 输出 inBi、ei 和 hi
-    std::cout << "inBi:\n" << inBi << std::endl;
-    std::cout << "ei:\n" << ei << std::endl;
-    std::cout << "hi:\n" << hi.transpose() << std::endl;
+    // std::cout << "inBi:\n" << inBi << std::endl;
+    // std::cout << "ei:\n" << ei << std::endl;
+    // std::cout << "hi:\n" << hi.transpose() << std::endl;
     // Use Bounded Revised Simplex to find initial basic feasible point of
     // original program
     Eigen::VectorXf y1(n-1);
     y1.setZero();
     int errsimp=0;
     // [y1, inB1, e1,itlim,errsimp] = simplxuprevsol(Ai,ci',b,inBi,hi,ei,n-1,m+n-1,itlim);
-    BoundedRevisedSimplex(Ai, ci.transpose(), b, inBi, hi, ei, n-1, m-1+n, itlim, y1, errsimp);
+    BoundedRevisedSimplex(Ai, cit, b, inBi, hi, ei, n-1, m-1+n, itlim, y1, errsimp);
     // heck that Feasible Solution was found
     if (itlim<=0)
     {   
@@ -610,7 +601,7 @@ void DPscaled_LPCA(const Eigen::VectorXf& yd, const Eigen::MatrixXf& B, const Ei
     // Construct an incorrect solution to accompany error flags
     if(errout!=0)
     {
-        std::cout << "ToDo:\n"<< std::endl;
+        std::cout << "Construct an incorrect solution to accompany error flags:\n"<< std::endl;
         xout(inBi(Eigen::seq(0,m-1))) = y1(Eigen::seq(0,m-1));
         xout=ei(Eigen::seq(0,m-1)).transpose().select(xout,-xout+h);
     }
@@ -622,18 +613,17 @@ void DPscaled_LPCA(const Eigen::VectorXf& yd, const Eigen::MatrixXf& B, const Ei
         e2=ei(Eigen::seq(0,m-1));
         BoundedRevisedSimplex(A, ct, b, inBi, h, e2, n-1, m, itlim, y0, errsimp);
         // outside
-        std::cout << "itlim:\n" << itlim << std::endl;
-        std::cout << "final e2:\n" << e2  << std::endl;
-        std::cout << "final y0:\n" << y0.transpose()  << std::endl;
-        std::cout << "final inBi:\n" << inBi  << std::endl;
+        // std::cout << "itlim:\n" << itlim << std::endl;
+        // std::cout << "final e2:\n" << e2  << std::endl;
+        // std::cout << "final y0:\n" << y0.transpose()  << std::endl;
+        // std::cout << "final inBi:\n" << inBi  << std::endl;
         // Construct solution to original LP problem from bounded simplex output
         // Set non-basic variables to 0 or h based on e2
         // Set basic variables to y2 or h-y2.
         xout(inBi)=y0;
-        std::cout << "Here is the xout:\n" << xout.transpose()  << std::endl;
+        // std::cout << "Here is the xout:\n" << xout.transpose()  << std::endl;
         xout=e2.transpose().select(xout,-xout+h);
-        std::cout << "reverse xout:\n" << xout.transpose()  << std::endl;
-
+        // std::cout << "reverse xout:\n" << xout.transpose()  << std::endl;
         if (itlim<=0){
             errout = 3;
             std::cout << " Too Many Iterations Finding Final Solution "<< std::endl; 
@@ -642,19 +632,17 @@ void DPscaled_LPCA(const Eigen::VectorXf& yd, const Eigen::MatrixXf& B, const Ei
             errout = 1;
             std::cout << " Solver error "<< std::endl; 
         }
-
     }
     // Transform Solution Back Into control variables
     u = xout(Eigen::seq(0,m-1))+uMin;
-    std::cout << " u:\n" << u.transpose()  << std::endl;
-
+    // std::cout << " u:\n" << u.transpose()  << std::endl;
     // Rescale controls so solution is not on boundary of Omega.
     float rho = ydt.dot(Bt*u)/(ydt.dot(ydt));
-    std::cout << "rho:\n" << rho  << std::endl;
+    // std::cout << "rho:\n" << rho  << std::endl;
     if(rho>1.0f){ 
         u /= rho;
     }
-    std::cout << "finally u:\n" << u.transpose()  << std::endl;
+    // std::cout << "finally u:\n" << u.transpose()  << std::endl;
     std::cout << "itlim:\n" << itlim << std::endl;
 }
 
@@ -753,8 +741,8 @@ int main(int argc, char **argv)
         auto finish = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> elapsed = finish - start;
         // std::cout << "DP_LPCA execution time: " << elapsed.count() << "s\n";
-        // std::cout << "DPscaled_LPCA execution time: " << elapsed.count() << "s\n";
-        // std::cout << "outloop u:\n" << u.transpose()  << std::endl;
+        std::cout << "DPscaled_LPCA execution time: " << elapsed.count() << "s\n";
+        std::cout << "outloop u:\n" << u.transpose()  << std::endl;
         // std::cout << "upper_lam:\n" << upper_lam  << std::endl;
         // std::cout << "errout:\n" << errout  << std::endl;
         // std::cout << "allocator_dir_LPwrap_4 execution time: " << elapsed.count() << "s\n";

@@ -11,5 +11,13 @@ make
 
 cd to build path, and run
 ```sh
-./MyExecutable
+./new_simplex ## or other target
+```
+
+## test report
+running time test on MacOS
+```
+DPscaled_LPCA execution time: 2.0875e-05s
+DP_LPCA execution time: 3.5875e-05s
+allocator_dir_LPwrap_4 execution time: 6.67e-07s
 ```

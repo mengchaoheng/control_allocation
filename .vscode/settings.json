@@ -120,6 +120,9 @@
         "bufferobject": "cpp",
         "image": "cpp",
         "texture": "cpp",
-        "buffered_value": "cpp"
+        "buffered_value": "cpp",
+        "fstream": "cpp",
+        "ref_ptr": "cpp",
+        "glextensions": "cpp"
     }
 }

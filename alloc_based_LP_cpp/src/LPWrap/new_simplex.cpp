@@ -734,18 +734,17 @@ int main(int argc, char **argv)
         yd << (float) data[i][0],  (float) data[i][1],   (float) data[i][2];
         // std::cout << "yd:\n" << yd.transpose()  << std::endl;
         auto start = std::chrono::high_resolution_clock::now();
-        // allocator_dir_LPwrap_4(_B_array, y_all, _uMin, _uMax, u_all, &z_all, &iters_all);
-        int itlim = 500; 
+        allocator_dir_LPwrap_4(_B_array, y_all, _uMin, _uMax, u_all, &z_all, &iters_all);
         // DP_LPCA(yd, B, uMin, uMax, itlim, upper_lam, u, errout);
-        DPscaled_LPCA(yd, B, uMin, uMax, itlim, u, errout);
+        // DPscaled_LPCA(yd, B, uMin, uMax, itlim, u, errout);
         auto finish = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> elapsed = finish - start;
         // std::cout << "DP_LPCA execution time: " << elapsed.count() << "s\n";
-        std::cout << "DPscaled_LPCA execution time: " << elapsed.count() << "s\n";
-        std::cout << "outloop u:\n" << u.transpose()  << std::endl;
+        // std::cout << "DPscaled_LPCA execution time: " << elapsed.count() << "s\n";
+        // std::cout << "outloop u:\n" << u.transpose()  << std::endl;
         // std::cout << "upper_lam:\n" << upper_lam  << std::endl;
         // std::cout << "errout:\n" << errout  << std::endl;
-        // std::cout << "allocator_dir_LPwrap_4 execution time: " << elapsed.count() << "s\n";
+        std::cout << "allocator_dir_LPwrap_4 execution time: " << elapsed.count() << "s\n";
         // 使用循环打印数组元素
         // std::cout << "u_all: " << " ";
         // for (int i = 0; i < 4; ++`i) {

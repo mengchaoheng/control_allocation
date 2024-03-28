@@ -68,8 +68,8 @@ for i=1:N
     % u = VJAwrap(IN_MAT);
     % x_VJAwrap(:,i) = Constrain(u,umin,umax);
 
-    u=pinv(B)*v(:,i);
-    x_inv(:,i) = Constrain(u,umin,umax);
+    % u=pinv(B)*v(:,i);
+    % x_inv(:,i) = Constrain(u,umin,umax);
     % 
     % [u,~,~] = wls_alloc(B,v(:,i),umin,umax,Wv,Wu,ud,gam,u0,W0,imax);
     % x_wls(:,i) = Constrain(u,umin,umax);
@@ -101,9 +101,9 @@ end
 output = readmatrix('output.csv')';
 % just use the flight data to compare.
 command_px4=v(:,1:len_command_px4);
-x1=x_LPwrap(:,1:len_command_px4);
-% x1=output(:,1:len_command_px4);
-x2=x_inv(:,1:len_command_px4);
+% x1=x_LPwrap(:,1:len_command_px4);
+x1=output(:,1:len_command_px4);
+x2=x_LPwrap(:,1:len_command_px4);
 
 % actual moments produced. The B matrix have to be the same.
 U1=B*x1;

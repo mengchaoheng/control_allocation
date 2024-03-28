@@ -5,8 +5,7 @@ Unzip to the root folder of this project. rename as `alglib`.
 ```sh
 cd build
 cmake ..
-make
-
+make && ./new_simplex ## or other target
 ```
 
 cd to build path, and run

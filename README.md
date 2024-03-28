@@ -2,17 +2,19 @@
 This is a repos. for test new control allocation algorithm developed from [ simulation of the book "aircraft control allocation"](https://github.com/mengchaoheng/aircraft-control-allocation) and [qcat](https://github.com/mengchaoheng/qcat).
 
 The new algorithm will used by a ductedfan UAV. The structure of a modern flight control system is as shown below
+
 <img src="./system.png" width="60%" height="60%" />
 
 The function of control allocation is to return a control effector command that satisfies the constraints for a point in the moment space. Due to the presence of constraints, only limited moments are attainable.
 
-<img src="./Fig1.png" width="40%" />
 <img src="./Fig2.png" width="44%" />
 
 This project will take the control allocation problem of ducted fan UAV as an example to test several currently known control allocation open source libraries. Several open source linear programming solvers have also been introduced, aiming to develop more efficient allocators for application in real aircraft. A new control allocation algorithm was also developed, which is based on modifications of existing methods. In order to be compatible with existing libraries, this project uses matlab and C/C++ programming languages. Matlab is used for testing and analysis. What is really used for aircraft is the C++ version of the function. For this purpose, We wrote test codes in two languages respectively.
 
 ## File structure 
 
+- `alloc_based_LP_cpp`: The C++ implementation of control allocation based on linear programming algorithm implemented by eigen is a subfolder that can be run independently.
+  - `alloc_based_LP_cpp/src/LPWrap`: the `new_simplex.cpp` file used to test the running time of alforithm.
 - `control_allocation_lib`: some open source allocation lib, be used as submodules.
   - aircraft-control-allocation-book-simulation
   - qcat
@@ -33,7 +35,7 @@ This project will take the control allocation problem of ducted fan UAV as an ex
 
 ## Instructions
 
-For matlab usage:
+### For matlab usage:
 1. Run `plot_fly_log_states.m` to get the `handle_fly_log/flight.mat` file.
 
 2. Run `Generate_input_data.m` t get input data.
@@ -42,8 +44,16 @@ For matlab usage:
 
 4. ToDo: fix the bug of `LP_lib/linear-programming-using-MATLAB`.
 
-For C/C++ project:
-1. `LP_lib/alglib_demo`: cd to build folder and run 
+### For C/C++ project:
+1. `alloc_based_LP_cpp`: see readme in the folder.
+
+```sh
+cd build
+cmake ..
+make && ./new_simplex ## or other target
+```
+
+2. `LP_lib/alglib_demo`: cd to build folder and run 
 ```Console
 $ cd build
 $ g++ -I ../src/alglib-cpp/src/ -o LPWrap_test.out  ../src/LPWrap/*.cpp ../src/LPWrap/*.c ../src/alglib-cpp/src/*.cpp -w  -O3
@@ -52,7 +62,7 @@ $ ./LPWrap_test.out
 ```
 For test alglib-based vs `allocator_dir_LPwrap_4` dir allocator. we can see that running time of the allocator. alglib-based is 1.1416e-05s and `allocator_dir_LPwrap_4` is 3.75e-07s. after get the output.csv data file, run `test.m` for compare with the offline version.
 
-2. `LP_lib/lp_tiny`: cd to path, and run the following command, allocator running time is 0.0002s. 
+3. `LP_lib/lp_tiny`: cd to path, and run the following command, allocator running time is 0.0002s. 
 ```sh
 $ 
 $ mkdir build
@@ -63,7 +73,7 @@ $ ./test_input_alloc
 ```
 The following lib have some bug, maybe the lib can't solve the problem. 
 
-1. `LP_lib/SDLP`: Build and run by:
+4. `LP_lib/SDLP`: Build and run by:
 ```Console
 mkdir build && cd build
 

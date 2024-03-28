@@ -544,15 +544,15 @@ void DPscaled_LPCA(const Eigen::VectorXf& yd, const Eigen::MatrixXf& B, const Ei
         u.setZero();
         return;
     }
-    Eigen::Vector<int, 1> ind_max_yd;
-    ind_max_yd << iy; 
-    std::cout << "Here is the ind_max_yd :\n" << ind_max_yd << std::endl;
-    Eigen::VectorXi ind_all = Eigen::VectorXi::LinSpaced(n, 0, n-1);
-    Eigen::VectorXi ind_other_yd = setdiff(ind_all, ind_max_yd);
-    std::cout << "Here is the ind_other_yd:\n" << ind_other_yd << std::endl;
-    Eigen::VectorXi ind_reorder(n);
-    ind_reorder << ind_max_yd, ind_other_yd;
-    std::cout << "Here is the ind_reorder:\n" << ind_reorder << std::endl;
+    // Eigen::Vector<int, 1> ind_max_yd;
+    // ind_max_yd << iy; 
+    // std::cout << "Here is the ind_max_yd :\n" << ind_max_yd << std::endl;
+    // Eigen::VectorXi ind_all = Eigen::VectorXi::LinSpaced(n, 0, n-1);
+    // Eigen::VectorXi ind_other_yd = setdiff(ind_all, ind_max_yd);
+    // std::cout << "Here is the ind_other_yd:\n" << ind_other_yd << std::endl;
+    // Eigen::VectorXi ind_reorder(n);
+    // ind_reorder << ind_max_yd, ind_other_yd;
+    // std::cout << "Here is the ind_reorder:\n" << ind_reorder << std::endl;
     
     // 创建一个单位PermutationMatrix
     Eigen::PermutationMatrix<3, 3> pmat; // 3x3矩阵的PermutationMatrix
@@ -616,7 +616,7 @@ void DPscaled_LPCA(const Eigen::VectorXf& yd, const Eigen::MatrixXf& B, const Ei
     std::cout << "sb:\n" << sb << std::endl;
     std::cout << "sb.asDiagonal():\n" <<  Eigen::MatrixXf(sb.asDiagonal()) << std::endl;
     // 构建 Ai，先将 A 和 diag(sb) 水平拼接
-    Eigen::MatrixXf Ai(A.rows(), A.cols() + n);
+    Eigen::MatrixXf Ai(A.rows(), A.cols() + n-1);
     Ai << A, Eigen::MatrixXf(sb.asDiagonal());
     std::cout << "Ai:\n" << Ai << std::endl;
     // 构建 ci
@@ -713,10 +713,10 @@ void DPscaled_LPCA(const Eigen::VectorXf& yd, const Eigen::MatrixXf& B, const Ei
     // u(i) = x(i)+umin(i) if e(i)
     u = xout(Eigen::seq(0,m-1))+uMin;
     // Rescale controls so solution is not on boundary of Omega.
-    Eigen::VectorXf rho = ydt.transpose()*Bt*u/(ydt.transpose()*ydt);
+    float rho = ydt.dot(Bt*u)/(ydt.dot(ydt));
     std::cout << "rho:\n" << rho  << std::endl;
-    if(rho(0)>1.0f){ 
-        u /= rho(0);
+    if(rho>1.0f){ 
+        u /= rho;
     }
     std::cout << "finally u:\n" << u  << std::endl;
 }
@@ -794,7 +794,8 @@ int main(int argc, char **argv)
     float upper_lam = 1e4f;
     int errout = 0;
     Eigen::VectorXf u(m);
-    DP_LPCA(yd, B, uMin, uMax, itlim, upper_lam, u, errout);
+    // DP_LPCA(yd, B, uMin, uMax, itlim, upper_lam, u, errout);
+    DPscaled_LPCA(yd, B, uMin, uMax, itlim, u, errout);
 
 
     // for(int i=0;i<num;i++)

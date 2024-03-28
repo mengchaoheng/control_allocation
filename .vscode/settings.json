@@ -113,6 +113,13 @@
         "mixinvector": "cpp",
         "fast_back_stack": "cpp",
         "primitiveset": "cpp",
-        "stack": "cpp"
+        "stack": "cpp",
+        "__tree": "cpp",
+        "map": "cpp",
+        "set": "cpp",
+        "bufferobject": "cpp",
+        "image": "cpp",
+        "texture": "cpp",
+        "buffered_value": "cpp"
     }
 }

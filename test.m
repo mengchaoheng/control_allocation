@@ -20,7 +20,7 @@ load 'input.mat'; % get unit_vector and the len_command_px4 (len_command_px4 is 
 %% setup ACA
 global NumU
 NumU=m;
-LPmethod=2; % LPmethod should be an integer between 0 and 5. when LPmethod=2 set upper of lambda to Inf can't save this method!!! but big number is the same as that based linprog
+LPmethod=3; % LPmethod should be an integer between 0 and 5. when LPmethod=2 set upper of lambda to Inf can't save this method!!! but big number is the same as that based linprog
 INDX=ones(1,m);  % active effectors
 IN_MAT = [B     zeros(k,1)
           umin' 0

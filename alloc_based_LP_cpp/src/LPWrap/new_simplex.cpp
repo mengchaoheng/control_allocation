@@ -31,15 +31,16 @@ Eigen::VectorXi setdiff(const Eigen::VectorXi& a, const Eigen::VectorXi& b) {
 
     return result;
 }
-void BoundedRevisedSimplex( Eigen::MatrixXf& A,
-                            Eigen::RowVectorXf& ct,
-                            Eigen::VectorXf& b,
+void BoundedRevisedSimplex( Eigen::MatrixXf A,
+                            Eigen::RowVectorXf ct,
+                            Eigen::VectorXf b,
                             Eigen::VectorXi& inB,
-                            Eigen::VectorXf& h,
+                            Eigen::VectorXf h,
                             Eigen::RowVector<bool, Eigen::Dynamic>& e,
                             int m, int n, int& itlim,
                             Eigen::VectorXf& y0,
                             int& errout) {
+    // 注意 int& itlim，在多次调用时注意值的设置。
     // Solves the linear program:
     //      minimize c'y 
     //      subject to 
@@ -328,96 +329,91 @@ void DP_LPCA(const Eigen::VectorXf& yd, const Eigen::MatrixXf& B, const Eigen::V
     int errsimp=0;
     Eigen::VectorXf xout(m+1);
     xout.setZero();
-
-
-
-
-    // //
     // std::cout << "Here is the VectorXf h:\n" << h.transpose() << std::endl;
-    // // To find Feasible solution construct problem with appended slack variables
-    // // A.6.4 Initialization of the Simplex Algorithm of <Aircraft control allocation>
-    // // 计算 diag(sb)，即将 b 中大于 0 的元素设为 1，小于等于 0 的元素设为 -1
-    // Eigen::VectorXf sb = 2.0f * (b.array() > 0).cast<float>() - 1.0f;
-    // // std::cout << "sb:\n" << sb << std::endl;
-    // // std::cout << "sb.asDiagonal():\n" <<  Eigen::MatrixXf(sb.asDiagonal()) << std::endl;
-    // // 构建 Ai，先将 A 和 diag(sb) 水平拼接
-    // Eigen::MatrixXf Ai(A.rows(), A.cols() + n);
-    // Ai << A, Eigen::MatrixXf(sb.asDiagonal());
-    // // std::cout << "Ai:\n" << Ai << std::endl;
-    // // 构建 ci
-    // Eigen::VectorXf ci(m + 1 + n);
-    // ci.head(m + 1).setZero(); // 设置前 m+1 个元素为零
-    // ci.tail(n).setOnes();     // 设置后 n 个元素为 1
-    // // std::cout << "ci:\n" << ci << std::endl;
-    // // 构建 inBi
-    // Eigen::VectorXi inBi = Eigen::VectorXi::LinSpaced(n, m + 1, m + n);
-    // // 构建 ei
-    // Eigen::RowVector<bool, Eigen::Dynamic> ei(m + n + 1); 
-    // ei.setOnes(); // 设置所有元素为 1
-    // // 构建 hi
-    // Eigen::VectorXf hi(m + n + 1);
-    // hi.head(m+1) = h;
-    // hi.tail(n) = 2 * b.array().abs();
-    // // 输出 inBi、ei 和 hi
-    // // std::cout << "inBi:\n" << inBi << std::endl;
-    // // std::cout << "ei:\n" << ei << std::endl;
-    // // std::cout << "hi:\n" << hi << std::endl;
-    // // Use Bounded Revised Simplex to find initial basic feasible point of
-    // // original program
-    // Eigen::VectorXf y1(n);
-    // y1.setZero();
-    // // [y1, inB1, e1,itlim, errsimp] = simplxuprevsol(Ai,ci',b,inBi,hi,ei,n,m+n+1,itlim);
-    // BoundedRevisedSimplex(Ai, ci.transpose(), b, inBi, hi, ei, n, m+1+n, itlim, y1, errsimp);
-    // // heck that Feasible Solution was found
-    // if (itlim<=0)
-    // {   
-    //     errout = -3;
-    //     // std::cout << " Too Many Iterations Finding Final Solution "<< std::endl; 
-    // }
-    // if((inBi.array()>m).any())
-    // {
-    //     errout = -2;
-    //     // std::cout << " No Initial Feasible Solution found "<< std::endl; 
-    // }
-    // if(errsimp)
-    // {
-    //     errout = -1;
-    //     // std::cout << " Solver error "<< std::endl; 
-    // }
-    // // Construct an incorrect solution to accompany error flags
-    // if(errout!=0)
-    // {
-    //     // std::cout << "ToDo:\n"<< std::endl;
-    //     Eigen::Vector<bool, Eigen::Dynamic> indv = (inBi.array() <= m).cast<bool>();
-    //     for (int i = 0; i < indv.cols(); ++i) {
-    //         if (indv(i)) {
-    //             xout(inBi(i)) = y1(i);
-    //         }
-    //     }
-    //     xout=ei(Eigen::seq(0,m)).transpose().select(xout,-xout+h);
-    // }
-    // else // No Error continue to solve problem
-    // {
-        Eigen::RowVector<bool, Eigen::Dynamic> e(m+1);
-        e << true, true, true, true, true;
+    // To find Feasible solution construct problem with appended slack variables
+    // A.6.4 Initialization of the Simplex Algorithm of <Aircraft control allocation>
+    // 计算 diag(sb)，即将 b 中大于 0 的元素设为 1，小于等于 0 的元素设为 -1
+    Eigen::VectorXf sb = 2.0f * (b.array() > 0).cast<float>() - 1.0f;
+    // std::cout << "sb:\n" << sb << std::endl;
+    // std::cout << "sb.asDiagonal():\n" <<  Eigen::MatrixXf(sb.asDiagonal()) << std::endl;
+    // 构建 Ai，先将 A 和 diag(sb) 水平拼接
+    Eigen::MatrixXf Ai(A.rows(), A.cols() + n);
+    Ai << A, Eigen::MatrixXf(sb.asDiagonal());
+    // std::cout << "Ai:\n" << Ai << std::endl;
+    // 构建 ci
+    Eigen::VectorXf ci(m + 1 + n);
+    ci.head(m + 1).setZero(); // 设置前 m+1 个元素为零
+    ci.tail(n).setOnes();     // 设置后 n 个元素为 1
+    // std::cout << "ci:\n" << ci << std::endl;
+    // 构建 inBi
+    Eigen::VectorXi inBi = Eigen::VectorXi::LinSpaced(n, m + 1, m + n);
+    // 构建 ei
+    Eigen::RowVector<bool, Eigen::Dynamic> ei(m + n + 1); 
+    ei.setOnes(); // 设置所有元素为 1
+    // 构建 hi
+    Eigen::VectorXf hi(m + n + 1);
+    hi.head(m+1) = h;
+    hi.tail(n) = 2 * b.array().abs();
+    // 输出 inBi、ei 和 hi
+    // std::cout << "inBi:\n" << inBi << std::endl;
+    // std::cout << "ei:\n" << ei << std::endl;
+    // std::cout << "hi:\n" << hi << std::endl;
+    // Use Bounded Revised Simplex to find initial basic feasible point of
+    // original program
+    Eigen::VectorXf y1(n);
+    y1.setZero();
+    // [y1, inB1, e1,itlim, errsimp] = simplxuprevsol(Ai,ci',b,inBi,hi,ei,n,m+n+1,itlim);
+    BoundedRevisedSimplex(Ai, ci.transpose(), b, inBi, hi, ei, n, m+1+n, itlim, y1, errsimp);
+    // heck that Feasible Solution was found
+    if (itlim<=0)
+    {   
+        errout = -3;
+        // std::cout << " Too Many Iterations Finding Final Solution "<< std::endl; 
+    }
+    if((inBi.array()>m).any())
+    {
+        errout = -2;
+        // std::cout << " No Initial Feasible Solution found "<< std::endl; 
+    }
+    if(errsimp)
+    {
+        errout = -1;
+        // std::cout << " Solver error "<< std::endl; 
+    }
+    // Construct an incorrect solution to accompany error flags
+    if(errout!=0)
+    {
+        // std::cout << "ToDo:\n"<< std::endl;
+        Eigen::Vector<bool, Eigen::Dynamic> indv = (inBi.array() <= m).cast<bool>();
+        for (int i = 0; i < indv.cols(); ++i) {
+            if (indv(i)) {
+                xout(inBi(i)) = y1(i);
+            }
+        }
+        xout=ei(Eigen::seq(0,m)).transpose().select(xout,-xout+h);
+    }
+    else // No Error continue to solve problem
+    {
+        // Eigen::RowVector<bool, Eigen::Dynamic> e(m+1);
+        // e << true, true, true, true, true;
 
-        Eigen::VectorXi inB(n); // inB 是一个整型向量
-        inB << 0, 1, 2;
+        // Eigen::VectorXi inB(n); // inB 是一个整型向量
+        // inB << 0, 1, 2;
         // std::cout << "Here is the VectorXi inB:\n" << inB.transpose() << std::endl;
         Eigen::VectorXf y0(n);
         y0.setZero();
-        // Eigen::RowVector<bool, Eigen::Dynamic> e2(m + 1); 
-        // e2=ei(Eigen::seq(0,m));
+        Eigen::RowVector<bool, Eigen::Dynamic> e2(m + 1); 
+        e2=ei(Eigen::seq(0,m));
         // std::cout << "Here is the RowVector e:\n" << e  << std::endl;
-        BoundedRevisedSimplex(A, ct, b, inB, h, e, n, m+1, itlim, y0, errsimp);
+        BoundedRevisedSimplex(A, ct, b, inBi, h, e2, n, m+1, itlim, y0, errsimp);
         // outside
         // std::cout << "itlim:\n" << itlim << std::endl;
-        // std::cout << "final e:\n" << e   << std::endl;
+        // std::cout << "final e2:\n" << e2   << std::endl;
         // std::cout << "final y0:\n" << y0.transpose()  << std::endl;
-        // std::cout << "final inB:\n" << inB.transpose()  << std::endl;
-        xout(inB)=y0;
+        // std::cout << "final inBi:\n" << inBi.transpose()  << std::endl;
+        xout(inBi)=y0;
         // std::cout << "Here is the xout:\n" << xout  << std::endl;
-        xout=e.transpose().select(xout,-xout+h);
+        xout=e2.transpose().select(xout,-xout+h);
         // std::cout << "reverse xout:\n" << xout.transpose()  << std::endl;
         if (itlim<=0){
             errout = 3;
@@ -427,7 +423,7 @@ void DP_LPCA(const Eigen::VectorXf& yd, const Eigen::MatrixXf& B, const Eigen::V
             errout = 1;
             // std::cout << " Solver error "<< std::endl; 
         }
-    // }
+    }
     u = xout(Eigen::seq(0,m-1))+uMin;
     if(xout(m)>1){ //Use upper_lam to prevent control surfaces from approaching position limits
         u /= xout(m);

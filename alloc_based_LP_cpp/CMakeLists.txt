@@ -5,6 +5,12 @@ project(MyProject)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# 设置编译器选项（包括-O3优化）
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+
+# 添加编译器标志以启用SIMD指令集
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+
 # 添加头文件搜索路径
 include_directories(${CMAKE_SOURCE_DIR}/alglib)
 include_directories(${CMAKE_SOURCE_DIR}/src/LPWrap) # 如果您有其他的头文件目录

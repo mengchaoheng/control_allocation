@@ -48,10 +48,14 @@ void BoundedRevisedSimplex(Eigen::MatrixXf& A,
     float tol=1e-7;
     // std::cout << "Here is the float tol:\n" << tol << std::endl;
 
-    Eigen::VectorXi nind {{0, 1}}; // 1:n-m
+    // Eigen::VectorXi nind {{0, 1}}; // 1:n-m
+    // 使用 LinSpaced() 创建等间隔序列，并转换为整数向量
+    int n_m=n-m;
+    Eigen::VectorXi nind = Eigen::VectorXi::LinSpaced(n_m, 0, n_m-1);
     std::cout << "Here is the VectorXi nind:\n" << nind << std::endl;
 
-    Eigen::VectorXi ind_all {{0, 1, 2, 3, 4}}; // 1:n
+    // Eigen::VectorXi ind_all {{0, 1, 2, 3, 4}}; // 1:n
+    Eigen::VectorXi ind_all = Eigen::VectorXi::LinSpaced(n, 0, n-1);
     std::cout << "Here is the VectorXi ind_all:\n" << ind_all << std::endl;
     
     Eigen::VectorXi inD = setdiff(ind_all, inB);
@@ -454,14 +458,14 @@ int main(int argc, char **argv)
 
 
 
-    // // 定义索引数量
-    // int n = 3;
+    // 定义索引数量
+    int nn = 3;
 
-    // // 使用 LinSpaced() 创建等间隔序列，并转换为整数向量
-    // Eigen::VectorXi ind = Eigen::VectorXi::LinSpaced(n, 1, n);
+    // 使用 LinSpaced() 创建等间隔序列，并转换为整数向量
+    Eigen::VectorXi index = Eigen::VectorXi::LinSpaced(nn, 1, nn);
 
-    // // 输出索引向量
-    // std::cout << "Indices vector:\n" << ind.transpose() << std::endl;
+    // 输出索引向量
+    std::cout << "Indices vector:\n" << index.transpose() << std::endl;
 
     
 

@@ -112,6 +112,7 @@
         "list": "cpp",
         "mixinvector": "cpp",
         "fast_back_stack": "cpp",
-        "primitiveset": "cpp"
+        "primitiveset": "cpp",
+        "stack": "cpp"
     }
 }

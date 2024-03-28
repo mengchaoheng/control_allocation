@@ -14,7 +14,7 @@ This project will take the control allocation problem of ducted fan UAV as an ex
 ## File structure 
 
 - `alloc_based_LP_cpp`: The C++ implementation of control allocation based on linear programming algorithm implemented by eigen is a subfolder that can be run independently.
-  - `alloc_based_LP_cpp/src/LPWrap`: the `new_simplex.cpp` file used to test the running time of alforithm.
+  - `alloc_based_LP_cpp/src/LPwrap`: the `new_simplex.cpp` file used to test the running time of alforithm.
 - `control_allocation_lib`: some open source allocation lib, be used as submodules.
   - aircraft-control-allocation-book-simulation
   - qcat
@@ -56,7 +56,7 @@ make && ./new_simplex ## or other target
 2. `LP_lib/alglib_demo`: cd to build folder and run 
 ```Console
 $ cd build
-$ g++ -I ../src/alglib-cpp/src/ -o LPWrap_test.out  ../src/LPWrap/*.cpp ../src/LPWrap/*.c ../src/alglib-cpp/src/*.cpp -w  -O3
+$ g++ -I ../src/alglib-cpp/src/ -o LPWrap_test.out  ../src/LPwrap/*.cpp ../src/LPwrap/*.c ../src/alglib-cpp/src/*.cpp -w  -O3
 
 $ ./LPWrap_test.out
 ```

@@ -246,6 +246,131 @@ void BoundedRevisedSimplex(Eigen::MatrixXf& A,
 
 }
 
+void DP_LPCA(const Eigen::VectorXf& yd, const Eigen::MatrixXf& B, const Eigen::VectorXf& uMin, const Eigen::VectorXf& uMax, int& itlim,   
+             const float& upper_lam, Eigen::VectorXf& u, int& errout)
+{
+    // DP_LPCA
+    // Direction Preserving Control Allocation Linear Program
+
+    // function [u, errout] = DP_LPCA(yd,B,uMin,uMax,itlim,upper_lam);
+
+    // Solves the control allocation problem while preserving the
+    // objective direction for unattainable commands. The solution
+    // is found by solving the problem,
+    // min -lambda,
+    // s.t. B*u = lambda*yd, uMin<=u<=uMax, 0<= lambda <=1
+
+    // For yd outside the AMS, the solution returned is that the
+    // maximum in the direction of yd.
+
+    // For yd strictly inside the AMS, the solution achieves
+    // Bu=yd and m-n controls will be at their limits; but there
+    // is no explicit preference to which solution will be 
+    // returned. This limits the usefulness of this routine as
+    // a practical allocator unless preferences for attainable solutions
+    // are handled externally.
+
+    // (For derivation of a similar formulation see A.1.2 and A.2.3 in the
+    // text)
+
+
+    // Inputs:
+    //         yd [n]    = Desired objective
+    //         B [n,m]   = Control Effectiveness matrix
+    //         uMin[m,1] = Lower bound for controls
+    //         uMax[m,1] = Upper bound for controls
+    //         itlim     = Number of allowed iterations limit
+    //                         (Sum of iterations in both branches)
+
+    // Outputs:
+    //         u[m,1]     = Control Solution
+    //         errout     = Error Status code
+    //                         0 = found solution
+    //                         <0 = Error in finding initial basic feasible solution
+    //                         >0 = Error in finding final solution
+    //                         -1,1 = Solver error (unbounded solution)
+    //                         -2   = Initial feasible solution not found
+    //                         -3,3 = Iteration limit exceeded
+    //         itlim      = Number of iterations remaining after solution found
+
+    // Calls:
+    //         simplxuprevsol = Bounded Revised Simplex solver (simplxuprevsol.m)
+
+    // Notes:
+    // If errout ~0 there was a problem in the solution. %
+
+    // Error code < 0 implies an error in the initialization and there is no guarantee on
+    // the quality of the output solution other than the control limits.
+    // Error code > 0 for errors in final solution--B*u is in the correct direction and has
+    // magnitude < yd, but B*u may not equal yd (for yd attainable)
+    // or be maximized (for yd unattainable)
+
+    // Modification History
+    // 2024-03-28      MengChaoHeng  Original
+    errout=0;
+    int n=B.rows();
+    int m=B.cols();
+
+    Eigen::MatrixXf A(n,m+1);
+    // yd*=-1;
+    A << B, -yd;
+
+    std::cout << "Here is the MatrixXf A:\n" << A << std::endl;
+    Eigen::VectorXf b= -B * uMin;
+    std::cout << "Here is the VectorXf b:\n" << b << std::endl;
+    // Eigen::VectorXf c {{0.0, 0.0, 0.0, 0.0, -1.0}};
+    Eigen::VectorXf zerosVector = Eigen::VectorXf::Zero(m);
+    Eigen::VectorXf c(m + 1);
+    c << zerosVector, -1.0f;
+    std::cout << "Here is the VectorXf c:\n" << c << std::endl;
+    Eigen::RowVectorXf ct=c.transpose();
+    Eigen::VectorXf h(m+1);
+    
+    h  << uMax-uMin, upper_lam;
+    std::cout << "Here is the VectorXf h:\n" << h << std::endl;
+
+    Eigen::RowVector<bool, Eigen::Dynamic> e(m+1);
+    e << true, true, false, true, true;
+
+    Eigen::VectorXi inB(n); // inB 是一个整型向量
+    inB << 0, 1, 3;
+    std::cout << "Here is the VectorXi inB:\n" << inB << std::endl;
+    int errsimp=0;
+    Eigen::VectorXf y0(n);
+    y0.setZero();
+    
+    BoundedRevisedSimplex(A, ct, b, inB, h, e, n, m+1, itlim, y0, errsimp);
+    // outside
+    std::cout << "itlim:\n" << itlim << std::endl;
+    std::cout << "final e:\n" << e  << std::endl;
+    std::cout << "final y0:\n" << y0  << std::endl;
+    std::cout << "final inB:\n" << inB  << std::endl;
+    Eigen::VectorXf xout(m+1);
+    xout.setZero();
+    xout(inB)=y0;
+    std::cout << "Here is the xout:\n" << xout  << std::endl;
+
+    xout=e.transpose().select(xout,-xout+h);
+    std::cout << "reverse xout:\n" << xout  << std::endl;
+
+    if (itlim<=0){
+        errout = 3;
+        std::cout << " Too Many Iterations Finding Final Solution "<< std::endl; 
+    }
+
+    if(errsimp){
+        errout = 1;
+        std::cout << " Solver error "<< std::endl; 
+    }
+       
+   u = xout(Eigen::seq(0,m-1))+uMin;
+
+    if(xout(m)>1){ //Use upper_lam to prevent control surfaces from approaching position limits
+        u /= xout(m);
+    }
+    std::cout << "finally u:\n" << u  << std::endl;
+}
+
 int main(int argc, char **argv)
 {
     std::ifstream file("../../input.csv");
@@ -317,69 +442,10 @@ int main(int argc, char **argv)
     // float u_all[4]={ 0.0,  0.0,   0.0,   0.0};
     // size_t array_size = sizeof(u_all) / sizeof(u_all[0]);
 
-
-
-    // 
-    // Direction Preserving Control Allocation Linear Program
-
-    // function [u, errout] = DP_LPCA(yd,B,uMin,uMax,itlim);
-
-    // Solves the control allocation problem while preserving the
-    // objective direction for unattainable commands. The solution
-    // is found by solving the problem,
-    // min -lambda,
-    // s.t. B*u = lambda*yd, uMin<=u<=uMax, 0<= lambda <=1
-
-    // For yd outside the AMS, the solution returned is that the
-    // maximum in the direction of yd.
-
-    // For yd strictly inside the AMS, the solution achieves
-    // Bu=yd and m-n controls will be at their limits; but there
-    // is no explicit preference to which solution will be 
-    // returned. This limits the usefulness of this routine as
-    // a practical allocator unless preferences for attainable solutions
-    // are handled externally.
-
-    // (For derivation of a similar formulation see A.1.2 and A.2.3 in the
-    // text)
-
-
-    // Inputs:
-    //         yd [n]    = Desired objective
-    //         B [n,m]   = Control Effectiveness matrix
-    //         uMin[m,1] = Lower bound for controls
-    //         uMax[m,1] = Upper bound for controls
-    //         itlim     = Number of allowed iterations limit
-    //                         (Sum of iterations in both branches)
-
-    // Outputs:
-    //         u[m,1]     = Control Solution
-    //         errout     = Error Status code
-    //                         0 = found solution
-    //                         <0 = Error in finding initial basic feasible solution
-    //                         >0 = Error in finding final solution
-    //                         -1,1 = Solver error (unbounded solution)
-    //                         -2   = Initial feasible solution not found
-    //                         -3,3 = Iteration limit exceeded
-    //         itlim      = Number of iterations remaining after solution found
-
-    // Calls:
-    //         simplxuprevsol = Bounded Revised Simplex solver (simplxuprevsol.m)
-
-    // Notes:
-    // If errout ~0 there was a problem in the solution. %
-
-    // Error code < 0 implies an error in the initialization and there is no guarantee on
-    // the quality of the output solution other than the control limits.
-    // Error code > 0 for errors in final solution--B*u is in the correct direction and has
-    // magnitude < yd, but B*u may not equal yd (for yd attainable)
-    // or be maximized (for yd unattainable)
-
-    // Modification History
-    // 2024-03-28      MengChaoHeng  Original
-    int errout=0;
     // for new implement using Eigen
     Eigen::MatrixXf B { {-0.4440,0.0,0.4440,0.0}, {0.0,-0.4440,0.0,0.4440},{0.2070,0.2070,0.2070,0.2070}};
+    int m=B.cols();
+
     std::cout << "Here is the matrix B:\n" << B << std::endl;
     Eigen::VectorXf uMin {{-0.3491, -0.3491, -0.3491, -0.3491}};
     Eigen::VectorXf uMax {{0.3491, 0.3491, 0.3491, 0.3491}};
@@ -387,71 +453,12 @@ int main(int argc, char **argv)
     std::cout << "Here is the VectorXf uMax:\n" << uMax << std::endl;
     Eigen::VectorXf  yd(3);
     yd << -0.2064, 0.3253, 0.3187;
-
     std::cout << "Here is the MatrixXf yd:\n" << yd << std::endl;
-    int m=3;
-    int n=5;
-    Eigen::MatrixXf A(m,n);
-    // yd*=-1;
-    A << B, -yd;
-
-    std::cout << "Here is the MatrixXf A:\n" << A << std::endl;
-    Eigen::VectorXf b= -B * uMin;
-    std::cout << "Here is the VectorXf b:\n" << b << std::endl;
-    Eigen::VectorXf c {{0.0, 0.0, 0.0, 0.0, -1.0}};
-    std::cout << "Here is the VectorXf c:\n" << c << std::endl;
-    Eigen::RowVectorXf ct=c.transpose();
-    Eigen::VectorXf h(n);
+    int itlim = 50; // 这里假设你的迭代次数初始值是50
     float upper_lam = 1e4f;
-    h  << uMax-uMin, upper_lam;
-    std::cout << "Here is the VectorXf h:\n" << h << std::endl;
-
-    Eigen::RowVector<bool, Eigen::Dynamic> e(n);
-    e << true, true, false, true, true;
-
-    Eigen::VectorXi inB(m); // inB 是一个整型向量
-    inB << 0, 1, 3;
-    std::cout << "Here is the VectorXi inB:\n" << inB << std::endl;
-    int errsimp=0;
-    Eigen::VectorXf y0(n);
-    y0.setZero();
-    int itlim = 50; // 这里假设你的迭代次数初始值是100
-    BoundedRevisedSimplex(A, ct, b, inB, h, e, m, n, itlim, y0, errsimp);
-    // outside
-    std::cout << "itlim:\n" << itlim << std::endl;
-    std::cout << "final e:\n" << e  << std::endl;
-    std::cout << "final y0:\n" << y0  << std::endl;
-    std::cout << "final inB:\n" << inB  << std::endl;
-    Eigen::VectorXf xout(n);
-    xout.setZero();
-    xout(inB)=y0;
-    std::cout << "Here is the xout:\n" << xout  << std::endl;
-
-    xout=e.transpose().select(xout,-xout+h);
-    std::cout << "reverse xout:\n" << xout  << std::endl;
-
-
-    if (itlim<=0){
-        errout = 3;
-        std::cout << " Too Many Iterations Finding Final Solution "<< std::endl; 
-    }
-
-    if(errsimp){
-        errout = 1;
-        std::cout << " Solver error "<< std::endl; 
-    }
-       
-    Eigen::VectorXf u_simplxuprevsol = xout(Eigen::seq(0,n-2))+uMin;
-    std::cout << "reverse xout(Eigen::seq(0,n-2)):\n" << xout(Eigen::seq(0,n-2)) << std::endl;
-
-    Eigen::VectorXf u_finally = u_simplxuprevsol;
-    std::cout << "reverse u_simplxuprevsol:\n" << u_simplxuprevsol  << std::endl;
-    if(xout(n-1)>1){ //Use upper_lam to prevent control surfaces from approaching position limits
-        u_finally =u_simplxuprevsol /xout(n-1);
-    }
-    std::cout << "reverse u_finally:\n" << u_finally  << std::endl;
-
-
+    int errout = 0;
+    Eigen::VectorXf u(m);
+    DP_LPCA(yd, B, uMin, uMax, itlim, upper_lam, u, errout);
 
 
 

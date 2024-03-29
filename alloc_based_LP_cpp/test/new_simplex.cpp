@@ -753,8 +753,8 @@ int main(int argc, char **argv)
         // std::cout << std::endl; 
         // 写入CSV文件
         for (size_t i = 0; i < array_size; ++i) {
-            // outFile << u_all[i] << (i < array_size - 1 ? "," : "\n");
-            outFile << u(i) << (i < array_size - 1 ? "," : "\n");
+            outFile << u_all[i] << (i < array_size - 1 ? "," : "\n");
+            // outFile << u(i) << (i < array_size - 1 ? "," : "\n");
         }
     }
     // 关闭文件

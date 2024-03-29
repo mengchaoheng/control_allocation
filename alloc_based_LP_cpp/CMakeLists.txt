@@ -18,6 +18,8 @@ include_directories(${CMAKE_SOURCE_DIR}/src/LPwrap) # 如果您有其他的头�
 # 查找Eigen库并包含它
 find_package(Eigen3 REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIR})
+# or
+# include_directories(/usr/local/Cellar/eigen/3.4.0_1/include/eigen3)
 
 # 添加子目录alglib
 add_subdirectory(alglib)
@@ -29,7 +31,7 @@ add_executable(LPwrap_test test/LPwrap_test.cpp src/LPwrap/allocator_dir_LPwrap_
 add_executable(new_simplex test/new_simplex.cpp src/LPwrap/allocator_dir_LPwrap_4.c src/LPwrap/rt_nonfinite.c)
 
 # 添加链接的库
-target_link_libraries(MyExecutable Eigen3::Eigen alglib)
+target_link_libraries(MyExecutable alglib)
 target_link_libraries(minlp_basic alglib)
 target_link_libraries(LPwrap_test alglib)
-target_link_libraries(new_simplex Eigen3::Eigen alglib)
+target_link_libraries(new_simplex  alglib)

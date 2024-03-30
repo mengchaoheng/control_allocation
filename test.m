@@ -20,7 +20,7 @@ load 'input.mat'; % get unit_vector and the len_command_px4 (len_command_px4 is 
 %% setup ACA
 global NumU
 NumU=m;
-LPmethod=3; % LPmethod should be an integer between 0 and 5. when LPmethod=2 set upper of lambda to Inf can't save this method!!! but big number is the same as that based linprog
+LPmethod=2; % LPmethod should be an integer between 0 and 5. when LPmethod=2 set upper of lambda to Inf can't save this method!!! but big number is the same as that based linprog
 INDX=ones(1,m);  % active effectors
 IN_MAT = [B     zeros(k,1)
           umin' 0
@@ -52,11 +52,11 @@ x_dir_alloc_linprog_re_bound=zeros(m,N);
 x_use_LP_lib=zeros(m,N);
 
 %% simulate flight process  
-for i=1:N
+for i=1:2%N
     
-    IN_MAT(1:3,end) = v(:,i); 
+    IN_MAT(1:3,end) = [0.1 0.2 0.3];%v(:,i); 
 
-    u = LPwrap(IN_MAT); % function of ACA lib
+    u = LPwrap(IN_MAT) % function of ACA lib
     x_LPwrap(:,i) = Constrain(u,umin,umax);
     % 
     % u= CGIwrap(IN_MAT);

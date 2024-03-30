@@ -24,16 +24,36 @@ extern "C" {
                             float u[4], float *z, unsigned int *iters);
 }
 
+void setdiff(int inB[], int m, int n, int inD[]) {
+    int k = 0;
+    bool found;
+    for (int i = 1; i <= n; ++i) {
+        found = false;
+        for (int j = 0; j < m; ++j) {
+            if (inB[j] == i) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            inD[k++] = i;
+        }
+    }
+}
+int* generateSequence(int i, int n) {
+    int* result = new int[n - i + 1]; // 动态分配数组内存
+
+    for (int num = i, index = 0; num <= n; ++num, ++index) {
+        result[index] = num;
+    }
+
+    return result;
+}
+
+
+
 int main(int argc, char **argv)
 {
-
-    // test data
-    float data1[] = {1,2,3,4,5};
-    float data2[] = {6,7,8,9,10};
-    Vector<float, 5> v1(data1);
-    Vector<float, 5> v2(data2);
-
-    v2.print();
     std::ifstream file("../../input.csv");
     std::vector<std::vector<double> > data;
     std::string line;
@@ -110,7 +130,614 @@ int main(int argc, char **argv)
     float u_all[4]={ 0.0,  0.0,   0.0,   0.0};
     size_t array_size = sizeof(u_all) / sizeof(u_all[0]);
     //===========================
-    for(int i=0;i<num;i++)
+    // for alloc_based_matrix
+    // 注意 int& itlim，在多次调用时注意值的设置。
+    // Solves the linear program:
+    //      minimize c'y 
+    //      subject to 
+    //      Ay = b
+    //      0<= y <= h
+    const int m=3;
+    const int n=5;
+    int inB[m]= {0, 1, 3};
+    float tol=1e-7;
+    int n_m=n-m;
+    int* nind = generateSequence(0, n_m-1);
+    int* ind_all = generateSequence(0, n-1);
+    int inD[n-m]; 
+    int itlim=100;
+    float A[m][n];
+    float b[m];
+    float c[n];
+    float h[n+1];
+    float yd[m]{0.1, 0.2, 0.3};
+    bool e[n]={true, true, false, true, true};;
+    float upper_lam=1e4;
+    for(int i=0; i<m; ++i)
+    {
+        float temp=0;
+        for(int j=0; j<n-1; ++j)
+        {
+            A[i][j] =_B[i][j];
+            temp +=-_B[i][j]*_uMin[j];
+        }
+        A[i][n-1] =-yd[i];
+        b[i] = temp;
+    }
+    std::cout << "A:" << std::endl;
+    for (size_t i = 0; i < m; ++i) {
+        for (size_t j = 0; j < n; ++j) {
+            std::cout << A[i][j] << " ";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << "b: [";
+    for (size_t i = 0; i < m; ++i) {
+        std::cout << b[i];
+        if (i < m - 1) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << "]" << std::endl;
+
+    for(int i=0; i<n-1; ++i)
+    {
+        c[i] =0;
+    }
+    c[n-1] =-1;
+    std::cout << "c: [";
+    for (size_t i = 0; i < n; ++i) {
+        std::cout << c[i];
+        if (i < n - 1) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << "]" << std::endl;
+
+    for(int i=0; i<n; ++i)
+    {
+        h[i] =_uMax[i]-_uMin[i];
+    }
+    h[n-1]=upper_lam;
+    std::cout << "h: [";
+    for (size_t i = 0; i < n; ++i) {
+        std::cout << h[i];
+        if (i < n - 1) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << "]" << std::endl;
+
+
+    
+    setdiff(inB, m, n, inD);
+    std::cout << "inB: [";
+    for (size_t i = 0; i < m; ++i) {
+        std::cout << inB[i];
+        if (i < m - 1) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << "]" << std::endl;
+
+    std::cout << "inD: [";
+    for (size_t i = 0; i <n- m; ++i) {
+        std::cout << inD[i];
+        if (i < n-m - 1) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << "]" << std::endl;
+
+    for(int i=0; i<m; ++i)
+    {
+        for(int j=0; j<n; ++j)
+        {
+            if(!e[j])
+            {
+                A[i][j] *=-1;
+                b[i]+=A[i][j]*h[j];
+            }
+        }
+    }
+    std::cout << "e: [";
+    for (size_t i = 0; i < n; ++i) {
+        std::cout << e[i];
+        if (i < n - 1) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << "]" << std::endl;
+    for(int j=0; j<n; ++j)
+    {
+        if(!e[j])
+        {
+            c[j] *=-1;
+        }
+    }
+    std::cout << "A:" << std::endl;
+    for (size_t i = 0; i < m; ++i) {
+        for (size_t j = 0; j < n; ++j) {
+            std::cout << A[i][j] << " ";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << "b: [";
+    for (size_t i = 0; i < m; ++i) {
+        std::cout << b[i];
+        if (i < m - 1) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << "]" << std::endl;
+    std::cout << "c: [";
+    for (size_t i = 0; i < n; ++i) {
+        std::cout << c[i];
+        if (i < n - 1) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << "]" << std::endl;
+
+
+    //==============================
+    matrix::SquareMatrix<float, 3> A_inB;
+    matrix::Matrix<float, m, n-m> A_inD;
+    matrix::Vector<float, m> c_inB;
+    matrix::Vector<float, n-m> c_inD;
+    for(int i=0; i<m; ++i)
+    {
+        for(int j=0; j<m; ++j)
+        {
+            A_inB(i,j)=A[i][inB[j]];
+            if(j<n-m)
+            {
+                A_inD(i,j)=A[i][inD[j]];
+            }
+        }
+        c_inB(i)=c[inB[i]];
+    }
+    for(int i=0; i<n-m; ++i)
+    {
+        c_inD(i)=c[inD[i]];
+    }
+    matrix::Vector<float, m> b_vec(b);
+    std::cout << "A_inB:";
+    A_inB.print();
+    std::cout << "A_inD:";
+    A_inD.print();
+    std::cout << "c_inB:";
+    c_inB.T().print();
+    std::cout << "c_inD:";
+    c_inD.T().print();
+    std::cout << "b_vec:";
+    b_vec.T().print();
+    //===============================
+    //  %Initial Solution
+    
+    matrix::Vector<float, 3> y0 = inv(A_inB)*b_vec;
+    std::cout << "y0:";
+    y0.transpose().print();
+    bool done = false;
+    bool unbounded = false;
+    std::cout << "while1 inB: [";
+            for (size_t i = 0; i < m; ++i) {
+                std::cout << inB[i];
+                if (i < m - 1) {
+                    std::cout << ", ";
+                }
+            }
+            std::cout << "]" << std::endl;
+    while ((!done  || !unbounded ) && (itlim > 0))
+    {
+        std::cout << "while2 inB: [";
+            for (size_t i = 0; i < m; ++i) {
+                std::cout << inB[i];
+                if (i < m - 1) {
+                    std::cout << ", ";
+                }
+            }
+            std::cout << "]" << std::endl;
+
+            
+        inB[0]=0;
+        itlim = itlim-1;
+        Matrix<float, 1UL, m> lamt= (inv(A_inB).transpose()*c_inB).transpose();
+        Matrix<float, 1UL, n-m> rdt = c_inD.transpose()-lamt*A_inD;
+        std::cout << "lamt:";
+        lamt.T().print();
+        std::cout << "rdt:";
+        rdt.T().print();
+        float minr;
+        size_t qind;
+        min(rdt.transpose(), minr, qind);
+        std::cout << "Here is the minr:\n" << minr << std::endl;
+        std::cout << "Here is the qind:\n" << qind << std::endl;
+        if(minr >=0)  // If all relative costs are positive then the solution is optimal
+        { 
+            done = true;
+            break;
+        }
+        int qel = inD[qind];  // Unknown to Enter the basis minimizes relative cost
+        std::cout << "Here is the qel:\n" << qel << std::endl;
+        float vec_data[3] ={A[0][qel], A[1][qel], A[2][qel]};
+        matrix::Vector<float, m> A_qel(vec_data);
+        matrix::Vector<float, m> yq=inv(A_inB)* A_qel; // Vector to enter in terms of the current Basis vector
+        std::cout << "yq:";
+        yq.T().print();
+        bool flag=false;
+        for(int i=0;i<m;++i){
+            if(std::abs(yq(i)) > tol)
+            {
+                flag = true; // Check this condition
+                break;
+            }
+        }
+        if(!flag)
+        {
+            unbounded = true; // Check this condition
+            break;
+        }
+        // Recompute rations and determine variable to leave
+        matrix::Vector<float, m> rat;
+        float hinB[m];
+        for(int i=0;i<m;++i)
+        {
+            if(std::abs(yq(i))>tol)
+            {
+                rat(i)=y0(i)/yq(i);
+                
+            }
+            else
+            {
+                rat(i)=INFINITY;
+                /* code */
+            }
+        }
+        std::cout << "rat = y0./yq;  rat:";
+        rat.T().print();
+
+        
+
+
+        for(int i=0;i<m;++i)
+        {
+            hinB[i]=h[inB[i]];
+            if(yq(i)<0)
+            {                    
+                rat(i)-=hinB[i]/yq(i);
+            }
+        }
+        std::cout << "rat:";
+        rat.T().print();
+         // Variable to exit is moving to its minimum value--Note that min returns the lowest index minimum
+        float minrat=rat(0);
+        size_t p=0;
+        min(rat, minrat, p);
+        std::cout << "Here is the minrat:\n" << minrat << std::endl;
+        std::cout << "Here is the p:\n" << p << std::endl;
+        // If the minimum ratio is zero, then the solution is degenerate and the entering
+        // variable will not change the basis---invoke Bland's selection rule to avoid
+        // cycling.
+        
+        if (std::abs(minrat) <= tol)
+        {
+            //Find negative relative cost
+            for(int i=0;i<n-m;++i)
+            {
+                if(rdt(1,i)<0){ //Note that since minr <0 indm is not empty   
+                    qind=nind[i];
+                    qel = inD[qind];//Unknown to Enter the basis is first indexed to avoid cycling
+                    break;
+                }
+            }
+            A_qel(0)=A[0][qel];
+            A_qel(1)=A[1][qel];
+            A_qel(2)=A[2][qel];
+            std::cout << "A_qel:";
+            A_qel.print();
+            yq=inv(A_inB)* A_qel;
+            std::cout << "yq:";
+            yq.T().print();
+            bool flag=false;
+            for(int i=0;i<m;++i){
+                if(std::abs(yq(i)) > tol)
+                {
+                    flag = true; // Check this condition
+                    break;
+                }
+            }
+            if(!flag)
+            {
+                unbounded = true; // Check this condition
+                // break;
+            }
+            // Recompute rations and determine variable to leave
+            // Recompute rations and determine variable to leave
+            float hinB[m];
+            for(int i=0;i<m;++i)
+            {
+                hinB[i]=h[inB[i]];
+                if(std::abs(yq(i))>tol)
+                {
+                    rat(i)=y0(i)/yq(i);
+                    if(yq(i)<0)
+                    {                    
+                        rat(i)-=hinB[i]/yq(i);
+                    }
+                }
+                else
+                {
+                    rat(i)=INFINITY;
+                    /* code */
+                }
+            }
+            std::cout << "rat:";
+            rat.T().print();
+            // Variable to exit is moving to its minimum value--Note that min returns the lowest index minimum
+            minrat=rat(0);
+            p=0;
+            min(rat, minrat, p);
+            std::cout << "Here is the minrat:\n" << minrat << std::endl;
+            std::cout << "Here is the p:\n" << p << std::endl;
+        }
+        if (minrat >= h[qel])
+        {
+            std::cout << " Case 1 "<< std::endl; 
+            e[qel] =!e[qel];
+            for(int i=0; i<m; ++i)
+            {
+                A[i][qel] *= -1;
+                b_vec(i)+=A[i][qel]*h[qel];
+            }
+            std::cout << "Here is the e[qel]:\n" << e[qel] << std::endl;
+            std::cout << "A:" << std::endl;
+            for (size_t i = 0; i < m; ++i) {
+                for (size_t j = 0; j < n; ++j) {
+                    std::cout << A[i][j] << " ";
+                }
+                std::cout << std::endl;
+            }
+            std::cout << "b_vec:";
+            b_vec.T().print();
+            c[qel] *= -1;
+            std::cout << "Here is the c[qel]:\n" << c[qel] << std::endl;
+
+        }
+        else if(yq(p) > 0)
+        {
+            std::cout << " Case 21 "<< std::endl; 
+            int pel = inB[p];
+            std::cout << "Here is the pel:\n" << pel << std::endl;
+            inB[p]= qel;
+            std::cout << "Here is the qel:\n" << qel << std::endl;
+            inD[qind]= pel;
+            std::cout << "Here is the inD[qind]:\n" << inD[qind] << std::endl;
+
+            // update x_inX
+            for(int i=0; i<m; ++i)
+            {
+                A_inB(i,p)=A[i][qel];
+            }
+            std::cout << "A_inB:";
+            A_inB.print();
+            
+            for(int i=0; i<n-m; ++i)
+            {
+                c_inB(p)=c[qel];
+            }
+            std::cout << "A_inB:";
+            A_inB.print();
+
+
+            for(int i=0; i<m; ++i)
+            {
+                A_inD(i,qind)=A[i][pel];
+            }
+            std::cout << "A_inB:";
+            A_inD.print();
+            
+            for(int i=0; i<n-m; ++i)
+            {
+                c_inD(qind)=c[pel];
+            }
+            std::cout << "A_inB:";
+            A_inD.print();
+
+
+        }
+        else
+        {
+            std::cout << " Case 22 "<< std::endl; 
+            int pel = inB[p];
+            std::cout << "Here is the p:\n" << p << std::endl;
+            std::cout << "inB: [";
+            for (size_t i = 0; i < m; ++i) {
+                std::cout << inB[i];
+                if (i < m - 1) {
+                    std::cout << ", ";
+                }
+            }
+            std::cout << "]" << std::endl;
+            std::cout << "Here is the pel:\n" << pel << std::endl;
+            e[pel]=!e[pel];
+            for(int i=0; i<m; ++i)
+            {
+                A[i][pel] *= -1;
+                b_vec(i)+=A[i][pel]*h[pel];
+            }
+            std::cout << "b_vec:";
+            b_vec.T().print();
+            inB[p]= qel;
+            std::cout << "inB: [";
+            for (size_t i = 0; i < m; ++i) {
+                std::cout << inB[i];
+                if (i < m - 1) {
+                    std::cout << ", ";
+                }
+            }
+            std::cout << "]" << std::endl;
+
+            std::cout << "Here is the qel:\n" << qel << std::endl;
+            inD[qind]= pel;
+            std::cout << "inD: [";
+            for (size_t i = 0; i < n-m; ++i) {
+                std::cout << inD[i];
+                if (i < n-m - 1) {
+                    std::cout << ", ";
+                }
+            }
+            std::cout << "]" << std::endl;
+
+
+            c[pel] *= -1;
+
+            // update x_inX
+            for(int i=0; i<m; ++i)
+            {
+                A_inB(i,p)=A[i][qel];
+            }
+            std::cout << "A_inB:";
+            A_inB.print();
+            
+            for(int i=0; i<n-m; ++i)
+            {
+                c_inB(p)=c[qel];
+            }
+            std::cout << "c_inB:";
+            c_inB.print();
+
+
+            for(int i=0; i<m; ++i)
+            {
+                A_inD(i,qind)=A[i][pel];
+            }
+            std::cout << "A_inD:";
+            A_inD.print();
+            
+            for(int i=0; i<n-m; ++i)
+            {
+                c_inD(qind)=c[pel];
+            }
+            std::cout << "c_inD:";
+            c_inD.print();
+
+
+
+        }
+        
+
+
+
+
+        y0=inv(A_inB)* b_vec;
+        std::cout << "y0:";
+        y0.T().print();
+    }
+    bool errout = unbounded;  
+    int err = 0;
+    float xout[n];
+    for(int i=0;i<n;++i){
+        xout[i]=0;
+    }
+    for(int i=0;i<m;++i){
+        xout[inB[i]]=y0(i);
+    }
+    std::cout << "inB: [";
+    for (size_t i = 0; i < m; ++i) {
+        std::cout << inB[i];
+        if (i < m - 1) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << "]" << std::endl;
+    std::cout << "y0:";
+    y0.T().print();
+    std::cout << "xout_y0: [";
+    for (size_t i = 0; i < n; ++i) {
+        std::cout << xout[i];
+        if (i < n - 1) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << "]" << std::endl;
+    
+
+    for(int i=0;i<n;++i){
+        if(!e[i]){
+            xout[i]=-xout[i]+h[i];
+        }
+    }
+    std::cout << "h: [";
+    for (size_t i = 0; i < n; ++i) {
+        std::cout << h[i];
+        if (i < n - 1) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << "]" << std::endl;
+    std::cout << "e: [";
+    for (size_t i = 0; i < n; ++i) {
+        std::cout << e[i];
+        if (i < n - 1) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << "]" << std::endl;
+
+    std::cout << "xout_h: [";
+    for (size_t i = 0; i < n; ++i) {
+        std::cout << xout[i];
+        if (i < n - 1) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << "]" << std::endl;
+
+
+    if(itlim<=0){
+        err = 3;
+        std::cout << "Too Many Iterations Finding Final Solution"<< std::endl; 
+    }
+	if(errout)
+    {
+        err = 1;
+        std::cout << "Solver error"<< std::endl;
+    }
+    float u_px4_matrix[n-1];
+    for(int i=0;i<n-1;++i){
+        u_px4_matrix[i]=xout[i]+_uMin[i];
+    }
+    std::cout << "u_px4_matrix: [";
+    for (size_t i = 0; i < n-1; ++i) {
+        std::cout << u_px4_matrix[i];
+        if (i < n - 2) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << "]" << std::endl;
+
+
+
+    
+    if(xout[n-1]>1){
+        for(int i=0;i<n-1;++i){
+            u_px4_matrix[i]/=xout[n-1];
+        }
+        std::cout << "Here is the pxout[n-1]el:\n" << xout[n-1] << std::endl;
+    }
+
+    std::cout << "u_px4_matrix: [";
+    for (size_t i = 0; i < n-1; ++i) {
+        std::cout << u_px4_matrix[i];
+        if (i < n-2) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << "]" << std::endl;
+
+	// main loop
+    for(int i=0;i<1;i++)
 	{
         float y_all[3]={(float) data[i][0],  (float) data[i][1],   (float) data[i][2]};
         float z_all= 0.0;

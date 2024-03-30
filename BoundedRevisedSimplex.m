@@ -1,4 +1,4 @@
-function [y0, inB, e,itlim,errout] = BoundedRevisedSimplex(A,ct,b,inB,h,e,m,n,itlim)
+function [y0, inB, e,errout] = BoundedRevisedSimplex(A,ct,b,inB,h,e,m,n,itlim)
 %  Bounded Revised Simplex
 %
 %function [yout, inBout,bout, itout,errout] = simplxuprevsol(A,ct,b,inB,inD,h,e,m,n,itlim)
@@ -166,6 +166,6 @@ while (~done  || ~unbounded ) && (itlim > 0)
      end
         
     y0 = A(:,inB)\b; % Compute new Basic solution;
-end
+end           
 errout = unbounded;     
 end

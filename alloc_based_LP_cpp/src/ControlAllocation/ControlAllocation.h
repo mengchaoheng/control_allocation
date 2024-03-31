@@ -1,5 +1,7 @@
 
 #include <matrix/math.hpp>
+#include <iostream>
+
 using namespace matrix;
 // 定义线性规划问题结构体
 template<int M, int N>
@@ -105,7 +107,23 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
     }
     std::cout << "]" << std::endl;
 
+    std::cout << "c: [";
+    for (size_t i = 0; i < N; ++i) {
+        std::cout << problem.c[i];
+        if (i < N - 1) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << "]" << std::endl;
 
+    std::cout << "h: [";
+    for (size_t i = 0; i < N; ++i) {
+        std::cout << problem.h[i];
+        if (i < N- 1) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << "]" << std::endl;
 
     //
 
@@ -354,6 +372,7 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
         y0=inv(A_inB)* b_vec;
     }
     result.errout = unbounded; 
+    y0.print();
     // 设置 result.y0, result.inB, result.e 等结果
     for(int i=0; i<M; ++i)
     {
@@ -523,7 +542,7 @@ public:
         // 在此初始化成员变量，或者留空
     }
     // 参数列表构造函数
-    ControlAllocatorBase(const Aircraft<ControlSize, EffectSize>& aircraft, float generalizedMoment[ControlSize]) {
+    ControlAllocatorBase(const Aircraft<ControlSize, EffectSize-1>& aircraft, float generalizedMoment[ControlSize]) {
         // 在此初始化成员变量，可以使用传入的参数值
         this->aircraft = aircraft;
         for (int i = 0; i < ControlSize; ++i) {
@@ -534,7 +553,7 @@ public:
     virtual float*  allocateControl(float generalizedMoment[ControlSize]) = 0;
 
     // 其他数学函数和成员变量定义
-    Aircraft<ControlSize, EffectSize> aircraft;// 构造函数设置
+    Aircraft<ControlSize, EffectSize-1> aircraft;// 构造函数设置
     float generalizedMoment[ControlSize];// 构造函数设置
 };
 // 控制分配类模板
@@ -545,10 +564,28 @@ private:
 public:
     // 构造函数, 利用aircraft 预设置 LinearProgrammingSolver 和 LinearProgrammingProblem
     // 构造函数
-    DP_LP_ControlAllocator(const Aircraft<ControlSize, EffectSize>& aircraft, float generalizedMoment[ControlSize])
+    DP_LP_ControlAllocator(const Aircraft<ControlSize, EffectSize-1>& aircraft, float generalizedMoment[ControlSize])
         : ControlAllocatorBase<ControlSize, EffectSize>(aircraft, generalizedMoment){
         // 在此处初始化其他成员变量 DP_LPCA_problem 和 Pre_DP_LPCA_problem 
         // 线性规划数据
+        upper_lam=1e4;
+        float _B[3][4] = { {-0.4440,0.0,0.4440,0.0}, {0.0,-0.4440,0.0,0.4440},{0.2070,0.2070,0.2070,0.2070}};
+    float _B_array[12];
+    for (int i = 0; i < 3; i++)
+    {
+        for(int j=0;j<4;j++)
+        {
+            _B_array[i+3*j] = _B[i][j];
+        }
+    }
+    float _uMin[4] ={};
+    float _uMax[4] ={};
+    for (int i = 0; i < 4; i++)
+    {
+        _uMin[i] =  -0.3491;
+        _uMax[i] =  0.3491;
+    }
+    float yd[3]={0.2, -0.1, 0.1};
         DP_LPCA_problem.itlim = 100;
         //填数据
         DP_LPCA_problem.inB[0]=0;
@@ -566,11 +603,11 @@ public:
             float temp=0;
             for(int j=0; j<DP_LPCA_problem.n-1; ++j)
             {
-                DP_LPCA_problem.A[i][j] =aircraft.controlEffectMatrix[i][j];
-                temp +=-aircraft.controlEffectMatrix[i][j]*aircraft.lowerLimits[j];
+                DP_LPCA_problem.A[i][j] =_B[i][j];
+                temp +=-_B[i][j]*_uMin[j];
             }
-            DP_LPCA_problem.A[i][DP_LPCA_problem.n-1] =-generalizedMoment[i]; // will be change in the loop
-            this->aircraft.generalizedMoment[i]=generalizedMoment[i];
+            DP_LPCA_problem.A[i][DP_LPCA_problem.n-1] =-yd[i]; // will be change in the loop
+            this->aircraft.generalizedMoment[i]=yd[i];
             DP_LPCA_problem.b[i] = temp;
         }
         for(int i=0; i<DP_LPCA_problem.n-1; ++i)
@@ -580,12 +617,50 @@ public:
         DP_LPCA_problem.c[DP_LPCA_problem.n-1] =-1;
         for(int i=0; i<DP_LPCA_problem.n; ++i)
         {
-            DP_LPCA_problem.h[i] =aircraft.upperLimits[i]-aircraft.lowerLimits[i];
+            DP_LPCA_problem.h[i] =_uMax[i]-_uMin[i];
         }
-        DP_LPCA_problem.h[DP_LPCA_problem.n-1]=upper_lam;
+        DP_LPCA_problem.h[DP_LPCA_problem.n-1]=1e4;
             // 
-            upper_lam=1e4;
+            
+
+            std::cout << "DP_LPCA_problem A:" << std::endl;
+        for (size_t i = 0; i < DP_LPCA_problem.m; ++i) {
+            for (size_t j = 0; j < DP_LPCA_problem.n; ++j) {
+                std::cout << DP_LPCA_problem.A[i][j] << " ";
+            }
+            std::cout << std::endl;
         }
+        std::cout << "DP_LPCA_problem b: [";
+        for (size_t i = 0; i < DP_LPCA_problem.m; ++i) {
+            std::cout << DP_LPCA_problem.b[i];
+            if (i < DP_LPCA_problem.m - 1) {
+                std::cout << ", ";
+            }
+        }
+        std::cout << "]" << std::endl;
+
+        std::cout << "DP_LPCA_problem c: [";
+        for (size_t i = 0; i < DP_LPCA_problem.n; ++i) {
+            std::cout << DP_LPCA_problem.c[i];
+            if (i < DP_LPCA_problem.n - 1) {
+                std::cout << ", ";
+            }
+        }
+        std::cout << "]" << std::endl;
+
+        std::cout << "DP_LPCA_problem h: [";
+        for (size_t i = 0; i < DP_LPCA_problem.n; ++i) {
+            std::cout << DP_LPCA_problem.h[i];
+            if (i < DP_LPCA_problem.n- 1) {
+                std::cout << ", ";
+            }
+        }
+        std::cout << "]" << std::endl;
+        }
+
+        
+
+
 
     // 设置算法参数函数
 
@@ -602,10 +677,12 @@ public:
         // DP_LPCA（generalizedMoment, aircraft） 
         // DP_LPCA函数利用飞行器数据，将分配问题描述为DP_LP问题并用BoundedRevisedSimplex求解
         // 使用模版函数result = BoundedRevisedSimplex(problem);
-        this->DP_LPCA_problem.A[0][DP_LPCA_problem.n-1]=-generalizedMoment[0];
-        this->DP_LPCA_problem.A[1][DP_LPCA_problem.n-1]=-generalizedMoment[1];
-        this->DP_LPCA_problem.A[2][DP_LPCA_problem.n-1]=-generalizedMoment[2];
-        auto result = BoundedRevisedSimplex(this->DP_LPCA_problem);
+        
+        DP_LPCA_problem.A[0][DP_LPCA_problem.n-1]=-generalizedMoment[0];
+        DP_LPCA_problem.A[1][DP_LPCA_problem.n-1]=-generalizedMoment[1];
+        DP_LPCA_problem.A[2][DP_LPCA_problem.n-1]=-generalizedMoment[2];
+        
+        auto result = BoundedRevisedSimplex(DP_LPCA_problem);
         // for(int i==0;i<ControlSize;++i)
         // {
         //     control[i]=result
@@ -620,15 +697,6 @@ public:
         for(int i=0;i<DP_LPCA_problem.m;++i){
             xout[result.inB[i]]=result.y0[i];
         }
-        std::cout << "result.y0: [";
-    for (size_t i = 0; i < DP_LPCA_problem.n-1; ++i) {
-        std::cout << result.y0[i];
-        if (i < DP_LPCA_problem.n-2) {
-            std::cout << ", ";
-        }
-    }
-    std::cout << "]" << std::endl;
-
         for(int i=0;i<DP_LPCA_problem.n;++i){
             if(!result.e[i]){
                 xout[i]=-xout[i]+DP_LPCA_problem.h[i];
@@ -643,12 +711,12 @@ public:
             err = 1;
             std::cout << "Solver error"<< std::endl;
         }
-        for(int i=0;i<ControlSize;++i){
-            control[i]=xout[i]+this->aircraft.lowerLimits[i];
+        for(int i=0;i<4;++i){
+            control[i]=xout[i]-0.3491;
         }
-        if(xout[ControlSize]>1){
-            for(int i=0;i<ControlSize;++i){
-                control[i]/=xout[ControlSize];
+        if(xout[4]>1){
+            for(int i=0;i<4;++i){
+                control[i]/=xout[4];
             }
         }
 
@@ -656,8 +724,8 @@ public:
     }
 
     // 其他成员函数和成员变量定义
-    LinearProgrammingProblem<ControlSize, EffectSize+1> DP_LPCA_problem;// 提前设置 using aircraft
-    LinearProgrammingProblem<ControlSize, EffectSize+4> Pre_DP_LPCA_problem;// 提前设置 using aircraft
+    LinearProgrammingProblem<ControlSize, EffectSize> DP_LPCA_problem;// 提前设置 using aircraft
+    LinearProgrammingProblem<ControlSize, EffectSize> Pre_DP_LPCA_problem;// 提前设置 using aircraft
 
     float upper_lam;
 

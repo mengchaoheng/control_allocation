@@ -1,10 +1,11 @@
 #include <iostream>
 #include <matrix/math.hpp>
+#include"ControlAllocation.h"
+
 using namespace matrix;
 // 定义线性规划问题结构体
 template<int M, int N>
 struct LinearProgrammingProblem {
-    
     int m=M;
     int n=N;
     int inB[M];
@@ -42,7 +43,7 @@ struct LinearProgrammingProblem {
 
         return result;
     }
-    
+
 };
 
 // 定义结果结构体
@@ -333,6 +334,12 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
 
 int main() {
     //飞机数据
+    // 示例代码
+    // 使用模板类时，可以指定 ControlSize 和 EffectSize 的具体值
+    // 例如：
+    Aircraft<3, 5> aircraft; // 创建一个具有 3 个操纵向量和 5 个广义力矩的飞行器对象
+    ControlAllocator<3, 5> allocator; // 创建一个控制分配器对象，用于具有 3 个操纵向量和 5 个广义力矩的飞行器
+    // 然后可以使用飞行器对象和控制分配器对象进行操作
     const float _B[3][4] = { {-0.4440,0.0,0.4440,0.0}, {0.0,-0.4440,0.0,0.4440},{0.2070,0.2070,0.2070,0.2070}};
     float _B_array[12];
     for (int i = 0; i < 3; i++)

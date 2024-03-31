@@ -13,6 +13,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
 
 # 添加头文件搜索路径
 include_directories(${CMAKE_SOURCE_DIR}/alglib)
+include_directories(${CMAKE_SOURCE_DIR}/src/ControlAllocation) # 如果您有其他的头文件目录
 include_directories(${CMAKE_SOURCE_DIR}/src/LPwrap) # 如果您有其他的头文件目录
 
 # 查找Eigen库并包含它

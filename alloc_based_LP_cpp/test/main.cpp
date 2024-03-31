@@ -3,60 +3,6 @@
 #include"ControlAllocation.h"
 
 using namespace matrix;
-// 定义线性规划问题结构体
-template<int M, int N>
-struct LinearProgrammingProblem {
-    int m=M;
-    int n=N;
-    int inB[M];
-    int inD[N-M];
-    int itlim;
-    float A[M][N];
-    float b[N];
-    float c[N];
-    float h[N];
-    bool e[N];
-    // 函数用于计算两个正整数集合的差
-    void setdiff(int setA[], int sizeA, int setB[], int sizeB, int result[]) {
-        int sizeResult = 0;
-        for (int i = 0; i < sizeA; ++i) {
-            bool foundInB = false;
-            // 检查当前 setA 中的元素是否在 setB 中
-            for (int j = 0; j < sizeB; ++j) {
-                if (setA[i] == setB[j]) {
-                    foundInB = true;
-                    break;
-                }
-            }
-            // 如果当前元素不在 setB 中，则将其添加到结果中
-            if (!foundInB) {
-                result[sizeResult++] = setA[i];
-            }
-        }
-    }
-    int* generateSequence(int i, int n) {
-        int* result = new int[n - i + 1]; // 动态分配数组内存
-
-        for (int num = i, index = 0; num <= n; ++num, ++index) {
-            result[index] = num;
-        }
-
-        return result;
-    }
-
-};
-
-// 定义结果结构体
-template<int M, int N>
-struct LinearProgrammingResult {
-    float y0[M];
-    int inB[M];
-    bool e[N];
-    int itlim;
-    bool errout;
-    // 其他结果成员
-};
-
 
 
 // 定义函数模板
@@ -333,14 +279,9 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
 
 
 int main() {
-    //飞机数据
-    // 示例代码
-    // 使用模板类时，可以指定 ControlSize 和 EffectSize 的具体值
-    // 例如：
-    Aircraft<3, 5> aircraft; // 创建一个具有 3 个操纵向量和 5 个广义力矩的飞行器对象
-    ControlAllocator<3, 5> allocator; // 创建一个控制分配器对象，用于具有 3 个操纵向量和 5 个广义力矩的飞行器
-    // 然后可以使用飞行器对象和控制分配器对象进行操作
-    const float _B[3][4] = { {-0.4440,0.0,0.4440,0.0}, {0.0,-0.4440,0.0,0.4440},{0.2070,0.2070,0.2070,0.2070}};
+    
+    
+    float _B[3][4] = { {-0.4440,0.0,0.4440,0.0}, {0.0,-0.4440,0.0,0.4440},{0.2070,0.2070,0.2070,0.2070}};
     float _B_array[12];
     for (int i = 0; i < 3; i++)
     {
@@ -356,6 +297,13 @@ int main() {
         _uMin[i] =  -0.3491;
         _uMax[i] =  0.3491;
     }
+    float yd[3]={0.2, -0.1, 0.1};
+    //飞机数据
+    // 示例代码
+    // 使用模板类时，可以指定 ControlSize 和 EffectSize 的具体值
+    // 例如：
+    float l1=0.148;float l2=0.069;float k_v=3;
+    Aircraft<3, 4> df_4(_B, 0.3491, 0.3491); // 创建一个具有 3 个操纵向量和 5 个广义力矩的飞行器对象
     // 分配器数据：
 
     // 线性规划数据
@@ -371,7 +319,7 @@ int main() {
     problem.e[2] = false;
     problem.e[3] = true;
     problem.e[4] = true;
-    float yd[3]={0.2, -0.1, 0.1};
+    
     float upper_lam=1e4;
     for(int i=0; i<problem.m; ++i)
     {

@@ -24,19 +24,21 @@ extern "C" {
                             float u[4], float *z, unsigned int *iters);
 }
 
-void setdiff(int inB[], int m, int n, int inD[]) {
-    int k = 0;
-    bool found;
-    for (int i = 1; i <= n; ++i) {
-        found = false;
-        for (int j = 0; j < m; ++j) {
-            if (inB[j] == i) {
-                found = true;
+// 函数用于计算两个正整数集合的差
+void setdiff(int setA[], int sizeA, int setB[], int sizeB, int result[], int& sizeResult) {
+    sizeResult = 0;
+    for (int i = 0; i < sizeA; ++i) {
+        bool foundInB = false;
+        // 检查当前 setA 中的元素是否在 setB 中
+        for (int j = 0; j < sizeB; ++j) {
+            if (setA[i] == setB[j]) {
+                foundInB = true;
                 break;
             }
         }
-        if (!found) {
-            inD[k++] = i;
+        // 如果当前元素不在 setB 中，则将其添加到结果中
+        if (!foundInB) {
+            result[sizeResult++] = setA[i];
         }
     }
 }
@@ -137,6 +139,7 @@ int main(int argc, char **argv)
     //      subject to 
     //      Ay = b
     //      0<= y <= h
+    auto start = std::chrono::high_resolution_clock::now();
     const int m=3;
     const int n=5;
     int inB[m]= {0, 1, 3};
@@ -144,13 +147,14 @@ int main(int argc, char **argv)
     int n_m=n-m;
     int* nind = generateSequence(0, n_m-1);
     int* ind_all = generateSequence(0, n-1);
-    int inD[n-m]; 
+    int inD[n_m]; 
+    setdiff(ind_all, n, inB, m, inD, n_m);
     int itlim=100;
     float A[m][n];
     float b[m];
     float c[n];
     float h[n+1];
-    float yd[m]{0.1, 0.2, 0.3};
+    float yd[m]{0.2, -0.1, 0.1};
     bool e[n]={true, true, false, true, true};;
     float upper_lam=1e4;
     for(int i=0; i<m; ++i)
@@ -210,7 +214,6 @@ int main(int argc, char **argv)
 
 
     
-    setdiff(inB, m, n, inD);
     std::cout << "inB: [";
     for (size_t i = 0; i < m; ++i) {
         std::cout << inB[i];
@@ -744,12 +747,12 @@ int main(int argc, char **argv)
         unsigned int iters_all= 0;
         // yd << (float) data[i][0],  (float) data[i][1],   (float) data[i][2];
         // std::cout << "yd:\n" << yd.transpose()  << std::endl;
-        auto start = std::chrono::high_resolution_clock::now();
-        allocator_dir_LPwrap_4(_B_array, y_all, _uMin, _uMax, u_all, &z_all, &iters_all);
+        // auto start = std::chrono::high_resolution_clock::now();
+        // allocator_dir_LPwrap_4(_B_array, y_all, _uMin, _uMax, u_all, &z_all, &iters_all);
 
         auto finish = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> elapsed = finish - start;
-        // std::cout << "allocator_dir_LPwrap_4 execution time: " << elapsed.count() << "s\n";
+        std::cout << "allocator_dir_LPwrap_4 execution time: " << elapsed.count() << "s\n";
         // 使用循环打印数组元素
         // std::cout << "u_all: " << " ";
         // for (int i = 0; i < 4; ++`i) {

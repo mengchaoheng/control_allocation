@@ -196,6 +196,7 @@ int main(int argc, char **argv)
             c[j] *=-1;
         }
     }
+    
     //==============================
     matrix::SquareMatrix<float, 3> A_inB;
     matrix::Matrix<float, m, n-m> A_inD;
@@ -218,7 +219,21 @@ int main(int argc, char **argv)
         c_inD(i)=c[inD[i]];
     }
     matrix::Vector<float, m> b_vec(b);
+    
     //===============================
+    
+    // inital some value
+    Matrix<float, 1UL, m> lamt;
+    lamt.setZero();
+    Matrix<float, 1UL, n-m> rdt;
+    rdt.setZero();
+    matrix::Vector<float, m> A_qel;
+    A_qel.setZero();
+    matrix::Vector<float, m> yq;
+    yq.setZero();
+    matrix::Vector<float, m> rat;
+    rat.setZero();
+    
     //  %Initial Solution
     matrix::Vector<float, 3> y0 = inv(A_inB)*b_vec;
     bool done = false;
@@ -226,8 +241,8 @@ int main(int argc, char **argv)
     while ((!done  || !unbounded ) && (itlim > 0))
     {
         itlim = itlim-1;
-        Matrix<float, 1UL, m> lamt= (inv(A_inB).transpose()*c_inB).transpose();
-        Matrix<float, 1UL, n-m> rdt = c_inD.transpose()-lamt*A_inD;
+        lamt= (inv(A_inB).transpose()*c_inB).transpose();
+        rdt = c_inD.transpose()-lamt*A_inD;
         float minr;
         size_t qind;
         min(rdt.transpose(), minr, qind);
@@ -237,10 +252,12 @@ int main(int argc, char **argv)
             break;
         }
         int qel = inD[qind];  // Unknown to Enter the basis minimizes relative cost
-        float vec_data[3] ={A[0][qel], A[1][qel], A[2][qel]};
-        matrix::Vector<float, m> A_qel(vec_data);
-        matrix::Vector<float, m> yq=inv(A_inB)* A_qel; // Vector to enter in terms of the current Basis vector
+        A_qel(0)=A[0][qel];
+        A_qel(1)=A[1][qel];
+        A_qel(2)=A[2][qel];
+        yq=inv(A_inB)* A_qel; // Vector to enter in terms of the current Basis vector
         bool flag=false;
+        
         for(int i=0;i<m;++i){
             if(std::abs(yq(i)) > tol)
             {
@@ -254,7 +271,7 @@ int main(int argc, char **argv)
             break;
         }
         // Recompute rations and determine variable to leave
-        matrix::Vector<float, m> rat;
+        
         float hinB[m];
         for(int i=0;i<m;++i)
         {
@@ -339,7 +356,7 @@ int main(int argc, char **argv)
         }
         if (minrat >= h[qel])
         {
-            std::cout << " Case 1 "<< std::endl; 
+            // std::cout << " Case 1 "<< std::endl; 
             e[qel] =!e[qel];
             for(int i=0; i<m; ++i)
             {
@@ -351,7 +368,7 @@ int main(int argc, char **argv)
         }
         else if(yq(p) > 0)
         {
-            std::cout << " Case 21 "<< std::endl; 
+            // std::cout << " Case 21 "<< std::endl; 
             int pel = inB[p];
             inB[p]= qel;
             inD[qind]= pel;
@@ -375,7 +392,7 @@ int main(int argc, char **argv)
         }
         else
         {
-            std::cout << " Case 22 "<< std::endl; 
+            // std::cout << " Case 22 "<< std::endl; 
             int pel = inB[p];
             e[pel]=!e[pel];
             for(int i=0; i<m; ++i)
@@ -406,9 +423,8 @@ int main(int argc, char **argv)
             }
         }
         y0=inv(A_inB)* b_vec;
-        std::cout << "y0:";
-        y0.T().print();
     }
+    
     bool errout = unbounded;  
     int err = 0;
     float xout[n];
@@ -441,7 +457,9 @@ int main(int argc, char **argv)
             u_px4_matrix[i]/=xout[n-1];
         }
     }
-
+    auto finish = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = finish - start;
+    std::cout << " execution time: " << elapsed.count() << "s\n";
     std::cout << "u_px4_matrix: [";
     for (size_t i = 0; i < n-1; ++i) {
         std::cout << u_px4_matrix[i];
@@ -462,9 +480,9 @@ int main(int argc, char **argv)
         // auto start = std::chrono::high_resolution_clock::now();
         // allocator_dir_LPwrap_4(_B_array, y_all, _uMin, _uMax, u_all, &z_all, &iters_all);
 
-        auto finish = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> elapsed = finish - start;
-        std::cout << "allocator_dir_LPwrap_4 execution time: " << elapsed.count() << "s\n";
+        // auto finish = std::chrono::high_resolution_clock::now();
+        // std::chrono::duration<double> elapsed = finish - start;
+        // std::cout << "allocator_dir_LPwrap_4 execution time: " << elapsed.count() << "s\n";
         // 使用循环打印数组元素
         // std::cout << "u_all: " << " ";
         // for (int i = 0; i < 4; ++`i) {

@@ -25,15 +25,7 @@ int main() {
         _uMax[i] =  0.3491;
     }
     float yd[3]={0.2, -0.1, 0.1};
-    //飞机数据
-    // 示例代码
-    // 使用模板类时，可以指定 ControlSize 和 EffectSize 的具体值
-    // 例如：
-    float l1=0.148;float l2=0.069;float k_v=3;
-    Aircraft<3, 4> df_4(_B, 0.3491, 0.3491); // 创建一个具有 3 个操纵向量和 5 个广义力矩的飞行器对象
-    // 分配器数据：
-    DP_LP_ControlAllocator<3, 5> DP_LPCA(df_4,yd); // 创建一个控制分配器对象，用于具有 4 个操纵向量和 3 个广义力矩的飞行器
-    // 然后可以使用飞行器对象和控制分配器对象进行操作
+    
 
     // 线性规划数据
     LinearProgrammingProblem<3, 5> problem;
@@ -77,10 +69,8 @@ int main() {
     LinearProgrammingResult<3, 5> result = BoundedRevisedSimplex(problem);
     auto finish = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = finish - start;
-    std::cout << " execution time: " << elapsed.count() << "s\n";
-    // 调用 u = DP_LP_ControlAllocator.allocateControl(yd)
-    float* u = new float[4];
-    u = DP_LPCA.allocateControl(yd);
+    std::cout << "execution time: " << elapsed.count() << "s\n";
+    
     // 使用结果
     // result.y0, result.inB, result.e, result.errout
     int err = 0;
@@ -123,11 +113,26 @@ int main() {
         }
     }
     std::cout << "]" << std::endl;
-
+    //飞机数据
+    // 示例代码
+    // 使用模板类时，可以指定 ControlSize 和 EffectSize 的具体值
+    // 例如：
+    float l1=0.148;float l2=0.069;float k_v=3;
+    Aircraft<3, 4> df_4(_B, -0.3491, 0.3491); // 创建一个具有 4 个操纵向量和 3 个广义力矩的飞行器对象
+    // 分配器数据：
+    DP_LP_ControlAllocator<3, 4> DP_LPCA(df_4, yd); // 创建一个控制分配器对象，用于具有 4 个操纵向量和 3 个广义力矩的飞行器(转化为线性规划问题，其维数和参数 <3, 4> 有关。)
+    // 然后可以使用飞行器对象和控制分配器对象进行操作
+    // 调用 u = DP_LP_ControlAllocator.allocateControl(yd)
+    float* u = new float[4];
+    start = std::chrono::high_resolution_clock::now();
+    u = DP_LPCA.allocateControl(yd);
+    finish = std::chrono::high_resolution_clock::now();
+    elapsed = finish - start;
+    std::cout << "DP_LPCA.allocateControl execution time: " << elapsed.count() << "s\n";
     std::cout << "u: [";
-    for (size_t i = 0; i < problem.n-1; ++i) {
+    for (size_t i = 0; i < 4; ++i) {
         std::cout << u[i];
-        if (i < problem.n-2) {
+        if (i < 3) {
             std::cout << ", ";
         }
     }

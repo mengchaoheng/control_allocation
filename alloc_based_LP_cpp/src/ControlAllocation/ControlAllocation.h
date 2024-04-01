@@ -3,49 +3,94 @@
 #include <iostream>
 
 using namespace matrix;
+
+// 函数用于计算两个正整数集合的差
+void setdiff(int setA[], int sizeA, int setB[], int sizeB, int result[]) {
+    int sizeResult = 0;
+    for (int i = 0; i < sizeA; ++i) {
+        bool foundInB = false;
+        // 检查当前 setA 中的元素是否在 setB 中
+        for (int j = 0; j < sizeB; ++j) {
+            if (setA[i] == setB[j]) {
+                foundInB = true;
+                break;
+            }
+        }
+        // 如果当前元素不在 setB 中，则将其添加到结果中
+        if (!foundInB) {
+            result[sizeResult++] = setA[i];
+        }
+    }
+}
+int* generateSequence(int i, int n) {
+    int* result = new int[n - i + 1]; // 动态分配数组内存
+
+    for (int num = i, index = 0; num <= n; ++num, ++index) {
+        result[index] = num;
+    }
+
+    return result;
+}
 // 定义线性规划问题结构体
 template<int M, int N>
 struct LinearProgrammingProblem {
     int m=M;
     int n=N;
     int inB[M];
-    int inD[N-M];
+    int inD[N-M]; // 
     int itlim;
     float A[M][N];
     float b[N];
     float c[N];
     float h[N];
     bool e[N];
-    // 函数用于计算两个正整数集合的差
-    void setdiff(int setA[], int sizeA, int setB[], int sizeB, int result[]) {
-        int sizeResult = 0;
-        for (int i = 0; i < sizeA; ++i) {
-            bool foundInB = false;
-            // 检查当前 setA 中的元素是否在 setB 中
-            for (int j = 0; j < sizeB; ++j) {
-                if (setA[i] == setB[j]) {
-                    foundInB = true;
-                    break;
-                }
-            }
-            // 如果当前元素不在 setB 中，则将其添加到结果中
-            if (!foundInB) {
-                result[sizeResult++] = setA[i];
+    // 默认构造函数，将所有成员变量初始化为0
+    LinearProgrammingProblem() : m(M), n(N), itlim(0) {
+        // 将数组成员变量初始化为0
+        for (int i = 0; i < M; ++i) {
+            inB[i] = 0;
+        }
+        for (int i = 0; i < N-M; ++i) {
+            inD[i] = 0;
+        }
+        for (int i = 0; i < M; ++i) {
+            for (int j = 0; j < N; ++j) {
+                A[i][j] = 0.0f;
             }
         }
-    }
-    int* generateSequence(int i, int n) {
-        int* result = new int[n - i + 1]; // 动态分配数组内存
-
-        for (int num = i, index = 0; num <= n; ++num, ++index) {
-            result[index] = num;
+        for (int i = 0; i < N; ++i) {
+            b[i] = 0.0f;
+            c[i] = 0.0f;
+            h[i] = 0.0f;
+            e[i] = false;
         }
-
-        return result;
     }
-
+    // 拷贝构造函数
+    LinearProgrammingProblem(const LinearProgrammingProblem<M, N>& other) {
+        m = other.m;
+        n = other.n;
+        itlim = other.itlim;
+        
+        // 复制数组成员变量
+        for (int i = 0; i < M; ++i) {
+            inB[i] = other.inB[i];
+        }
+        for (int i = 0; i < N - M; ++i) {
+            inD[i] = other.inD[i];
+        }
+        for (int i = 0; i < M; ++i) {
+            for (int j = 0; j < N; ++j) {
+                A[i][j] = other.A[i][j];
+            }
+        }
+        for (int i = 0; i < N; ++i) {
+            b[i] = other.b[i];
+            c[i] = other.c[i];
+            h[i] = other.h[i];
+            e[i] = other.e[i];
+        }
+    }
 };
-
 // 定义结果结构体
 template<int M, int N>
 struct LinearProgrammingResult {
@@ -55,27 +100,348 @@ struct LinearProgrammingResult {
     int itlim;
     bool errout;
     // 其他结果成员
+    // 默认构造函数，将所有成员变量初始化为0
+    LinearProgrammingResult() : itlim(0), errout(false) {
+        // 将数组成员变量初始化为0
+        for (int i = 0; i < M; ++i) {
+            y0[i] = 0.0f;
+            inB[i] = 0;
+        }
+        for (int i = 0; i < N; ++i) {
+            e[i] = false;
+        }
+    }
 };
 
-// template<int M, int N>
-// class LinearProgrammingSolver {
-// public:
-//     LinearProgrammingSolver() = default;
-//     // 构造函数，接受一个 LinearProgrammingProblem 对象作为参数
-//     LinearProgrammingSolver(const LinearProgrammingProblem<M, N>& inputProblem) : problem(inputProblem) {}
+template<int M, int N>
+class LinearProgrammingSolverForAC {
+public:
+    // 默认构造函数，初始化所有成员变量
+    LinearProgrammingSolverForAC() 
+        : problem(),                // 使用默认构造函数初始化 problem
+          result(),                 // 使用默认构造函数初始化 result
+          tol(1e-7),                // 将 tol 初始化为 1e-7
+          n_m(N - M)               // 计算并初始化 n_m
+    {
+        // nind = generateSequence(0, N-M-1);
+        // ind_all = generateSequence(0, N-1);
+        for (int i = 0; i < N - M; ++i) {
+            nind[i] = i; // 使用 i 初始化 nind 数组的元素
+        }
+        // ind_all = generateSequence(0, N-1);
+        // 初始化 ind_all 数组
+        for (int i = 0; i < N ; ++i) {
+            ind_all[i] = i; // 使用 i 初始化 nind 数组的元素
+        }
+        A_inB.setZero();
+        A_inD.setZero();
+        c_inB.setZero();
+        c_inD.setZero();
+        lamt.setZero();
+        rdt.setZero();
+        A_qel.setZero();
+        yq.setZero();
+        rat.setZero();
+    }
+    // 构造函数，接受一个 LinearProgrammingProblem 对象作为参数
+    LinearProgrammingSolverForAC(const LinearProgrammingProblem<M, N>& inputProblem) : problem(inputProblem) {
+        // nind = generateSequence(0, N-M-1);
+        // 初始化 nind 数组
+        for (int i = 0; i < N - M; ++i) {
+            nind[i] = i; // 使用 i 初始化 nind 数组的元素
+        }
+        // ind_all = generateSequence(0, N-1);
+        // 初始化 ind_all 数组
+        for (int i = 0; i < N ; ++i) {
+            ind_all[i] = i; // 使用 i 初始化 nind 数组的元素
+        }
+        A_inB.setZero();
+        A_inD.setZero();
+        c_inB.setZero();
+        c_inD.setZero();
+        lamt.setZero();
+        rdt.setZero();
+        A_qel.setZero();
+        yq.setZero();
+        rat.setZero();
+    }
+    // 成员函数调用 Simplex （改自 BoundedRevisedSimplex ），并返回结果
+    // void solve() {
+    //     result = Simplex(problem);
+    // }
+    LinearProgrammingResult<M, N>  solve() {
+        result = Simplex(problem);
+        return result;
+    }
+    LinearProgrammingProblem<M, N> problem;
+    LinearProgrammingResult<M, N> result;
+    // for simplex
+    //==============================
+    matrix::SquareMatrix<float, M> A_inB;
+    matrix::Matrix<float, M, N-M> A_inD;
+    matrix::Vector<float, M> c_inB;
+    matrix::Vector<float, N-M> c_inD;
+    // inital some value
+    Matrix<float, 1UL, M> lamt;
+    Matrix<float, 1UL, N-M> rdt;
+    matrix::Vector<float, M> A_qel;
+    matrix::Vector<float, M> yq;
+    matrix::Vector<float, M> rat;
+    float tol=1e-7;
+    const int n_m=N-M;
+    int nind[N-M]; 
+    int ind_all[N]; 
+    LinearProgrammingResult<M, N> Simplex(LinearProgrammingProblem<M, N>& problem){
+        LinearProgrammingResult<M, N> result;
+        // 实现线性规划算法
+        // 使用 problem.inB, problem.inD, problem.itlim, problem.A, problem.b, problem.c, problem.h, problem.e
+        // Partition A
+        setdiff(ind_all, N, problem.inB, M, problem.inD);
+        // Adjust signs problem if variables are initialized at upper bounds.
+        for(int i=0; i<M; ++i)
+        {
+            for(int j=0; j<N; ++j)
+            {
+                if(!problem.e[j])
+                {
+                    problem.A[i][j] *=-1;
+                    problem.b[i]+=problem.A[i][j]*problem.h[j];
+                }
+            }
+        }
+        for(int j=0; j<N; ++j)
+        {
+            if(!problem.e[j])
+            {
+                problem.c[j] *=-1;
+            }
+        }
+        for(int i=0; i<M; ++i)
+        {
+            for(int j=0; j<M; ++j)
+            {
+                A_inB(i,j)=problem.A[i][problem.inB[j]];
+                if(j<n_m)
+                {
+                    A_inD(i,j)=problem.A[i][problem.inD[j]];
+                }
+            }
+            c_inB(i)=problem.c[problem.inB[i]];
+        }
+        for(int i=0; i<n_m; ++i)
+        {
+            c_inD(i)=problem.c[problem.inD[i]];
+        }
+        matrix::Vector<float, M> b_vec(problem.b);
+        // Initial Solution
+        matrix::Vector<float, M> y0 = inv(A_inB)*b_vec;
+        bool done = false;
+        bool unbounded = false;
+        while ((!done  || !unbounded ) && (problem.itlim > 0))
+        {
+            problem.itlim = problem.itlim-1;
+            lamt= (inv(A_inB).transpose()*c_inB).transpose();
+            rdt = c_inD.transpose()-lamt*A_inD;
+            float minr;
+            size_t qind;
+            min(rdt.transpose(), minr, qind);
+            if(minr >=0)  // If all relative costs are positive then the solution is optimal
+            { 
+                done = true;
+                break;
+            }
+            int qel = problem.inD[qind];  // Unknown to Enter the basis minimizes relative cost
+            A_qel(0)=problem.A[0][qel];
+            A_qel(1)=problem.A[1][qel];
+            A_qel(2)=problem.A[2][qel];
+            yq=inv(A_inB)* A_qel; // Vector to enter in terms of the current Basis vector
+            bool flag=false;
+            
+            for(int i=0;i<M;++i){
+                if(std::abs(yq(i)) > tol)
+                {
+                    flag = true; // Check this condition
+                    break;
+                }
+            }
+            if(!flag)
+            {
+                unbounded = true; // Check this condition
+                break;
+            }
+            // Recompute rations and determine variable to leave
+            float hinB[M];
+            for(int i=0;i<M;++i)
+            {
+                if(std::abs(yq(i))>tol)
+                {
+                    rat(i)=y0(i)/yq(i);
+                    
+                }
+                else
+                {
+                    rat(i)=INFINITY;
+                    /* code */
+                }
+            }
+            for(int i=0;i<M;++i)
+            {
+                hinB[i]=problem.h[problem.inB[i]];
+                if(yq(i)<0)
+                {                    
+                    rat(i)-=hinB[i]/yq(i);
+                }
+            }
+            // Variable to exit is moving to its minimum value--Note that min returns the lowest index minimum
+            float minrat=rat(0);
+            size_t p=0;
+            min(rat, minrat, p);
+            // If the minimum ratio is zero, then the solution is degenerate and the entering
+            // variable will not change the basis---invoke Bland's selection rule to avoid
+            // cycling.
+            if (std::abs(minrat) <= tol)
+            {
+                //Find negative relative cost
+                for(int i=0;i<n_m;++i)
+                {
+                    if(rdt(1,i)<0){ //Note that since minr <0 indm is not empty   
+                        qind=nind[i];
+                        qel = problem.inD[qind];//Unknown to Enter the basis is first indexed to avoid cycling
+                        break;
+                    }
+                }
+                A_qel(0)=problem.A[0][qel];
+                A_qel(1)=problem.A[1][qel];
+                A_qel(2)=problem.A[2][qel];
+                yq=inv(A_inB)* A_qel;
+                bool flag=false;
+                for(int i=0;i<M;++i){
+                    if(std::abs(yq(i)) > tol)
+                    {
+                        flag = true; // Check this condition
+                        break;
+                    }
+                }
+                if(!flag)
+                {
+                    unbounded = true; // Check this condition
+                    // break;
+                }
+                // Recompute rations and determine variable to leave
+                // Recompute rations and determine variable to leave
+                float hinB[M];
+                for(int i=0;i<M;++i)
+                {
+                    hinB[i]=problem.h[problem.inB[i]];
+                    if(std::abs(yq(i))>tol)
+                    {
+                        rat(i)=y0(i)/yq(i);
+                        if(yq(i)<0)
+                        {                    
+                            rat(i)-=hinB[i]/yq(i);
+                        }
+                    }
+                    else
+                    {
+                        rat(i)=INFINITY;
+                        /* code */
+                    }
+                }
+                // Variable to exit is moving to its minimum value--Note that min returns the lowest index minimum
+                minrat=rat(0);
+                p=0;
+                min(rat, minrat, p);
+            }
+            if (minrat >= problem.h[qel])
+            {
+                // std::cout << " Case 1 "<< std::endl; 
+                problem.e[qel] =!problem.e[qel];
+                for(int i=0; i<M; ++i)
+                {
+                    problem.A[i][qel] *= -1;
+                    b_vec(i)+=problem.A[i][qel]*problem.h[qel];
+                }
+                problem.c[qel] *= -1;
 
-//     // 成员函数调用 BoundedRevisedSimplex 算法，并返回结果
-//     void solve() {
-//         result = BoundedRevisedSimplex(problem);
-//     }
-//     LinearProgrammingProblem<M, N> problem;
-//     LinearProgrammingResult<M, N> result;
-
-//     // 获取结果
-//     const LinearProgrammingResult<M, N>& getResult() const {
-//         return result;
-//     }
-// };
+            }
+            else if(yq(p) > 0)
+            {
+                // std::cout << " Case 21 "<< std::endl; 
+                int pel = problem.inB[p];
+                problem.inB[p]= qel;
+                problem.inD[qind]= pel;
+                // update x_inX
+                for(int i=0; i<M; ++i)
+                {
+                    A_inB(i,p)=problem.A[i][qel];
+                }
+                for(int i=0; i<n_m; ++i)
+                {
+                    c_inB(p)=problem.c[qel];
+                }
+                for(int i=0; i<M; ++i)
+                {
+                    A_inD(i,qind)=problem.A[i][pel];
+                }
+                for(int i=0; i<n_m; ++i)
+                {
+                    c_inD(qind)=problem.c[pel];
+                }
+            }
+            else
+            {
+                // std::cout << " Case 22 "<< std::endl; 
+                int pel = problem.inB[p];
+                problem.e[pel]=!problem.e[pel];
+                for(int i=0; i<M; ++i)
+                {
+                    problem.A[i][pel] *= -1;
+                    b_vec(i)+=problem.A[i][pel]*problem.h[pel];
+                }
+                problem.inB[p]= qel;
+                problem.inD[qind]= pel;
+                problem.c[pel] *= -1;
+                // update x_inX
+                for(int i=0; i<M; ++i)
+                {
+                    A_inB(i,p)=problem.A[i][qel];
+                }
+                
+                for(int i=0; i<n_m; ++i)
+                {
+                    c_inB(p)=problem.c[qel];
+                }
+                for(int i=0; i<M; ++i)
+                {
+                    A_inD(i,qind)=problem.A[i][pel];
+                }
+                for(int i=0; i<n_m; ++i)
+                {
+                    c_inD(qind)=problem.c[pel];
+                }
+            }
+            y0=inv(A_inB)* b_vec;
+        }
+        result.errout = unbounded; 
+        // y0.print();
+        // 设置 result.y0, result.inB, result.e 等结果
+        for(int i=0; i<M; ++i)
+        {
+            result.y0[i]=y0(i);
+            result.inB[i]=problem.inB[i];
+        }
+        for(int i=0; i<N; ++i)
+        {
+            result.e[i]=problem.e[i];
+        }
+        result.itlim=problem.itlim;
+        return result;
+    }
+    // 获取结果
+    const LinearProgrammingResult<M, N>& getResult() const {
+        return result;
+    }
+};
 
 
 // 定义函数模板
@@ -86,10 +452,10 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
     // 使用 problem.inB, problem.inD, problem.itlim, problem.A, problem.b, problem.c, problem.h, problem.e
     float tol=1e-7;
     const int n_m=N-M;
-    int* nind = problem.generateSequence(0, n_m-1);
+    int* nind = generateSequence(0, n_m-1);
     
-    int* ind_all = problem.generateSequence(0, N-1);
-    problem.setdiff(ind_all, N, problem.inB, M, problem.inD);
+    int* ind_all = generateSequence(0, N-1);
+    setdiff(ind_all, N, problem.inB, M, problem.inD);
     // std::cout << "A:" << std::endl;
     // for (size_t i = 0; i < M; ++i) {
     //     for (size_t j = 0; j < N; ++j) {
@@ -519,19 +885,15 @@ public:
         // 在此初始化成员变量，或者留空
     }
     // 参数列表构造函数
-    ControlAllocatorBase(const Aircraft<ControlSize, EffectorSize>& aircraft, float generalizedMoment[ControlSize]) 
+    ControlAllocatorBase(const Aircraft<ControlSize, EffectorSize>& aircraft) 
         : aircraft(aircraft) { // 使用传入的aircraft对象初始化aircraft成员
-        // 在此初始化成员变量，可以使用传入的参数值
-        for (int i = 0; i < ControlSize; ++i) {
-            this->generalizedMoment[i] = generalizedMoment[i];
-        }
     }
 
-    virtual float*  allocateControl(float generalizedMoment[ControlSize]) = 0;
+    virtual float*  allocateControl(float input[ControlSize]) = 0;
 
     // 其他数学函数和成员变量定义
     Aircraft<ControlSize, EffectorSize> aircraft; // 构造函数设置
-    float generalizedMoment[ControlSize]; // 构造函数设置
+    
 };
 // 控制分配类模板
 template <int ControlSize, int EffectorSize>
@@ -539,10 +901,10 @@ class DP_LP_ControlAllocator : public ControlAllocatorBase<ControlSize, Effector
 private:
     // 添加算法设置参数
 public:
-    // 构造函数, 利用aircraft 预设置 LinearProgrammingSolver 和 LinearProgrammingProblem
+    // 构造函数, 利用aircraft 预设置LinearProgrammingProblem, 再初始化 LinearProgrammingSolverForAC
     // 构造函数
-    DP_LP_ControlAllocator(const Aircraft<ControlSize, EffectorSize>& aircraft, float generalizedMoment[ControlSize])
-        : ControlAllocatorBase<ControlSize, EffectorSize>(aircraft, generalizedMoment){
+    DP_LP_ControlAllocator(const Aircraft<ControlSize, EffectorSize>& aircraft)
+        : ControlAllocatorBase<ControlSize, EffectorSize>(aircraft){
         // 在此处用aircraft, generalizedMoment初始化 成员变量 DP_LPCA_problem 和 Pre_DP_LPCA_problem 
         // 线性规划数据
         DP_LPCA_problem.itlim = 100;
@@ -565,7 +927,7 @@ public:
                 DP_LPCA_problem.A[i][j] = aircraft.controlEffectMatrix[i][j];
                 temp +=-aircraft.controlEffectMatrix[i][j]*aircraft.lowerLimits[j];
             }
-            DP_LPCA_problem.A[i][EffectorSize] =-generalizedMoment[i]; // will be change in the loop
+            DP_LPCA_problem.A[i][EffectorSize] =-0; // will be change in the loop
             DP_LPCA_problem.b[i] = temp;
         }
         for(int i=0; i<EffectorSize; ++i)
@@ -578,42 +940,8 @@ public:
             DP_LPCA_problem.h[i] =aircraft.upperLimits[i]-aircraft.lowerLimits[i];
         }
         DP_LPCA_problem.h[EffectorSize]=upper_lam;
-            // 
-
-        std::cout << "DP_LPCA_problem A:" << std::endl;
-        for (size_t i = 0; i < ControlSize; ++i) {
-            for (size_t j = 0; j < DP_LPCA_problem.n; ++j) {
-                std::cout << DP_LPCA_problem.A[i][j] << " ";
-            }
-            std::cout << std::endl;
-        }
-        std::cout << "DP_LPCA_problem b: [";
-        for (size_t i = 0; i < ControlSize; ++i) {
-            std::cout << DP_LPCA_problem.b[i];
-            if (i < ControlSize - 1) {
-                std::cout << ", ";
-            }
-        }
-        std::cout << "]" << std::endl;
-
-        std::cout << "DP_LPCA_problem c: [";
-        for (size_t i = 0; i < DP_LPCA_problem.n; ++i) {
-            std::cout << DP_LPCA_problem.c[i];
-            if (i < DP_LPCA_problem.n - 1) {
-                std::cout << ", ";
-            }
-        }
-        std::cout << "]" << std::endl;
-
-        std::cout << "DP_LPCA_problem h: [";
-        for (size_t i = 0; i < DP_LPCA_problem.n; ++i) {
-            std::cout << DP_LPCA_problem.h[i];
-            if (i < DP_LPCA_problem.n- 1) {
-                std::cout << ", ";
-            }
-        }
-        std::cout << "]" << std::endl;
-        }
+        LPsolverForAC.problem=DP_LPCA_problem;
+    }
 
     // 设置算法参数函数
 
@@ -632,7 +960,7 @@ public:
         // 使用模版函数result = BoundedRevisedSimplex(problem);  
         for (int i = 0; i < ControlSize; ++i) {
             DP_LPCA_problem.A[i][EffectorSize]=-input[i];
-            this->generalizedMoment[i] = input[i];
+            this->generalizedMoment[i] = input[i]; // just record.
         }
         auto result = BoundedRevisedSimplex(DP_LPCA_problem);
         // 使用结果
@@ -669,10 +997,60 @@ public:
         }
         return EffectorCommand;
     }
-
+    float* allocateControl_bases_solver(float input[ControlSize]){
+        // 重写控制分配器函数
+        // 实现控制分配算法
+        float* EffectorCommand = new float[EffectorSize];
+        // 算法实现
+        // DP_LPCA（generalizedMoment, aircraft） 
+        // DP_LPCA函数利用飞行器数据，将分配问题描述为DP_LP问题并用BoundedRevisedSimplex求解
+        // 使用模版函数result = BoundedRevisedSimplex(problem);  
+        for (int i = 0; i < ControlSize; ++i) {
+            LPsolverForAC.problem.A[i][EffectorSize]=-input[i];
+            this->generalizedMoment[i] = input[i];
+        }
+        auto result = LPsolverForAC.solve();
+        // 使用结果
+        // result.y0, result.inB, result.e, result.errout
+        int err = 0;
+        float xout[LPsolverForAC.problem.n];
+        for(int i=0;i<LPsolverForAC.problem.n;++i){
+            xout[i]=0;
+        }
+        for(int i=0;i<ControlSize;++i){
+            xout[result.inB[i]]=result.y0[i];
+        }
+        for(int i=0;i<LPsolverForAC.problem.n;++i){
+            if(!result.e[i]){
+                xout[i]=-xout[i]+LPsolverForAC.problem.h[i];
+            }
+        }
+        if(result.itlim<=0){
+            err = 3;
+            std::cout << "Too Many Iterations Finding Final Solution"<< std::endl; 
+        }
+        if(result.errout)
+        {
+            err = 1;
+            std::cout << "Solver error"<< std::endl;
+        }
+        for(int i=0;i<EffectorSize;++i){
+            EffectorCommand[i]=xout[i]+this->aircraft.lowerLimits[i];
+            // EffectorCommand[i]=0;
+        }
+        if(xout[EffectorSize]>1){
+            for(int i=0;i<EffectorSize;++i){
+                EffectorCommand[i]/=xout[EffectorSize];
+            }
+        }
+        return EffectorCommand;
+    }
     // 其他成员函数和成员变量定义
+    float generalizedMoment[ControlSize]; // 构造函数设置
+    // 线性规划相关
     LinearProgrammingProblem<ControlSize, EffectorSize+1> DP_LPCA_problem;// 提前设置 using aircraft
     LinearProgrammingProblem<ControlSize, EffectorSize+4> Pre_DP_LPCA_problem;// 提前设置 using aircraft
+    LinearProgrammingSolverForAC<ControlSize, EffectorSize+1> LPsolverForAC;
     float upper_lam = 1e4;
 };
 

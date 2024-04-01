@@ -159,45 +159,16 @@ int main() {
 
 
 
-    // //飞机数据
-    // // 示例代码
-    // // 使用模板类时，可以指定 ControlSize 和 EffectSize 的具体值
-    // // 例如：
-    // float l1=0.148;float l2=0.069;float k_v=3;
-    // Aircraft<3, 4> df_4(_B, -0.3491, 0.3491); // 创建一个具有 4 个操纵向量和 3 个广义力矩的飞行器对象
-    // // 分配器数据：
-    // DP_LP_ControlAllocator<3, 4> DP_LPCA(df_4); // 创建一个控制分配器对象，用于具有 4 个操纵向量和 3 个广义力矩的飞行器(转化为线性规划问题，其维数和参数 <3, 4> 有关。)
-    // // 然后可以使用飞行器对象和控制分配器对象进行操作
-    // // 调用 u = DP_LP_ControlAllocator.allocateControl(yd)
-    // float* u = new float[4];
-    // start = std::chrono::high_resolution_clock::now();
-    // u = DP_LPCA.allocateControl(yd);
-    // finish = std::chrono::high_resolution_clock::now();
-    // elapsed = finish - start;
-    // std::cout << "DP_LPCA.allocateControl execution time: " << elapsed.count() << "s\n";
-    // std::cout << "u: [";
-    // for (size_t i = 0; i < 4; ++i) {
-    //     std::cout << u[i];
-    //     if (i < 3) {
-    //         std::cout << ", ";
-    //     }
-    // }
-    // std::cout << "]" << std::endl;
-
-    // float* u2 = new float[4];
-    // start = std::chrono::high_resolution_clock::now();
-    // u2 = DP_LPCA.allocateControl_bases_solver(yd);
-    // finish = std::chrono::high_resolution_clock::now();
-    // elapsed = finish - start;
-    // std::cout << "DP_LPCA.allocateControl_bases_solver execution time: " << elapsed.count() << "s\n";
-    // std::cout << "u2: [";
-    // for (size_t i = 0; i < 4; ++i) {
-    //     std::cout << u2[i];
-    //     if (i < 3) {
-    //         std::cout << ", ";
-    //     }
-    // }
-    // std::cout << "]" << std::endl;
+    //飞机数据
+    // 示例代码
+    // 使用模板类时，可以指定 ControlSize 和 EffectSize 的具体值
+    // 例如：
+    float l1=0.148;float l2=0.069;float k_v=3;
+    Aircraft<3, 4> df_4(_B, -0.3491, 0.3491); // 创建一个具有 4 个操纵向量和 3 个广义力矩的飞行器对象
+    // 分配器数据：
+    DP_LP_ControlAllocator<3, 4> DP_LPCA(df_4); // 创建一个控制分配器对象，用于具有 4 个操纵向量和 3 个广义力矩的飞行器(转化为线性规划问题，其维数和参数 <3, 4> 有关。)
+    // 然后可以使用飞行器对象和控制分配器对象进行操作
+   
 
 
 
@@ -259,9 +230,45 @@ int main() {
             }
         }
         std::cout << "]" << std::endl;
+
+
+
+         // 调用 u = DP_LP_ControlAllocator.allocateControl(yd)
+        float* u = new float[4];
+        start = std::chrono::high_resolution_clock::now();
+        u = DP_LPCA.allocateControl(yd);
+        finish = std::chrono::high_resolution_clock::now();
+        elapsed = finish - start;
+        std::cout << "DP_LPCA.allocateControl execution time: " << elapsed.count() << "s\n";
+        std::cout << "u: [";
+        for (size_t i = 0; i < 4; ++i) {
+            std::cout << u[i];
+            if (i < 3) {
+                std::cout << ", ";
+            }
+        }
+        std::cout << "]" << std::endl;
+
+        // float* u2 = new float[4];
+        // start = std::chrono::high_resolution_clock::now();
+        // u2 = DP_LPCA.allocateControl_bases_solver(yd);
+        // finish = std::chrono::high_resolution_clock::now();
+        // elapsed = finish - start;
+        // std::cout << "DP_LPCA.allocateControl_bases_solver execution time: " << elapsed.count() << "s\n";
+        // std::cout << "u2: [";
+        // for (size_t i = 0; i < 4; ++i) {
+        //     std::cout << u2[i];
+        //     if (i < 3) {
+        //         std::cout << ", ";
+        //     }
+        // }
+        // std::cout << "]" << std::endl;
+
+
+
         // 写入CSV文件
         for (size_t i = 0; i < array_size; ++i) {
-            outFile << u_px4_matrix[i] << (i < array_size - 1 ? "," : "\n");
+            outFile << u[i] << (i < array_size - 1 ? "," : "\n");
         }
     }
     // 关闭文件

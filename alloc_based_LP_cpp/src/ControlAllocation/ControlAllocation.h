@@ -144,7 +144,7 @@ public:
         rat.setZero();
     }
     // 构造函数，接受一个 LinearProgrammingProblem 对象作为参数
-    LinearProgrammingSolverForAC(const LinearProgrammingProblem<M, N>& inputProblem) : problem(inputProblem) {
+    LinearProgrammingSolverForAC(const LinearProgrammingProblem<M, N> inputProblem) : problem(inputProblem) {
         // nind = generateSequence(0, N-M-1);
         // 初始化 nind 数组
         for (int i = 0; i < N - M; ++i) {
@@ -191,7 +191,7 @@ public:
     const int n_m=N-M;
     int nind[N-M]; 
     int ind_all[N]; 
-    LinearProgrammingResult<M, N> Simplex(LinearProgrammingProblem<M, N>& problem){
+    LinearProgrammingResult<M, N> Simplex(LinearProgrammingProblem<M, N> problem){
         LinearProgrammingResult<M, N> result;
         // 实现线性规划算法
         // 使用 problem.inB, problem.inD, problem.itlim, problem.A, problem.b, problem.c, problem.h, problem.e
@@ -237,9 +237,10 @@ public:
         matrix::Vector<float, M> y0 = inv(A_inB)*b_vec;
         bool done = false;
         bool unbounded = false;
-        while ((!done  || !unbounded ) && (problem.itlim > 0))
+        int iters =0;
+        while ((!done  || !unbounded ) && (iters <= problem.itlim))
         {
-            problem.itlim = problem.itlim-1;
+            iters = iters+1;
             lamt= (inv(A_inB).transpose()*c_inB).transpose();
             rdt = c_inD.transpose()-lamt*A_inD;
             float minr;
@@ -434,7 +435,9 @@ public:
         {
             result.e[i]=problem.e[i];
         }
-        result.itlim=problem.itlim;
+        result.iters=iters;
+        std::cout << "iters:"<<iters<<std::endl;
+        std::cout << "problem.itlim:"<<problem.itlim<<std::endl;
         return result;
     }
     // 获取结果
@@ -1176,7 +1179,7 @@ public:
                 xout[i]=-xout[i]+DP_LPCA_problem.h[i];
             }
         }
-        if(result.itlim<=0){
+        if(result.iters>=DP_LPCA_problem.itlim){
             err = 3;
             std::cout << "Too Many Iterations Finding Final Solution"<< std::endl; 
         }

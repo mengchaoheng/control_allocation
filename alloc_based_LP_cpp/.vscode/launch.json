@@ -5,7 +5,7 @@
             "name": "Debug with LLDB",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/main", // 可执行文件路径
+            "program": "${workspaceFolder}/build/MyExecutable", // 可执行文件路径
             "args": [], // 可执行文件的启动参数，如果有的话
             "stopAtEntry": false, // 是否在程序入口处停止
             "cwd": "${workspaceFolder}", // 可执行文件所在目录，可根据实际情况调整

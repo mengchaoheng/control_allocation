@@ -123,6 +123,7 @@
         "buffered_value": "cpp",
         "fstream": "cpp",
         "ref_ptr": "cpp",
-        "glextensions": "cpp"
+        "glextensions": "cpp",
+        "uniform": "cpp"
     }
 }

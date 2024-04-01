@@ -757,6 +757,23 @@ int main(int argc, char **argv)
             // outFile << u(i) << (i < array_size - 1 ? "," : "\n");
         }
     }
+    Eigen::MatrixXf A_inB(3,3);
+    A_inB << -0.44400001,	-0.0008042347,	-0.44400001,
+                0,	4.2093598e-07,	      -0,
+	            0.207,	0.20472944,	  -0.207;
+    std::cout << "A_inB:\n" << A_inB << std::endl;
+
+    // 检查矩阵是否可逆
+    // if (A_inB.isInvertible()) {
+    //     // 计算矩阵的逆
+    //     Eigen::MatrixXf inverse_matrix = A_inB.inverse();
+
+    //     // 输出逆矩阵内容
+    //     std::cout << "Inverse A_inB:\n" << inverse_matrix << std::endl;
+    // } else {
+    //     std::cerr << "A_inB is not invertible!" << std::endl;
+    // }
+
     // 关闭文件
     outFile.close();
     // 释放内存

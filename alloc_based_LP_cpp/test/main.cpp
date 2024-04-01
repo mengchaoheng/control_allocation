@@ -1,12 +1,53 @@
 #include <iostream>
 #include <matrix/math.hpp>
 #include"ControlAllocation.h"
-
+#include <fstream>
+#include <vector>
+#include <sstream>
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
+#include <chrono>
 using namespace matrix;
 
 
 int main() {
-    
+    std::ifstream file("../../input.csv");
+    std::vector<std::vector<double> > data;
+    std::string line;
+    if (file.is_open()) {
+        while (std::getline(file, line)) {
+            std::istringstream sline(line);
+            std::vector<double> row;
+            std::string value;
+ 
+            while (std::getline(sline, value, ',')) {
+                row.push_back(std::stod(value));
+            }
+ 
+            data.push_back(row);
+        }
+        file.close();
+    } else {
+        std::cerr << "Unable to open file" << std::endl;
+        return 1;
+    }
+    // 假设所有行的列数都相同，将第一行的列数作为数组的大小
+    size_t columns = data[0].size();
+    size_t num = data.size();
+    double** array = new double*[data.size()];
+    for (size_t i = 0; i < data.size(); ++i) {
+        array[i] = new double[columns];
+        for (size_t j = 0; j < columns; ++j) {
+            array[i][j] = data[i][j];
+        }
+    }
+    // 打开CSV文件进行写入
+    std::ofstream outFile("../../output.csv");
+    if (!outFile.is_open()) {
+        std::cerr << "无法打开文件" << std::endl;
+        return 1;
+    }
     
     float _B[3][4] = { {-0.4440,0.0,0.4440,0.0}, {0.0,-0.4440,0.0,0.4440},{0.2070,0.2070,0.2070,0.2070}};
     float _B_array[12];
@@ -24,7 +65,7 @@ int main() {
         _uMin[i] =  -0.3491;
         _uMax[i] =  0.3491;
     }
-    float yd[3]={0.2, -0.1, 0.1};
+    float yd[3]={-0.2, -0.1, 0.1};
     
 
     // 线性规划数据
@@ -86,7 +127,7 @@ int main() {
             xout[i]=-xout[i]+problem.h[i];
         }
     }
-    if(result.itlim<=0){
+    if(result.iters>=problem.itlim){
         err = 3;
         std::cout << "Too Many Iterations Finding Final Solution"<< std::endl; 
     }
@@ -113,45 +154,132 @@ int main() {
         }
     }
     std::cout << "]" << std::endl;
-    //飞机数据
-    // 示例代码
-    // 使用模板类时，可以指定 ControlSize 和 EffectSize 的具体值
-    // 例如：
-    float l1=0.148;float l2=0.069;float k_v=3;
-    Aircraft<3, 4> df_4(_B, -0.3491, 0.3491); // 创建一个具有 4 个操纵向量和 3 个广义力矩的飞行器对象
-    // 分配器数据：
-    DP_LP_ControlAllocator<3, 4> DP_LPCA(df_4); // 创建一个控制分配器对象，用于具有 4 个操纵向量和 3 个广义力矩的飞行器(转化为线性规划问题，其维数和参数 <3, 4> 有关。)
-    // 然后可以使用飞行器对象和控制分配器对象进行操作
-    // 调用 u = DP_LP_ControlAllocator.allocateControl(yd)
-    float* u = new float[4];
-    start = std::chrono::high_resolution_clock::now();
-    u = DP_LPCA.allocateControl(yd);
-    finish = std::chrono::high_resolution_clock::now();
-    elapsed = finish - start;
-    std::cout << "DP_LPCA.allocateControl execution time: " << elapsed.count() << "s\n";
-    std::cout << "u: [";
-    for (size_t i = 0; i < 4; ++i) {
-        std::cout << u[i];
-        if (i < 3) {
-            std::cout << ", ";
-        }
-    }
-    std::cout << "]" << std::endl;
 
-    float* u2 = new float[4];
-    start = std::chrono::high_resolution_clock::now();
-    u2 = DP_LPCA.allocateControl_bases_solver(yd);
-    finish = std::chrono::high_resolution_clock::now();
-    elapsed = finish - start;
-    std::cout << "DP_LPCA.allocateControl_bases_solver execution time: " << elapsed.count() << "s\n";
-    std::cout << "u2: [";
-    for (size_t i = 0; i < 4; ++i) {
-        std::cout << u2[i];
-        if (i < 3) {
-            std::cout << ", ";
+
+
+
+
+    // //飞机数据
+    // // 示例代码
+    // // 使用模板类时，可以指定 ControlSize 和 EffectSize 的具体值
+    // // 例如：
+    // float l1=0.148;float l2=0.069;float k_v=3;
+    // Aircraft<3, 4> df_4(_B, -0.3491, 0.3491); // 创建一个具有 4 个操纵向量和 3 个广义力矩的飞行器对象
+    // // 分配器数据：
+    // DP_LP_ControlAllocator<3, 4> DP_LPCA(df_4); // 创建一个控制分配器对象，用于具有 4 个操纵向量和 3 个广义力矩的飞行器(转化为线性规划问题，其维数和参数 <3, 4> 有关。)
+    // // 然后可以使用飞行器对象和控制分配器对象进行操作
+    // // 调用 u = DP_LP_ControlAllocator.allocateControl(yd)
+    // float* u = new float[4];
+    // start = std::chrono::high_resolution_clock::now();
+    // u = DP_LPCA.allocateControl(yd);
+    // finish = std::chrono::high_resolution_clock::now();
+    // elapsed = finish - start;
+    // std::cout << "DP_LPCA.allocateControl execution time: " << elapsed.count() << "s\n";
+    // std::cout << "u: [";
+    // for (size_t i = 0; i < 4; ++i) {
+    //     std::cout << u[i];
+    //     if (i < 3) {
+    //         std::cout << ", ";
+    //     }
+    // }
+    // std::cout << "]" << std::endl;
+
+    // float* u2 = new float[4];
+    // start = std::chrono::high_resolution_clock::now();
+    // u2 = DP_LPCA.allocateControl_bases_solver(yd);
+    // finish = std::chrono::high_resolution_clock::now();
+    // elapsed = finish - start;
+    // std::cout << "DP_LPCA.allocateControl_bases_solver execution time: " << elapsed.count() << "s\n";
+    // std::cout << "u2: [";
+    // for (size_t i = 0; i < 4; ++i) {
+    //     std::cout << u2[i];
+    //     if (i < 3) {
+    //         std::cout << ", ";
+    //     }
+    // }
+    // std::cout << "]" << std::endl;
+
+
+
+    
+
+
+    size_t array_size =4;
+    // main loop
+    for(int i=0;i<num;i++)
+	{
+        float yd[3]={(float) data[i][0],  (float) data[i][1],   (float) data[i][2]};
+        for(int i=0; i<problem.m; ++i)
+        {
+            problem.A[i][problem.n-1] =-yd[i];
+        }
+
+        start = std::chrono::high_resolution_clock::now();
+        result = BoundedRevisedSimplex(problem);
+        finish = std::chrono::high_resolution_clock::now();
+        elapsed = finish - start;
+        std::cout << "execution time: " << elapsed.count() << "s\n";
+        // 使用结果
+        // result.y0, result.inB, result.e, result.errout
+        for(int i=0;i<problem.n;++i){
+            xout[i]=0;
+        }
+        for(int i=0;i<problem.m;++i){
+            xout[result.inB[i]]=result.y0[i];
+        }
+        for(int i=0;i<problem.n;++i){
+            if(!result.e[i]){
+                xout[i]=-xout[i]+problem.h[i];
+            }
+        }
+        if(result.iters>=problem.itlim){
+            err = 3;
+            std::cout << "Too Many Iterations Finding Final Solution"<< std::endl; 
+        }
+        if(result.errout)
+        {
+            err = 1;
+            std::cout << "Solver error"<< std::endl;
+        }
+        for(int i=0;i<problem.n-1;++i){
+            u_px4_matrix[i]=xout[i]+_uMin[i];
+        }
+        if(xout[problem.n-1]>1){
+            for(int i=0;i<problem.n-1;++i){
+                u_px4_matrix[i]/=xout[problem.n-1];
+            }
+        }
+
+        
+        std::cout << "u_px4_matrix: [";
+        for (size_t i = 0; i < problem.n-1; ++i) {
+            std::cout << u_px4_matrix[i];
+            if (i < problem.n-2) {
+                std::cout << ", ";
+            }
+        }
+        std::cout << "]" << std::endl;
+        // 写入CSV文件
+        for (size_t i = 0; i < array_size; ++i) {
+            outFile << u_px4_matrix[i] << (i < array_size - 1 ? "," : "\n");
         }
     }
-    std::cout << "]" << std::endl;
+    // 关闭文件
+    outFile.close();
+    // 释放内存
+    for (size_t i = 0; i < data.size(); ++i) {
+        delete[] array[i];
+    }
+    delete[] array;
+
+
+
+
+
+
+
+
+    
 
     return 0;
 }

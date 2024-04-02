@@ -111,6 +111,19 @@ struct LinearProgrammingResult {
             e[i] = false;
         }
     }
+    // 拷贝构造函数
+    LinearProgrammingResult(const LinearProgrammingResult<M, N>& other) {
+        // 将成员变量从另一个对象复制到当前对象
+        for (int i = 0; i < M; ++i) {
+            y0[i] = other.y0[i];
+            inB[i] = other.inB[i];
+        }
+        for (int i = 0; i < N; ++i) {
+            e[i] = other.e[i];
+        }
+        iters = other.iters;
+        errout = other.errout;
+    }
 };
 
 template<int M, int N>
@@ -1268,6 +1281,7 @@ public:
     }
     Aircraft(float controlEffectMatrixInit[ControlSize][EffectorSize], float lower, float upper) : lower(lower), upper(upper) {
         // 使用传入的初始化参数和飞行器
+        std::cout << "使用传入的controlEffectMatrixInit, lower, upper初始化参数和飞行器"<< std::endl; 
         for (int i = 0; i < EffectorSize; ++i) {
             this->controlVector[i] = 0;
             this->upperLimits[i] = upper;
@@ -1302,7 +1316,9 @@ public:
     }
     // 参数列表构造函数
     ControlAllocatorBase(const Aircraft<ControlSize, EffectorSize>& aircraft) 
-        : aircraft(aircraft) { // 使用传入的aircraft对象初始化aircraft成员
+        : aircraft(aircraft) { 
+        // 使用传入的aircraft对象初始化aircraft成员
+        std::cout << "ControlAllocatorBase使用传入的aircraft对象初始化aircraft成员"<< std::endl;
     }
 
     virtual float*  allocateControl(float input[ControlSize]) = 0;
@@ -1321,9 +1337,10 @@ public:
     // 构造函数
     DP_LP_ControlAllocator(const Aircraft<ControlSize, EffectorSize>& aircraft)
         : ControlAllocatorBase<ControlSize, EffectorSize>(aircraft){
+        std::cout << "DP_LP_ControlAllocator使用传入的aircraft对象给ControlAllocatorBase初始化aircraft成员后, 其余参数DP_LPCA_problem在这里初始化"<< std::endl;
         // 在此处用aircraft, generalizedMoment初始化 成员变量 DP_LPCA_problem 和 Pre_DP_LPCA_problem 
         // 线性规划数据
-        DP_LPCA_problem.itlim = 2;
+        DP_LPCA_problem.itlim = 10;
         //填数据
         DP_LPCA_problem.inB[0]=0;
         DP_LPCA_problem.inB[1]=1;
@@ -1334,28 +1351,29 @@ public:
         DP_LPCA_problem.e[2] = false;
         DP_LPCA_problem.e[3] = true;
         DP_LPCA_problem.e[4] = true;
-
-        for(int i=0; i<ControlSize; ++i)
+        
+        for(int i=0; i<DP_LPCA_problem.m; ++i)
         {
             float temp=0;
-            for(int j=0; j<EffectorSize; ++j)
+            for(int j=0; j<DP_LPCA_problem.n-1; ++j)
             {
-                DP_LPCA_problem.A[i][j] = aircraft.controlEffectMatrix[i][j];
+                DP_LPCA_problem.A[i][j] =aircraft.controlEffectMatrix[i][j];
                 temp +=-aircraft.controlEffectMatrix[i][j]*aircraft.lowerLimits[j];
             }
-            DP_LPCA_problem.A[i][EffectorSize] =-0; // will be change in the loop
+            DP_LPCA_problem.A[i][DP_LPCA_problem.n-1] =0;
             DP_LPCA_problem.b[i] = temp;
         }
-        for(int i=0; i<EffectorSize; ++i)
+        for(int i=0; i<DP_LPCA_problem.n-1; ++i)
         {
             DP_LPCA_problem.c[i] =0;
         }
-        DP_LPCA_problem.c[EffectorSize] =-1;
+        DP_LPCA_problem.c[DP_LPCA_problem.n-1] =-1;
         for(int i=0; i<DP_LPCA_problem.n; ++i)
         {
             DP_LPCA_problem.h[i] =aircraft.upperLimits[i]-aircraft.lowerLimits[i];
         }
-        DP_LPCA_problem.h[EffectorSize]=upper_lam;
+        DP_LPCA_problem.h[DP_LPCA_problem.n-1]=upper_lam;
+        
         LPsolverForAC.problem=DP_LPCA_problem;
     }
 
@@ -1374,8 +1392,9 @@ public:
         // DP_LPCA（generalizedMoment, aircraft） 
         // DP_LPCA函数利用飞行器数据，将分配问题描述为DP_LP问题并用BoundedRevisedSimplex求解
         // 使用模版函数result = BoundedRevisedSimplex(problem);  
-        for (int i = 0; i < ControlSize; ++i) {
-            DP_LPCA_problem.A[i][EffectorSize]=-input[i];
+        for(int i=0; i<DP_LPCA_problem.m; ++i)
+        {
+            DP_LPCA_problem.A[i][DP_LPCA_problem.n-1] =-input[i];
             this->generalizedMoment[i] = input[i]; // just record.
         }
         auto result = BoundedRevisedSimplex(DP_LPCA_problem);

@@ -82,7 +82,7 @@ while (~done  || ~unbounded ) && (itlim > 0)
     rdt = ct(inD)-lamt*A(:,inD);
     %Find minimum relative cost
     [minr, qind] = min(rdt);
-    if minr >=0  % If all relative costs are positive then the solution is optimal
+    if minr >=0  % If all relative costs are positive then the solution is optimal % have to be compare with 0
         done = true;
         break;
     end

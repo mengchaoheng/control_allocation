@@ -52,11 +52,11 @@ x_dir_alloc_linprog_re_bound=zeros(m,N);
 x_use_LP_lib=zeros(m,N);
 
 %% simulate flight process  
-for i=1:2%N
+for i=1:N
     
-    IN_MAT(1:3,end) = [0.1 0.2 0.3];%v(:,i); 
+    IN_MAT(1:3,end) = v(:,i);% [-0.475528, 0, -0.154509]';
 
-    u = LPwrap(IN_MAT) % function of ACA lib
+    u = LPwrap(IN_MAT); % function of ACA lib
     x_LPwrap(:,i) = Constrain(u,umin,umax);
     % 
     % u= CGIwrap(IN_MAT);

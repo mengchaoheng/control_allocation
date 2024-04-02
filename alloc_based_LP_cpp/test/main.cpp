@@ -65,12 +65,12 @@ int main() {
         _uMin[i] =  -0.3491;
         _uMax[i] =  0.3491;
     }
-    float yd[3]={-0.2, -0.1, 0.1};
+    float yd[3]={-0.475528, 0, -0.154509};
     
 
     // 线性规划数据
     LinearProgrammingProblem<3, 5> problem;
-    problem.itlim = 100;
+    problem.itlim = 4;
     //填数据
     problem.inB[0]=0;
     problem.inB[1]=1;
@@ -177,50 +177,50 @@ int main() {
 
     size_t array_size =4;
     // main loop
-    for(int i=0;i<8223;i++)
+    for(int i=0;i<num;i++)
 	{
         float yd[3]={(float) data[i][0],  (float) data[i][1],   (float) data[i][2]};
-        // for(int i=0; i<problem.m; ++i)
-        // {
-        //     problem.A[i][problem.n-1] =-yd[i];
-        // }
+        for(int i=0; i<problem.m; ++i)
+        {
+            problem.A[i][problem.n-1] =-yd[i];
+        }
         //=====================origin================================
 
-        // start = std::chrono::high_resolution_clock::now();
-        // result = BoundedRevisedSimplex(problem);
-        // finish = std::chrono::high_resolution_clock::now();
-        // elapsed = finish - start;
-        // std::cout << "execution time: " << elapsed.count() << "s\n";
-        // // 使用结果
-        // // result.y0, result.inB, result.e, result.errout
-        // for(int i=0;i<problem.n;++i){
-        //     xout[i]=0;
-        // }
-        // for(int i=0;i<problem.m;++i){
-        //     xout[result.inB[i]]=result.y0[i];
-        // }
-        // for(int i=0;i<problem.n;++i){
-        //     if(!result.e[i]){
-        //         xout[i]=-xout[i]+problem.h[i];
-        //     }
-        // }
-        // if(result.iters>=problem.itlim){
-        //     err = 3;
-        //     std::cout << "Too Many Iterations Finding Final Solution"<< std::endl; 
-        // }
-        // if(result.errout)
-        // {
-        //     err = 1;
-        //     std::cout << "Solver error"<< std::endl;
-        // }
-        // for(int i=0;i<problem.n-1;++i){
-        //     u_px4_matrix[i]=xout[i]+_uMin[i];
-        // }
-        // if(xout[problem.n-1]>1){
-        //     for(int i=0;i<problem.n-1;++i){
-        //         u_px4_matrix[i]/=xout[problem.n-1];
-        //     }
-        // }
+        start = std::chrono::high_resolution_clock::now();
+        result = BoundedRevisedSimplex(problem);
+        finish = std::chrono::high_resolution_clock::now();
+        elapsed = finish - start;
+        std::cout << "execution time: " << elapsed.count() << "s\n";
+        // 使用结果
+        // result.y0, result.inB, result.e, result.errout
+        for(int i=0;i<problem.n;++i){
+            xout[i]=0;
+        }
+        for(int i=0;i<problem.m;++i){
+            xout[result.inB[i]]=result.y0[i];
+        }
+        for(int i=0;i<problem.n;++i){
+            if(!result.e[i]){
+                xout[i]=-xout[i]+problem.h[i];
+            }
+        }
+        if(result.iters>=problem.itlim){
+            err = 3;
+            std::cout << "Too Many Iterations Finding Final Solution"<< std::endl; 
+        }
+        if(result.errout)
+        {
+            err = 1;
+            std::cout << "Solver error"<< std::endl;
+        }
+        for(int i=0;i<problem.n-1;++i){
+            u_px4_matrix[i]=xout[i]+_uMin[i];
+        }
+        if(xout[problem.n-1]>1){
+            for(int i=0;i<problem.n-1;++i){
+                u_px4_matrix[i]/=xout[problem.n-1];
+            }
+        }
 
         
         // std::cout << "u_px4_matrix: [";
@@ -235,12 +235,13 @@ int main() {
 
 
          // 调用 u = DP_LP_ControlAllocator.allocateControl(yd)
-        float* u = new float[4];
-        start = std::chrono::high_resolution_clock::now();
-        u = DP_LPCA.allocateControl(yd);
-        finish = std::chrono::high_resolution_clock::now();
-        elapsed = finish - start;
-        std::cout << "DP_LPCA.allocateControl execution time: " << elapsed.count() << "s\n";
+        // float* u = new float[4];
+        // start = std::chrono::high_resolution_clock::now();
+        // u = DP_LPCA.allocateControl(yd);
+        // finish = std::chrono::high_resolution_clock::now();
+        // elapsed = finish - start;
+        // std::cout << "DP_LPCA.allocateControl execution time: " << elapsed.count() << "s\n";
+
         // std::cout << "u: [";
         // for (size_t i = 0; i < 4; ++i) {
         //     std::cout << u[i];
@@ -256,6 +257,7 @@ int main() {
         // finish = std::chrono::high_resolution_clock::now();
         // elapsed = finish - start;
         // std::cout << "DP_LPCA.allocateControl_bases_solver execution time: " << elapsed.count() << "s\n";
+
         // std::cout << "u2: [";
         // for (size_t i = 0; i < 4; ++i) {
         //     std::cout << u2[i];
@@ -269,7 +271,7 @@ int main() {
 
         // 写入CSV文件
         for (size_t i = 0; i < array_size; ++i) {
-            outFile << u[i] << (i < array_size - 1 ? "," : "\n");
+            outFile << u_px4_matrix[i] << (i < array_size - 1 ? "," : "\n");
         }
     }
     // 关闭文件

@@ -101,7 +101,6 @@ end
 output = readmatrix('output.csv')';
 % just use the flight data to compare.
 command_px4=v(:,1:len_command_px4);
-% x1=x_LPwrap(:,1:len_command_px4);
 x1=output(:,1:len_command_px4);
 x2=x_LPwrap(:,1:len_command_px4);
 
@@ -155,3 +154,12 @@ plot(t,error2(3,:),'Color','b','LineStyle','--','Marker','o','MarkerIndices',tt)
 % plot(t,U1(3,:),'Color','b','LineStyle','-.','Marker','+','MarkerIndices',tt);hold on;
 % plot(t,U2(3,:),'Color','g','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
 % plot(t,command_px4(:,3),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
+
+outside_x1=output(:,len_command_px4+1:end);
+outside_x2=x_LPwrap(:,len_command_px4+1:end);
+outside_U1=B*outside_x1;
+outside_U2=B*outside_x2;
+figure,
+plot3(outside_U1(1,:),outside_U1(2,:),outside_U1(3,:),'r*');
+figure,
+plot3(outside_U2(1,:),outside_U2(2,:),outside_U2(3,:),'g*');

@@ -65,7 +65,7 @@ int main() {
         _uMin[i] =  -0.3491;
         _uMax[i] =  0.3491;
     }
-    float yd[3]={-0.475528, 0, -0.154509};
+    float yd[3]={-0.430392439767736,-0.236610246030909,-0.0936906572928623};
     
 
     // 线性规划数据
@@ -181,62 +181,67 @@ int main() {
     for(int i=0;i<num;i++)
 	{
         float yd[3]={(float) data[i][0],  (float) data[i][1],   (float) data[i][2]};
-        //=====================origin================================
-        bool flag=false;
-        for(int i=0;i<4;++i){
-            if(std::abs(yd[i]) > problem.tol)
-            {
-                flag = true; // Check this condition
-                break;
-            }
-        }
-        if(!flag){
-            for(int i=0;i<4;++i){
-                u_px4_matrix[i]=0;
-                
-            }
-        }else{
-            for(int i=0; i<problem.m; ++i)
-            {
-                problem.A[i][problem.n-1] =-yd[i];
-            }
-            start = std::chrono::high_resolution_clock::now();
-            result = BoundedRevisedSimplex(problem);
-            finish = std::chrono::high_resolution_clock::now();
-            elapsed = finish - start;
-            std::cout << "execution time: " << elapsed.count() << "s\n";
-            // 使用结果
-            // result.y0, result.inB, result.e, result.errout
-            for(int i=0;i<problem.n;++i){
-                xout[i]=0;
-            }
-            for(int i=0;i<problem.m;++i){
-                xout[result.inB[i]]=result.y0[i];
-            }
-            for(int i=0;i<problem.n;++i){
-                if(!result.e[i]){
-                    xout[i]=-xout[i]+problem.h[i];
-                }
-            }
-            if(result.iters>=problem.itlim){
-                err = 3;
-                std::cout << "Too Many Iterations Finding Final Solution"<< std::endl; 
-            }
-            if(result.errout)
-            {
-                err = 1;
-                std::cout << "Solver error"<< std::endl;
-            }
-            for(int i=0;i<problem.n-1;++i){
-                u_px4_matrix[i]=xout[i]+_uMin[i];
-            }
-            if(xout[problem.n-1]>1){
-                for(int i=0;i<problem.n-1;++i){
-                    u_px4_matrix[i]/=xout[problem.n-1];
-                }
-            }
 
-        }
+
+
+
+        
+        //=====================origin================================
+        // bool flag=false;
+        // for(int i=0;i<4;++i){
+        //     if(std::abs(yd[i]) > problem.tol)
+        //     {
+        //         flag = true; // Check this condition
+        //         break;
+        //     }
+        // }
+        // if(!flag){
+        //     for(int i=0;i<4;++i){
+        //         u_px4_matrix[i]=0;
+                
+        //     }
+        // }else{
+        //     for(int i=0; i<problem.m; ++i)
+        //     {
+        //         problem.A[i][problem.n-1] =-yd[i];
+        //     }
+        //     start = std::chrono::high_resolution_clock::now();
+        //     result = BoundedRevisedSimplex(problem);
+        //     finish = std::chrono::high_resolution_clock::now();
+        //     elapsed = finish - start;
+        //     std::cout << "execution time: " << elapsed.count() << "s\n";
+        //     // 使用结果
+        //     // result.y0, result.inB, result.e, result.errout
+        //     for(int i=0;i<problem.n;++i){
+        //         xout[i]=0;
+        //     }
+        //     for(int i=0;i<problem.m;++i){
+        //         xout[result.inB[i]]=result.y0[i];
+        //     }
+        //     for(int i=0;i<problem.n;++i){
+        //         if(!result.e[i]){
+        //             xout[i]=-xout[i]+problem.h[i];
+        //         }
+        //     }
+        //     if(result.iters>=problem.itlim){
+        //         err = 3;
+        //         std::cout << "Too Many Iterations Finding Final Solution"<< std::endl; 
+        //     }
+        //     if(result.errout)
+        //     {
+        //         err = 1;
+        //         std::cout << "Solver error"<< std::endl;
+        //     }
+        //     for(int i=0;i<problem.n-1;++i){
+        //         u_px4_matrix[i]=xout[i]+_uMin[i];
+        //     }
+        //     if(xout[problem.n-1]>1){
+        //         for(int i=0;i<problem.n-1;++i){
+        //             u_px4_matrix[i]/=xout[problem.n-1];
+        //         }
+        //     }
+
+        // }
         // std::cout << "u_px4_matrix: [";
         // for (size_t i = 0; i < problem.n-1; ++i) {
         //     std::cout << u_px4_matrix[i];
@@ -249,22 +254,22 @@ int main() {
 
 
          // 调用 u = DP_LP_ControlAllocator.allocateControl(yd)
-        // float* u = new float[4];
-        // start = std::chrono::high_resolution_clock::now();
+        float* u = new float[4];
+        start = std::chrono::high_resolution_clock::now();
+        u = DP_LPCA.allocateControl(yd);
         // u = DP_LPCA.allocateControl(yd);
-        // // u = DP_LPCA.allocateControl(yd);
-        // finish = std::chrono::high_resolution_clock::now();
-        // elapsed = finish - start;
-        // std::cout << "DP_LPCA.allocateControl execution time: " << elapsed.count() << "s\n";
+        finish = std::chrono::high_resolution_clock::now();
+        elapsed = finish - start;
+        std::cout << "DP_LPCA.allocateControl execution time: " << elapsed.count() << "s\n";
 
-        // std::cout << "u: [";
-        // for (size_t i = 0; i < 4; ++i) {
-        //     std::cout << u[i];
-        //     if (i < 3) {
-        //         std::cout << ", ";
-        //     }
-        // }
-        // std::cout << "]" << std::endl;
+        std::cout << "u: [";
+        for (size_t i = 0; i < 4; ++i) {
+            std::cout << u[i];
+            if (i < 3) {
+                std::cout << ", ";
+            }
+        }
+        std::cout << "]" << std::endl;
 
         // float* u2 = new float[4];
         // start = std::chrono::high_resolution_clock::now();
@@ -286,7 +291,7 @@ int main() {
 
         // 写入CSV文件
         for (size_t i = 0; i < array_size; ++i) {
-            outFile << u_px4_matrix[i] << (i < array_size - 1 ? "," : "\n");
+            outFile << u[i] << (i < array_size - 1 ? "," : "\n");
         }
     }
     // 关闭文件

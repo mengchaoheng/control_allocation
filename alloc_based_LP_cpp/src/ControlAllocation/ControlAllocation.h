@@ -1408,7 +1408,7 @@ public:
         if(!flag){
             for(int i=0;i<EffectorSize;++i){
                 EffectorCommand[i]=0;
-                this->generalizedMoment[i] =0;
+                // this->generalizedMoment[i] =0; //error do not add this
             }
             // std::cout << "return 0"<< std::endl;
             return EffectorCommand;

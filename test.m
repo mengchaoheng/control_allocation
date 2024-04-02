@@ -54,7 +54,7 @@ x_use_LP_lib=zeros(m,N);
 %% simulate flight process  
 for i=1:N
     
-    IN_MAT(1:3,end) = v(:,i);% [-0.475528, 0, -0.154509]';
+    IN_MAT(1:3,end) = v(:,i);% [-0.475528, 0, -0.154509]';[-0.430392439767736;-0.236610246030909;-0.0936906572928623]
 
     u = LPwrap(IN_MAT); % function of ACA lib
     x_LPwrap(:,i) = Constrain(u,umin,umax);
@@ -159,6 +159,7 @@ outside_x1=output(:,len_command_px4+1:end);
 outside_x2=x_LPwrap(:,len_command_px4+1:end);
 outside_U1=B*outside_x1;
 outside_U2=B*outside_x2;
+outside_err=outside_x1-outside_x2;
 figure,
 plot3(outside_U1(1,:),outside_U1(2,:),outside_U1(3,:),'r*');
 figure,

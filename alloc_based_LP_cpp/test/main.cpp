@@ -185,7 +185,7 @@ int main() {
 
 
 
-        
+
         //=====================origin================================
         // bool flag=false;
         // for(int i=0;i<4;++i){
@@ -262,21 +262,21 @@ int main() {
         elapsed = finish - start;
         std::cout << "DP_LPCA.allocateControl execution time: " << elapsed.count() << "s\n";
 
-        std::cout << "u: [";
-        for (size_t i = 0; i < 4; ++i) {
-            std::cout << u[i];
-            if (i < 3) {
-                std::cout << ", ";
-            }
-        }
-        std::cout << "]" << std::endl;
+        // std::cout << "u: [";
+        // for (size_t i = 0; i < 4; ++i) {
+        //     std::cout << u[i];
+        //     if (i < 3) {
+        //         std::cout << ", ";
+        //     }
+        // }
+        // std::cout << "]" << std::endl;
 
-        // float* u2 = new float[4];
-        // start = std::chrono::high_resolution_clock::now();
-        // u2 = DP_LPCA.allocateControl_bases_solver(yd);
-        // finish = std::chrono::high_resolution_clock::now();
-        // elapsed = finish - start;
-        // std::cout << "DP_LPCA.allocateControl_bases_solver execution time: " << elapsed.count() << "s\n";
+        float* u2 = new float[4];
+        start = std::chrono::high_resolution_clock::now();
+        u2 = DP_LPCA.allocateControl_bases_solver(yd);
+        finish = std::chrono::high_resolution_clock::now();
+        elapsed = finish - start;
+        std::cout << "DP_LPCA.allocateControl_bases_solver execution time: " << elapsed.count() << "s\n";
 
         // std::cout << "u2: [";
         // for (size_t i = 0; i < 4; ++i) {
@@ -291,7 +291,7 @@ int main() {
 
         // 写入CSV文件
         for (size_t i = 0; i < array_size; ++i) {
-            outFile << u[i] << (i < array_size - 1 ? "," : "\n");
+            outFile << u2[i] << (i < array_size - 1 ? "," : "\n");
         }
     }
     // 关闭文件

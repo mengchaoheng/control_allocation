@@ -679,11 +679,45 @@ public:
 // 定义函数模板
 template<int M, int N>
 LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, N> problem) {
+    // Bounded Revised Simplex
+
+    // function [yout, inBout,eout, itout,errout] = simplxuprevsol(A,ct,b,inB,inD,h,e,m,n,itlim)
+
+    // Solves the linear program:
+    //         minimize c'y 
+    //         subject to 
+    //         Ay = b
+    //         0<= y <= h
+
+    // Inputs: 
+    //         A [m,n]   = lhs Matrix of equaltity constraints
+    //         ct [1,n]  = transpose of cost vector
+    //         b [m,1]   = rhs vector for equality constraint
+    //         inB [m]   = Vector of indices of unknowns in the initial basic set
+    //         inD [n-m] = Vector of indices of unknowns not in the initial basic set
+    //         h[n,1]    = Upper Bound for unknowns
+    //         e[n,1]    = Sign for unknown variables (+ lower bound, - upper bound)
+    // Optional inputs:
+    //         m,n       = number of constraints, unknowns (Opposite standard
+    //                     CA convention
+    //         itlim     = Upper bound on the allowed iterations\
+
+    // Outputs:
+    //         yout[n,1]  = Optimal output variable
+    //         inBout     = indices of Basic vectors in output
+    //         eout       = sign associate with output unknowns
+    //         itout      = number of iterations remaining out of itlim
+    //         errout     = Flag (=true) if unbounded is set
+
+    // Modification History
+    // 2002      Roger Beck  Original
+    // 8/2014    Roger Beck  Update for use
+    // 9/2014    Roger Beck  Added anti-cycling rule
+    // 4/2024    Meng ChaoHeng
     LinearProgrammingResult<M, N> result;
-    // 实现线性规划算法
-    // 使用 problem.inB, problem.inD, problem.itlim, problem.A, problem.b, problem.c, problem.h, problem.e
-    // float tol=1e-7;
+    // 使用 problem.inB, problem.inD, problem.itlim, problem.A, problem.b, problem.c, problem.h, problem.e, problem.tol
     const int n_m=N-M;
+    // Index list for non-basic variables, that is 1 2 3 4 ... n
     int* nind = generateSequence(0, n_m-1);
     // std::cout << "nind: [";
     // for (size_t i = 0; i <N- M; ++i) {
@@ -694,6 +728,7 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
     // }
     // std::cout << "]" << std::endl;
     //=============
+    // Index list for all variables 
     int* ind_all = generateSequence(0, N-1);
     //=============
     // std::cout << "ind_all: [";
@@ -705,6 +740,7 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
     // }
     // std::cout << "]" << std::endl;
     //=============
+    // Partition A, we have inD, which the element in ind_all but not in inB
     setdiff(ind_all, N, problem.inB, M, problem.inD);
     //=============
     // std::cout << "problem.inB: [";
@@ -760,8 +796,7 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
     // std::cout << "]" << std::endl;
 
     
-    //
-
+    //djust signs problem if variables are initialized at upper bounds.
     for(int i=0; i<M; ++i)
     {
         for(int j=0; j<N; ++j)
@@ -851,17 +886,18 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
     rat.setZero();
     
     //  %Initial Solution
-    // matrix::Vector<float, M> y0 = inv(A_inB)*b_vec;
     matrix::LeastSquaresSolver<float, M,M> LSsolver0(A_inB);
     matrix::Vector<float, M> y0 = LSsolver0.solve(b_vec);
     // std::cout << "y0:";
     // y0.print();
+    // Initialize Loop Termination Conditionss
     bool done = false;
     bool unbounded = false;
     int iters =0;
      while ((!done  || !unbounded ) && (iters <= problem.itlim))
     {
         iters = iters+1;
+        // Calculate transpose of relative cost vector based on current basis
         // lamt= (inv(A_inB).transpose()*c_inB).transpose();
         matrix::LeastSquaresSolver<float, M,M> LSsolver_lamt(A_inB.transpose());
         lamt = LSsolver_lamt.solve(c_inB).transpose();
@@ -872,6 +908,7 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
         // rdt.print();
         float minr;
         size_t qind;
+        // Find minimum relative cost
         min(rdt.transpose(), minr, qind);
         // std::cout << "minr:"<<minr<<std::endl;
         // std::cout << "qind:"<<qind<<std::endl;
@@ -885,18 +922,17 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
         A_qel(1)=problem.A[1][qel];
         A_qel(2)=problem.A[2][qel];
         // std::cout << "qel:"<<qel<<std::endl;
-
-        // yq=inv(A_inB)* A_qel; // Vector to enter in terms of the current Basis vector
+        // yq=inv(A_inB)* A_qel; 
         matrix::LeastSquaresSolver<float, M,M> LSsolver1(A_inB);
-        yq = LSsolver1.solve(A_qel);
+        yq = LSsolver1.solve(A_qel); // Vector to enter in terms of the current Basis vector
         // std::cout << "yq:";
         // yq.print();
+         // Check wether all the abs of yq[i] is greater than tol.
         bool flag=false;
-        
         for(int i=0;i<M;++i){
-            if(std::abs(yq(i)) > problem.tol)
+            if(std::abs(yq(i)) > problem.tol) 
             {
-                flag = true; // Check this condition
+                flag = true; 
                 break;
             }
         }
@@ -906,7 +942,7 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
             std::cout << "simplex loop Solution is unbounded"<< std::endl; 
             break;
         }
-        // Recompute rations and determine variable to leave
+        // Compute ratio how much each current basic variable will have to move for the entering variable.
         // careful here
         float hinB[M];
         for(int i=0;i<M;++i)
@@ -915,16 +951,16 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
             {
                 rat(i)=y0(i)/yq(i);
                 hinB[i]=problem.h[problem.inB[i]];
+                // If yq < 0 then increasing variable when it leaves the basis will minimize cost
                 if(yq(i)<0 ) // have to be compare with 0!!!
                 {
                     // std::cout << "yq(i)<0 i:"<< i<< std::endl;                  
                     rat(i)-=hinB[i]/yq(i);
                 }
             }
-            else
+            else // If an element yq ~=0 then it doesn't change for the entering variable and shouldn't be chosen
             {
                 rat(i)=INFINITY;
-                /* code */
             }
         }
         // std::cout << "rat:";
@@ -935,19 +971,21 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
         min(rat, minrat, p);
         // std::cout << "minrat:"<<minrat<<std::endl;
         // std::cout << "p:"<<p<<std::endl;
+
         // If the minimum ratio is zero, then the solution is degenerate and the entering
         // variable will not change the basis---invoke Bland's selection rule to avoid
         // cycling.
         if (std::abs(minrat) <= problem.tol)
         {
-            //Find negative relative cost
+            // Find negative relative cost
             // std::cout << " Find negative relative cost "<< std::endl; 
             for(int i=0;i<N-M;++i)
             {
                 // std::cout << "rdt(0,i):"<<rdt(0,i)<<std::endl; 
-                if(rdt(0,i)<0){ //Note that since minr <0 indm is not empty 
+                // indm is the index of rdt < 0, qind is the fisrt one.
+                if(rdt(0,i)<0){ // Note that since minr <0 indm is not empty 
                     qind=nind[i];
-                    qel = problem.inD[qind];//Unknown to Enter the basis is first indexed to avoid cycling
+                    qel = problem.inD[qind];// Unknown to Enter the basis is first indexed to avoid cycling
                     // std::cout << "qind:"<<qind<<std::endl;
                     // std::cout << "qel:"<<qel<<std::endl;
                     break;
@@ -958,14 +996,14 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
             A_qel(2)=problem.A[2][qel];
             // yq=inv(A_inB)* A_qel;
             matrix::LeastSquaresSolver<float, M,M> LSsolver2(A_inB);
-            yq = LSsolver2.solve(A_qel);
+            yq = LSsolver2.solve(A_qel); // Vector to enter in terms of the current Basis vector
             // std::cout << "yq:";
             // yq.print();
             bool flag=false;
             for(int i=0;i<M;++i){
                 if(std::abs(yq(i)) > problem.tol)
                 {
-                    flag = true; // Check this condition
+                    flag = true; 
                     break;
                 }
             }
@@ -976,23 +1014,21 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
                 break;
             }
             // Recompute rations and determine variable to leave
-            // Recompute rations and determine variable to leave
             float hinB[M];
             for(int i=0;i<M;++i)
             {
                 hinB[i]=problem.h[problem.inB[i]];
-                if(std::abs(yq(i))>problem.tol)
+                if(std::abs(yq(i))>problem.tol) 
                 {
                     rat(i)=y0(i)/yq(i);
-                    if(yq(i)<0)
+                    if(yq(i)<0) // If yq < 0 then increasing variable when it leaves the basis will minimize cost
                     {                    
                         rat(i)-=hinB[i]/yq(i);
                     }
                 }
                 else
-                {
-                    rat(i)=INFINITY;
-                    /* code */
+                { 
+                    rat(i)=INFINITY; // If an element yq ~=0 then it doesn't change for the entering variable and shouldn't be chosen
                 }
             }
             // std::cout << "rat:";
@@ -1004,8 +1040,10 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
             // std::cout << "minrat:"<<minrat<<std::endl;
             // std::cout << "p:"<<p<<std::endl;
         }
+        // Maintain the bounded simplex as only having lower bounds by recasting any variable that needs to move to its opposite bound.
         if (minrat >= problem.h[qel])
         {
+            // Case 1: Entering variable goes to opposite bound and current basis is maintained
             // std::cout << " Case 1 "<< std::endl; 
             problem.e[qel] =!problem.e[qel];
             for(int i=0; i<M; ++i)
@@ -1025,6 +1063,7 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
         }
         else if(yq(p) > 0)
         {
+            // Case 2: Leaving variable returns to lower bound (0)	
             // std::cout << " Case 21 "<< std::endl; 
             int pel = problem.inB[p];
             // std::cout << "pel:"<<pel<<std::endl;
@@ -1051,6 +1090,7 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
         }
         else
         {
+            // Case 2: Leaving variable moves to upper bound	
             // std::cout << " Case 22 "<< std::endl; 
             int pel = problem.inB[p];
             // std::cout << "pel:"<<pel<<std::endl;
@@ -1104,7 +1144,7 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
         //     c_inD(i)=problem.c[problem.inD[i]];
         // }
         // y0=inv(A_inB)* b_vec;
-
+        //  Compute new Basic solution;
         matrix::LeastSquaresSolver<float, M,M> LSsolver(A_inB);
         y0 = LSsolver.solve(b_vec);
         // std::cout << "y0:";
@@ -1408,7 +1448,6 @@ public:
         if(!flag){
             for(int i=0;i<EffectorSize;++i){
                 EffectorCommand[i]=0;
-                // this->generalizedMoment[i] =0; //error do not add this
             }
             // std::cout << "return 0"<< std::endl;
             return EffectorCommand;
@@ -1512,9 +1551,8 @@ public:
     // 其他成员函数和成员变量定义
     float generalizedMoment[ControlSize]; // 构造函数设置
     // 线性规划相关
-    LinearProgrammingProblem<ControlSize, EffectorSize+1> DP_LPCA_problem;// 提前设置 using aircraft
-    LinearProgrammingProblem<ControlSize, EffectorSize+4> Pre_DP_LPCA_problem;// 提前设置 using aircraft
-    LinearProgrammingSolverForAC<ControlSize, EffectorSize+1> LPsolverForAC;
+    LinearProgrammingProblem<ControlSize, EffectorSize+1> DP_LPCA_problem;// 提前设置 inital by  aircraft data 
+    LinearProgrammingProblem<ControlSize, EffectorSize+4> Pre_DP_LPCA_problem;// 提前设置 inital by aircraft data
     float upper_lam = 1e4;
     
 };

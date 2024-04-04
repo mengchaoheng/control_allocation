@@ -8,7 +8,7 @@ using namespace matrix;
 const int SIZE_ydt = 3; // 假设 ydt 是一个包含 5 个元素的一维数组
 const int SIZE_Bt_row = 3; // 假设 Bt 是一个 5x5 的二维数组
 const int SIZE_Bt_col = 4;
-float calculateRho(float ydt[], float u[], float Bt[][SIZE_Bt_col], float tol) {
+inline float calculateRho(float ydt[], float u[], float Bt[][SIZE_Bt_col], float tol) {
     float numerator = 0.0f;
     float denominator = 0.0f;
     float ydt_T_Bt[SIZE_Bt_col];
@@ -35,7 +35,7 @@ float calculateRho(float ydt[], float u[], float Bt[][SIZE_Bt_col], float tol) {
 }
 
 // 函数用于计算两个正整数集合的差
-void setdiff(int setA[], int sizeA, int setB[], int sizeB, int result[]) {
+inline void setdiff(int setA[], int sizeA, int setB[], int sizeB, int result[]) {
     int sizeResult = 0;
     for (int i = 0; i < sizeA; ++i) {
         bool foundInB = false;
@@ -52,7 +52,7 @@ void setdiff(int setA[], int sizeA, int setB[], int sizeB, int result[]) {
         }
     }
 }
-int* generateSequence(int i, int n) {
+inline int* generateSequence(int i, int n) {
     int* result = new int[n - i + 1]; // 动态分配数组内存
 
     for (int num = i, index = 0; num <= n; ++num, ++index) {

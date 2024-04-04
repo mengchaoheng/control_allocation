@@ -284,7 +284,7 @@ int main() {
         //     }
         // }
         // std::cout << "]" << std::endl;
-        //=========================DPscaled_LPCA============================
+        //=========================DPscaled_LPCA============================INFO  [mixer_module] dir_alloc_sim time: 16
         start = std::chrono::high_resolution_clock::now();
         float* u3 = Allocator.DPscaled_LPCA(yd);  // Allocator.DPscaled_LPCA execution time: 4.17e-07s
         finish = std::chrono::high_resolution_clock::now();
@@ -322,14 +322,14 @@ int main() {
         // }
         // std::cout << std::endl; 
 
-        delete[] u;
-        delete[] u2;
-        delete[] u3;
-        delete[] u4;
         // 写入CSV文件
         for (size_t i = 0; i < array_size; ++i) {
             outFile << u3[i] << (i < array_size - 1 ? "," : "\n");
         }
+        delete[] u;
+        delete[] u2;
+        delete[] u3;
+        delete[] u4;
     }
     // 关闭文件
     outFile.close();

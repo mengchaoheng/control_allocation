@@ -289,6 +289,10 @@ public:
         // 8/2014    Roger Beck  Update for use
         // 9/2014    Roger Beck  Added anti-cycling rule
         // 4/2024    Meng ChaoHeng
+        // std::cout << "BoundedRevisedSimplex loop"<< std::endl; 
+        // std::cout << "M"<<M<< std::endl; 
+        // std::cout << "N"<<N<< std::endl; 
+
         LinearProgrammingResult<M, N> result;
         // 使用 problem.inB, problem.inD, problem.itlim, problem.A, problem.b, problem.c, problem.h, problem.e, problem.tol
         // const int n_m=N-M;
@@ -423,6 +427,14 @@ public:
         //     }
         // }
         // std::cout << "]" << std::endl;
+        // std::cout << "e: [";
+        // for (size_t i = 0; i < N; ++i) {
+        //     std::cout << problem.e[i];
+        //     if (i < N- 1) {
+        //         std::cout << ", ";
+        //     }
+        // }
+        // std::cout << "]" << std::endl;
 
         
         //==============================
@@ -430,25 +442,39 @@ public:
         // matrix::Matrix<float, M, n_m> A_inD;
         // matrix::Vector<float, M> c_inB;
         // matrix::Vector<float, n_m> c_inD;
+        //===============use inB and inD to inital==============
         for(int i=0; i<M; ++i)
         {
             for(int j=0; j<M; ++j)
             {
                 A_inB(i,j)=problem.A[i][problem.inB[j]];
-                if(j<n_m)
-                {
-                    A_inD(i,j)=problem.A[i][problem.inD[j]];
-                }
             }
             c_inB(i)=problem.c[problem.inB[i]];
         }
-        for(int i=0; i<n_m; ++i)
+        for(int i=0; i<M; ++i)
+        {
+            for(int j=0; j<N-M; ++j)
+            {
+                A_inD(i,j)=problem.A[i][problem.inD[j]];
+            }
+        }
+        for(int i=0; i<N-M; ++i)
         {
             c_inD(i)=problem.c[problem.inD[i]];
         }
         matrix::Vector<float, M> b_vec(problem.b);
-
-        // // inital some value
+        
+        // std::cout << "A_inB:";
+        // A_inB.print();
+        // std::cout << "A_inD:";
+        // A_inD.print();
+        // std::cout << "c_inB:";
+        // c_inB.print();
+        // std::cout << "c_inD:";
+        // c_inD.print();
+        // std::cout << "b_vec:";
+        // b_vec.print();
+        // inital some value
         // Matrix<float, 1, M> lamt;
         // lamt.setZero();
         // Matrix<float, 1, n_m> rdt;
@@ -459,7 +485,8 @@ public:
         // yq.setZero();
         // matrix::Vector<float, M> rat;
         // rat.setZero();
-        
+        //==============================
+
         //  %Initial Solution
         matrix::LeastSquaresSolver<float, M,M> LSsolver0(A_inB);
         matrix::Vector<float, M> y0 = LSsolver0.solve(b_vec);
@@ -622,6 +649,8 @@ public:
                 // std::cout << "p:"<<p<<std::endl;
             }
             // Maintain the bounded simplex as only having lower bounds by recasting any variable that needs to move to its opposite bound.
+            // std::cout << "problem.h[qel]:"<<problem.h[qel]<<std::endl;
+            // std::cout << "minrat-problem.h[qel]:"<<minrat-problem.h[qel]<<std::endl;
             if (minrat >= problem.h[qel])
             {
                 // Case 1: Entering variable goes to opposite bound and current basis is maintained
@@ -754,6 +783,7 @@ public:
             //     }
             // }
             // std::cout << "]" << std::endl;
+
             // std::cout << "b_vec:";
             // b_vec.print();
             // std::cout << "c: [";
@@ -781,7 +811,14 @@ public:
             //     }
             // }
             // std::cout << "]" << std::endl;
-
+            // std::cout << "e: [";
+            // for (size_t i = 0; i < N; ++i) {
+            //     std::cout << problem.e[i];
+            //     if (i < N- 1) {
+            //         std::cout << ", ";
+            //     }
+            // }
+            // std::cout << "]" << std::endl;
 
 
 
@@ -1561,16 +1598,7 @@ public:
         DP_LPCA_problem.tol=1e-7;
         DP_LPCA_problem.itlim = 10;
         //填数据
-        //===========just for df4, we alway have to calc this by a new problem================
-        // we can call BoundedRevisedSimplex direct in allocationControl
-        // DP_LPCA_problem.inB[0]=0;
-        // DP_LPCA_problem.inB[1]=1;
-        // DP_LPCA_problem.inB[2]=3;
-        // DP_LPCA_problem.e[0] = true;
-        // DP_LPCA_problem.e[1] = true;
-        // DP_LPCA_problem.e[2] = false;
-        // DP_LPCA_problem.e[3] = true;
-        // DP_LPCA_problem.e[4] = true;
+        
         for(int i=0; i<DP_LPCA_problem.m; ++i)
         {
             float temp=0;
@@ -1884,6 +1912,17 @@ public:
             return EffectorCommand;
         }
         //=======================
+        //===========just for df4, we alway have to calc this by a new problem================
+        // we can call BoundedRevisedSimplex direct in allocationControl
+        DP_LPCA_problem.inB[0]=0;
+        DP_LPCA_problem.inB[1]=1;
+        DP_LPCA_problem.inB[2]=3;
+        DP_LPCA_problem.e[0] = true;
+        DP_LPCA_problem.e[1] = true;
+        DP_LPCA_problem.e[2] = false;
+        DP_LPCA_problem.e[3] = true;
+        DP_LPCA_problem.e[4] = true;
+        //=======================
         for(int i=0; i<DP_LPCA_problem.m; ++i)
         {
             DP_LPCA_problem.A[i][DP_LPCA_problem.n-1] =-input[i];
@@ -1955,6 +1994,17 @@ public:
             return EffectorCommand;
         }
         //=======================  
+        //===========just for df4, we alway have to calc this by a new problem================
+        // we can call BoundedRevisedSimplex direct in allocationControl
+        LPsolverForAC.problem.inB[0]=0;
+        LPsolverForAC.problem.inB[1]=1;
+        LPsolverForAC.problem.inB[2]=3;
+        LPsolverForAC.problem.e[0] = true;
+        LPsolverForAC.problem.e[1] = true;
+        LPsolverForAC.problem.e[2] = false;
+        LPsolverForAC.problem.e[3] = true;
+        LPsolverForAC.problem.e[4] = true;
+        //=======================
         for (int i = 0; i < ControlSize; ++i) {
             LPsolverForAC.problem.A[i][EffectorSize]=-input[i];
             this->generalizedMoment[i] = input[i];

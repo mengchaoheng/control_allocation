@@ -171,21 +171,12 @@ int main() {
     // 然后可以使用飞行器对象和控制分配器对象进行操作
    
 
-
-
-    
-
-
     size_t array_size =4;
     // main loop
     for(int i=0;i<num;i++)
 	{
         float yd[3]={(float) data[i][0],  (float) data[i][1],   (float) data[i][2]};
         // float yd[3]={0.1,  0.2,   -0.1}; // for test
-
-
-
-
 
         //=====================origin================================
         // bool flag=false;

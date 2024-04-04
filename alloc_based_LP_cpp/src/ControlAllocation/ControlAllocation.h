@@ -4,20 +4,13 @@
 
 using namespace matrix;
 
-// 计算 rho 的函数
+// 计算 rho 的函数, for DPscaled_LPCA
 const int SIZE_ydt = 3; // 假设 ydt 是一个包含 5 个元素的一维数组
 const int SIZE_Bt_row = 3; // 假设 Bt 是一个 5x5 的二维数组
 const int SIZE_Bt_col = 4;
 float calculateRho(float ydt[], float u[], float Bt[][SIZE_Bt_col]) {
     float numerator = 0.0f;
     float denominator = 0.0f;
-
-    // 计算分子
-    // for (int i = 0; i < SIZE_ydt; ++i) {
-    //     for (int j = 0; j < SIZE_Bt_row; ++j) {
-    //         numerator += ydt[i] * Bt[j][i] * u[j];
-    //     }
-    // }
     float ydt_T_Bt[SIZE_Bt_col];
     for (int j = 0; j < SIZE_Bt_col; ++j) {
         ydt_T_Bt[j] = 0;
@@ -28,33 +21,19 @@ float calculateRho(float ydt[], float u[], float Bt[][SIZE_Bt_col]) {
     for (int k = 0; k < SIZE_Bt_col; ++k) {
         numerator += ydt_T_Bt[k] * u[k];
     }
-     
-    
-    // std::cout << "numerator"<<numerator<< std::endl;
     // 计算 ydt 的模的平方
     for (int i = 0; i < SIZE_ydt; ++i) {
         denominator += ydt[i] * ydt[i];
     }
-
-    // 避免除以零
+    // 避免除以零  // ydt的模不会很小
     if (denominator == 0) {
-        std::cerr << "Error: Division by zero." << std::endl;
+        // std::cerr << "Error: Division by zero." << std::endl;
         return 0.0f;
     }
-
     // 计算 rho
     return numerator / denominator;
 }
 
-
-
-// 定义一个计算矩阵diag(sb)的函数, sb = 2*(b > 0)-1;
-void calculateM(const int* b, int size, int** m) {
-    // 计算矩阵m的对角元素
-    for (int i = 0; i < size; ++i) {
-        m[i][i] = (b[i] > 0) ? 1 : -1;
-    }
-}
 // 函数用于计算两个正整数集合的差
 void setdiff(int setA[], int sizeA, int setB[], int sizeB, int result[]) {
     int sizeResult = 0;
@@ -177,7 +156,7 @@ struct LinearProgrammingResult {
         errout = other.errout;
     }
 };
-
+// LinearProgrammingSolverForAC 仅测试用。用于测试预定义矩阵会不会运算速度更快，但测试结果显示速度没有多少提升。
 template<int M, int N>
 class LinearProgrammingSolverForAC {
 public:
@@ -843,8 +822,10 @@ public:
     }
 };
 
-
-// 定义函数模板
+// 定义函数模板，修正单纯形算法实现。要求A行满秩，求解问题前已知inB和e，即需要找到一个初始基本可行解开始算法迭代。e=0表示该初始解在上限h上，否则就是0
+// see A.6.3 Simplex Method[1]. this function reimplement the simplxuprevsol of this book:
+// [1] W. Durham, K. A. Bordignon, and R. Beck, Aircraft control allocation. none: John Wiley & Sons, 2017.
+// and you can download the code on: https://github.com/mengchaoheng/control_allocation.git
 template<int M, int N>
 LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, N> problem) {
     // Bounded Revised Simplex
@@ -1535,7 +1516,7 @@ public:
     }
     Aircraft(float controlEffectMatrixInit[ControlSize][EffectorSize], float lower, float upper) : lower(lower), upper(upper) {
         // 使用传入的初始化参数和飞行器
-        std::cout << "使用传入的controlEffectMatrixInit, lower, upper初始化参数和飞行器"<< std::endl; 
+        // std::cout << "使用传入的controlEffectMatrixInit, lower, upper初始化参数和飞行器"<< std::endl; 
         for (int i = 0; i < EffectorSize; ++i) {
             this->controlVector[i] = 0;
             this->upperLimits[i] = upper;
@@ -1572,7 +1553,7 @@ public:
     ControlAllocatorBase(const Aircraft<ControlSize, EffectorSize>& aircraft) 
         : aircraft(aircraft) { 
         // 使用传入的aircraft对象初始化aircraft成员
-        std::cout << "ControlAllocatorBase使用传入的aircraft对象初始化aircraft成员"<< std::endl;
+        // std::cout << "ControlAllocatorBase使用传入的aircraft对象初始化aircraft成员"<< std::endl;
     }
 
     virtual float*  allocateControl(float input[ControlSize]) = 0;
@@ -1591,7 +1572,7 @@ public:
     // 构造函数
     DP_LP_ControlAllocator(const Aircraft<ControlSize, EffectorSize>& aircraft)
         : ControlAllocatorBase<ControlSize, EffectorSize>(aircraft){
-        std::cout << "DP_LP_ControlAllocator使用传入的aircraft对象给ControlAllocatorBase初始化aircraft成员后, 其余参数DP_LPCA_problem在这里初始化"<< std::endl;
+        // std::cout << "DP_LP_ControlAllocator使用传入的aircraft对象给ControlAllocatorBase初始化aircraft成员后, 其余参数DP_LPCA_problem在这里初始化"<< std::endl;
         // 在此处用aircraft, generalizedMoment初始化 成员变量 DP_LPCA_problem 和 Pre_DP_LPCA_problem 
         // 线性规划数据
         //=====================================DP_LPCA_problem================================
@@ -2045,6 +2026,9 @@ public:
         }
         return EffectorCommand;
     }
+
+    // To find an initial condition, many linear programming solvers treat the solution in two phases. Phase one solves a specially constructed problem designed to yield a basic feasible solution that is used to initialize the original problem in phase two.
+    // So we have DP_LPCA and DPscaled_LPCA
     float* DP_LPCA(float input[ControlSize]){
         // Direction Preserving Control Allocation Linear Program
 

@@ -26,20 +26,20 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 add_subdirectory(alglib)
 
 # 添加 matrix 库的子目录
-# add_subdirectory(${CMAKE_SOURCE_DIR}/matrix) #maybe don't need
+# add_subdirectory(${CMAKE_SOURCE_DIR}/matrix) # maybe don't need
 
 # 将 matrix 库的头文件路径添加到包含目录
 include_directories(${CMAKE_SOURCE_DIR}/matrix)
 
 
 # 添加可执行文件
-add_executable(MyExecutable test/main.cpp)
-# add_executable(minlp_basic test/minlp_basic.cpp)
-# add_executable(LPwrap_test test/LPwrap_test.cpp src/LPwrap/allocator_dir_LPwrap_4.c src/LPwrap/rt_nonfinite.c)
+add_executable(main test/main.cpp)
+add_executable(minlp_basic test/minlp_basic.cpp)
+add_executable(LPwrap_test test/LPwrap_test.cpp src/LPwrap/allocator_dir_LPwrap_4.c src/LPwrap/rt_nonfinite.c)
 add_executable(new_simplex test/new_simplex.cpp src/LPwrap/allocator_dir_LPwrap_4.c src/LPwrap/rt_nonfinite.c)
 add_executable(px4_matrix_alloc test/px4_matrix_alloc.cpp src/LPwrap/allocator_dir_LPwrap_4.c src/LPwrap/rt_nonfinite.c)
 # 添加链接的库
-target_link_libraries(MyExecutable alglib)
-# target_link_libraries(minlp_basic alglib)
-# target_link_libraries(LPwrap_test alglib)
+target_link_libraries(main alglib)
+target_link_libraries(minlp_basic alglib)
+target_link_libraries(LPwrap_test alglib)
 target_link_libraries(new_simplex  alglib)

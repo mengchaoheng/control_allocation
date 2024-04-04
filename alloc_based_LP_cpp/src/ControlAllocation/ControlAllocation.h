@@ -3,6 +3,51 @@
 #include <iostream>
 
 using namespace matrix;
+
+// 计算 rho 的函数
+const int SIZE_ydt = 3; // 假设 ydt 是一个包含 5 个元素的一维数组
+const int SIZE_Bt_row = 3; // 假设 Bt 是一个 5x5 的二维数组
+const int SIZE_Bt_col = 4;
+float calculateRho(float ydt[], float u[], float Bt[][SIZE_Bt_col]) {
+    float numerator = 0.0f;
+    float denominator = 0.0f;
+
+    // 计算分子
+    // for (int i = 0; i < SIZE_ydt; ++i) {
+    //     for (int j = 0; j < SIZE_Bt_row; ++j) {
+    //         numerator += ydt[i] * Bt[j][i] * u[j];
+    //     }
+    // }
+    float ydt_T_Bt[SIZE_Bt_col];
+    for (int j = 0; j < SIZE_Bt_col; ++j) {
+        ydt_T_Bt[j] = 0;
+        for (int k = 0; k < SIZE_ydt; ++k) { //or < SIZE_Bt_row
+            ydt_T_Bt[j] += ydt[k] * Bt[k][j];
+        }
+    }
+    for (int k = 0; k < SIZE_Bt_col; ++k) {
+        numerator += ydt_T_Bt[k] * u[k];
+    }
+     
+    
+    std::cout << "numerator"<<numerator<< std::endl;
+    // 计算 ydt 的模的平方
+    for (int i = 0; i < SIZE_ydt; ++i) {
+        denominator += ydt[i] * ydt[i];
+    }
+
+    // 避免除以零
+    if (denominator == 0) {
+        std::cerr << "Error: Division by zero." << std::endl;
+        return 0.0f;
+    }
+
+    // 计算 rho
+    return numerator / denominator;
+}
+
+
+
 // 定义一个计算矩阵diag(sb)的函数, sb = 2*(b > 0)-1;
 void calculateM(const int* b, int size, int** m) {
     // 计算矩阵m的对角元素
@@ -448,9 +493,12 @@ public:
                 break;
             }
             int qel = problem.inD[qind];  // Unknown to Enter the basis minimizes relative cost
-            A_qel(0)=problem.A[0][qel];
-            A_qel(1)=problem.A[1][qel];
-            A_qel(2)=problem.A[2][qel];
+            // A_qel(0)=problem.A[0][qel];
+            // A_qel(1)=problem.A[1][qel];
+            // A_qel(2)=problem.A[2][qel];
+            for(int i=0;i<problem.m;++i){
+                A_qel(i)=problem.A[i][qel];
+            }
             // std::cout << "qel:"<<qel<<std::endl;
             // yq=inv(A_inB)* A_qel; 
             matrix::LeastSquaresSolver<float, M,M> LSsolver1(A_inB);
@@ -521,9 +569,12 @@ public:
                         break;
                     }
                 }
-                A_qel(0)=problem.A[0][qel];
-                A_qel(1)=problem.A[1][qel];
-                A_qel(2)=problem.A[2][qel];
+                // A_qel(0)=problem.A[0][qel];
+                // A_qel(1)=problem.A[1][qel];
+                // A_qel(2)=problem.A[2][qel];
+                for(int i=0;i<problem.m;++i){
+                    A_qel(i)=problem.A[i][qel];
+                }
                 // yq=inv(A_inB)* A_qel;
                 matrix::LeastSquaresSolver<float, M,M> LSsolver2(A_inB);
                 yq = LSsolver2.solve(A_qel); // Vector to enter in terms of the current Basis vector
@@ -794,86 +845,90 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
     // 8/2014    Roger Beck  Update for use
     // 9/2014    Roger Beck  Added anti-cycling rule
     // 4/2024    Meng ChaoHeng
+    std::cout << "BoundedRevisedSimplex loop"<< std::endl; 
+    std::cout << "M"<<M<< std::endl; 
+    std::cout << "N"<<N<< std::endl; 
+
     LinearProgrammingResult<M, N> result;
     // 使用 problem.inB, problem.inD, problem.itlim, problem.A, problem.b, problem.c, problem.h, problem.e, problem.tol
     const int n_m=N-M;
     // Index list for non-basic variables, that is 1 2 3 4 ... n
     int* nind = generateSequence(0, n_m-1);
-    // std::cout << "nind: [";
-    // for (size_t i = 0; i <N- M; ++i) {
-    //     std::cout << nind[i];
-    //     if (i <N- M - 1) {
-    //         std::cout << ", ";
-    //     }
-    // }
-    // std::cout << "]" << std::endl;
+    std::cout << "nind: [";
+    for (size_t i = 0; i <N- M; ++i) {
+        std::cout << nind[i];
+        if (i <N- M - 1) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << "]" << std::endl;
     //=============
     // Index list for all variables 
     int* ind_all = generateSequence(0, N-1);
     //=============
-    // std::cout << "ind_all: [";
-    // for (size_t i = 0; i <N; ++i) {
-    //     std::cout << ind_all[i];
-    //     if (i <N- 1) {
-    //         std::cout << ", ";
-    //     }
-    // }
-    // std::cout << "]" << std::endl;
+    std::cout << "ind_all: [";
+    for (size_t i = 0; i <N; ++i) {
+        std::cout << ind_all[i];
+        if (i <N- 1) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << "]" << std::endl;
     //=============
     // Partition A, we have inD, which the element in ind_all but not in inB
     setdiff(ind_all, N, problem.inB, M, problem.inD);
     //=============
-    // std::cout << "problem.inB: [";
-    // for (size_t i = 0; i <M; ++i) {
-    //     std::cout << problem.inB[i];
-    //     if (i <M- 1) {
-    //         std::cout << ", ";
-    //     }
-    // }
-    // std::cout << "]" << std::endl;
-    // std::cout << "problem.inD: [";
-    // for (size_t i = 0; i <N-M; ++i) {
-    //     std::cout << problem.inD[i];
-    //     if (i <N-M- 1) {
-    //         std::cout << ", ";
-    //     }
-    // }
-    // std::cout << "]" << std::endl;
+    std::cout << "problem.inB: [";
+    for (size_t i = 0; i <M; ++i) {
+        std::cout << problem.inB[i];
+        if (i <M- 1) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << "]" << std::endl;
+    std::cout << "problem.inD: [";
+    for (size_t i = 0; i <N-M; ++i) {
+        std::cout << problem.inD[i];
+        if (i <N-M- 1) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << "]" << std::endl;
 
 
-    // std::cout << "A:" << std::endl;
-    // for (size_t i = 0; i < M; ++i) {
-    //     for (size_t j = 0; j < N; ++j) {
-    //         std::cout << problem.A[i][j] << " ";
-    //     }
-    //     std::cout << std::endl;
-    // }
-    // std::cout << "b: [";
-    // for (size_t i = 0; i < M; ++i) {
-    //     std::cout << problem.b[i];
-    //     if (i < M - 1) {
-    //         std::cout << ", ";
-    //     }
-    // }
-    // std::cout << "]" << std::endl;
+    std::cout << "A:" << std::endl;
+    for (size_t i = 0; i < M; ++i) {
+        for (size_t j = 0; j < N; ++j) {
+            std::cout << problem.A[i][j] << " ";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << "b: [";
+    for (size_t i = 0; i < M; ++i) {
+        std::cout << problem.b[i];
+        if (i < M - 1) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << "]" << std::endl;
 
-    // std::cout << "c: [";
-    // for (size_t i = 0; i < N; ++i) {
-    //     std::cout << problem.c[i];
-    //     if (i < N - 1) {
-    //         std::cout << ", ";
-    //     }
-    // }
-    // std::cout << "]" << std::endl;
+    std::cout << "c: [";
+    for (size_t i = 0; i < N; ++i) {
+        std::cout << problem.c[i];
+        if (i < N - 1) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << "]" << std::endl;
 
-    // std::cout << "h: [";
-    // for (size_t i = 0; i < N; ++i) {
-    //     std::cout << problem.h[i];
-    //     if (i < N- 1) {
-    //         std::cout << ", ";
-    //     }
-    // }
-    // std::cout << "]" << std::endl;
+    std::cout << "h: [";
+    for (size_t i = 0; i < N; ++i) {
+        std::cout << problem.h[i];
+        if (i < N- 1) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << "]" << std::endl;
 
     
     //djust signs problem if variables are initialized at upper bounds.
@@ -895,47 +950,47 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
             problem.c[j] *=-1;
         }
     }
-    // std::cout << "A:" << std::endl;
-    // for (size_t i = 0; i < M; ++i) {
-    //     for (size_t j = 0; j < N; ++j) {
-    //         std::cout << problem.A[i][j] << " ";
-    //     }
-    //     std::cout << std::endl;
-    // }
-    // std::cout << "b: [";
-    // for (size_t i = 0; i < M; ++i) {
-    //     std::cout << problem.b[i];
-    //     if (i < M - 1) {
-    //         std::cout << ", ";
-    //     }
-    // }
-    // std::cout << "]" << std::endl;
+    std::cout << "A:" << std::endl;
+    for (size_t i = 0; i < M; ++i) {
+        for (size_t j = 0; j < N; ++j) {
+            std::cout << problem.A[i][j] << " ";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << "b: [";
+    for (size_t i = 0; i < M; ++i) {
+        std::cout << problem.b[i];
+        if (i < M - 1) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << "]" << std::endl;
 
-    // std::cout << "c: [";
-    // for (size_t i = 0; i < N; ++i) {
-    //     std::cout << problem.c[i];
-    //     if (i < N - 1) {
-    //         std::cout << ", ";
-    //     }
-    // }
-    // std::cout << "]" << std::endl;
+    std::cout << "c: [";
+    for (size_t i = 0; i < N; ++i) {
+        std::cout << problem.c[i];
+        if (i < N - 1) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << "]" << std::endl;
 
-    // std::cout << "h: [";
-    // for (size_t i = 0; i < N; ++i) {
-    //     std::cout << problem.h[i];
-    //     if (i < N- 1) {
-    //         std::cout << ", ";
-    //     }
-    // }
-    // std::cout << "]" << std::endl;
-    // std::cout << "e: [";
-    // for (size_t i = 0; i < N; ++i) {
-    //     std::cout << problem.e[i];
-    //     if (i < N- 1) {
-    //         std::cout << ", ";
-    //     }
-    // }
-    // std::cout << "]" << std::endl;
+    std::cout << "h: [";
+    for (size_t i = 0; i < N; ++i) {
+        std::cout << problem.h[i];
+        if (i < N- 1) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << "]" << std::endl;
+    std::cout << "e: [";
+    for (size_t i = 0; i < N; ++i) {
+        std::cout << problem.e[i];
+        if (i < N- 1) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << "]" << std::endl;
 
     
     //==============================
@@ -965,16 +1020,16 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
     }
     matrix::Vector<float, M> b_vec(problem.b);
     
-    // std::cout << "A_inB:";
-    // A_inB.print();
-    // std::cout << "A_inD:";
-    // A_inD.print();
-    // std::cout << "c_inB:";
-    // c_inB.print();
-    // std::cout << "c_inD:";
-    // c_inD.print();
-    // std::cout << "b_vec:";
-    // b_vec.print();
+    std::cout << "A_inB:";
+    A_inB.print();
+    std::cout << "A_inD:";
+    A_inD.print();
+    std::cout << "c_inB:";
+    c_inB.print();
+    std::cout << "c_inD:";
+    c_inD.print();
+    std::cout << "b_vec:";
+    b_vec.print();
     // inital some value
     Matrix<float, 1, M> lamt;
     lamt.setZero();
@@ -991,8 +1046,8 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
     //  %Initial Solution
     matrix::LeastSquaresSolver<float, M,M> LSsolver0(A_inB);
     matrix::Vector<float, M> y0 = LSsolver0.solve(b_vec);
-    // std::cout << "y0:";
-    // y0.print();
+    std::cout << "y0:";
+    y0.print();
     // Initialize Loop Termination Conditionss
     bool done = false;
     bool unbounded = false;
@@ -1005,31 +1060,34 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
         matrix::LeastSquaresSolver<float, M,M> LSsolver_lamt(A_inB.transpose());
         lamt = LSsolver_lamt.solve(c_inB).transpose();
         rdt = c_inD.transpose()-lamt*A_inD;
-        // std::cout << "lamt:";
-        // lamt.print();
-        // std::cout << "rdt:";
-        // rdt.print();
+        std::cout << "lamt:";
+        lamt.print();
+        std::cout << "rdt:";
+        rdt.print();
         float minr;
         size_t qind;
         // Find minimum relative cost
         min(rdt.transpose(), minr, qind);
-        // std::cout << "minr:"<<minr<<std::endl;
-        // std::cout << "qind:"<<qind<<std::endl;
+        std::cout << "minr:"<<minr<<std::endl;
+        std::cout << "qind:"<<qind<<std::endl;
         if(minr >=0)  // If all relative costs are positive then the solution is optimal. have to compare with 0 !
         { 
             done = true;
             break;
         }
         int qel = problem.inD[qind];  // Unknown to Enter the basis minimizes relative cost
-        A_qel(0)=problem.A[0][qel];
-        A_qel(1)=problem.A[1][qel];
-        A_qel(2)=problem.A[2][qel];
-        // std::cout << "qel:"<<qel<<std::endl;
+        // A_qel(0)=problem.A[0][qel];
+        // A_qel(1)=problem.A[1][qel];
+        // A_qel(2)=problem.A[2][qel];
+        for(int i=0;i<problem.m;++i){
+            A_qel(i)=problem.A[i][qel];
+        }
+        std::cout << "qel:"<<qel<<std::endl;
         // yq=inv(A_inB)* A_qel; 
         matrix::LeastSquaresSolver<float, M,M> LSsolver1(A_inB);
         yq = LSsolver1.solve(A_qel); // Vector to enter in terms of the current Basis vector
-        // std::cout << "yq:";
-        // yq.print();
+        std::cout << "yq:";
+        yq.print();
          // Check wether all the abs of yq[i] is greater than tol.
         bool flag=false;
         for(int i=0;i<M;++i){
@@ -1066,14 +1124,14 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
                 rat(i)=INFINITY;
             }
         }
-        // std::cout << "rat:";
-        // rat.print();
+        std::cout << "rat:";
+        rat.print();
          // Variable to exit is moving to its minimum value--Note that min returns the lowest index minimum
         float minrat=rat(0);
         size_t p=0;
         min(rat, minrat, p);
-        // std::cout << "minrat:"<<minrat<<std::endl;
-        // std::cout << "p:"<<p<<std::endl;
+        std::cout << "minrat:"<<minrat<<std::endl;
+        std::cout << "p:"<<p<<std::endl;
 
         // If the minimum ratio is zero, then the solution is degenerate and the entering
         // variable will not change the basis---invoke Bland's selection rule to avoid
@@ -1081,7 +1139,7 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
         if (std::abs(minrat) <= problem.tol)
         {
             // Find negative relative cost
-            // std::cout << " Find negative relative cost "<< std::endl; 
+            std::cout << " Find negative relative cost "<< std::endl; 
             for(int i=0;i<N-M;++i)
             {
                 // std::cout << "rdt(0,i):"<<rdt(0,i)<<std::endl; 
@@ -1094,14 +1152,17 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
                     break;
                 }
             }
-            A_qel(0)=problem.A[0][qel];
-            A_qel(1)=problem.A[1][qel];
-            A_qel(2)=problem.A[2][qel];
+            // A_qel(0)=problem.A[0][qel];
+            // A_qel(1)=problem.A[1][qel];
+            // A_qel(2)=problem.A[2][qel];
+            for(int i=0;i<problem.m;++i){
+                A_qel(i)=problem.A[i][qel];
+            }
             // yq=inv(A_inB)* A_qel;
             matrix::LeastSquaresSolver<float, M,M> LSsolver2(A_inB);
             yq = LSsolver2.solve(A_qel); // Vector to enter in terms of the current Basis vector
-            // std::cout << "yq:";
-            // yq.print();
+            std::cout << "yq:";
+            yq.print();
             bool flag=false;
             for(int i=0;i<M;++i){
                 if(std::abs(yq(i)) > problem.tol)
@@ -1134,22 +1195,22 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
                     rat(i)=INFINITY; // If an element yq ~=0 then it doesn't change for the entering variable and shouldn't be chosen
                 }
             }
-            // std::cout << "rat:";
-            // rat.print();
+            std::cout << "rat:";
+            rat.print();
             // Variable to exit is moving to its minimum value--Note that min returns the lowest index minimum
             minrat=rat(0);
             p=0;
             min(rat, minrat, p);
-            // std::cout << "minrat:"<<minrat<<std::endl;
-            // std::cout << "p:"<<p<<std::endl;
+            std::cout << "minrat:"<<minrat<<std::endl;
+            std::cout << "p:"<<p<<std::endl;
         }
         // Maintain the bounded simplex as only having lower bounds by recasting any variable that needs to move to its opposite bound.
-        // std::cout << "problem.h[qel]:"<<problem.h[qel]<<std::endl;
-        // std::cout << "minrat-problem.h[qel]:"<<minrat-problem.h[qel]<<std::endl;
+        std::cout << "problem.h[qel]:"<<problem.h[qel]<<std::endl;
+        std::cout << "minrat-problem.h[qel]:"<<minrat-problem.h[qel]<<std::endl;
         if (minrat >= problem.h[qel])
         {
             // Case 1: Entering variable goes to opposite bound and current basis is maintained
-            // std::cout << " Case 1 "<< std::endl; 
+            std::cout << " Case 1 "<< std::endl; 
             problem.e[qel] =!problem.e[qel];
             for(int i=0; i<M; ++i)
             {
@@ -1169,7 +1230,7 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
         else if(yq(p) > 0)
         {
             // Case 2: Leaving variable returns to lower bound (0)	
-            // std::cout << " Case 21 "<< std::endl; 
+            std::cout << " Case 21 "<< std::endl; 
             int pel = problem.inB[p];
             // std::cout << "pel:"<<pel<<std::endl;
             // std::cout << "qel:"<<qel<<std::endl;
@@ -1196,7 +1257,7 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
         else
         {
             // Case 2: Leaving variable moves to upper bound	
-            // std::cout << " Case 22 "<< std::endl; 
+            std::cout << " Case 22 "<< std::endl; 
             int pel = problem.inB[p];
             // std::cout << "pel:"<<pel<<std::endl;
             problem.e[pel]=!problem.e[pel];
@@ -1252,68 +1313,68 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
         //  Compute new Basic solution;
         matrix::LeastSquaresSolver<float, M,M> LSsolver(A_inB);
         y0 = LSsolver.solve(b_vec);
-        // std::cout << "y0:";
-        // y0.print();
-        // std::cout << "A_inB:";
-        // A_inB.print();
-        // std::cout << "A_inD:";
-        // A_inD.print();
-        // std::cout << "c_inB:";
-        // c_inB.print();
-        // std::cout << "c_inD:";
-        // c_inD.print();
+        std::cout << "y0:";
+        y0.print();
+        std::cout << "A_inB:";
+        A_inB.print();
+        std::cout << "A_inD:";
+        A_inD.print();
+        std::cout << "c_inB:";
+        c_inB.print();
+        std::cout << "c_inD:";
+        c_inD.print();
         
-        // std::cout << "A:" << std::endl;
-        // for (size_t i = 0; i < M; ++i) {
-        //     for (size_t j = 0; j < N; ++j) {
-        //         std::cout << problem.A[i][j] << " ";
-        //     }
-        //     std::cout << std::endl;
-        // }
-        // std::cout << "b: [";
-        // for (size_t i = 0; i < M; ++i) {
-        //     std::cout << problem.b[i];
-        //     if (i < M - 1) {
-        //         std::cout << ", ";
-        //     }
-        // }
-        // std::cout << "]" << std::endl;
+        std::cout << "A:" << std::endl;
+        for (size_t i = 0; i < M; ++i) {
+            for (size_t j = 0; j < N; ++j) {
+                std::cout << problem.A[i][j] << " ";
+            }
+            std::cout << std::endl;
+        }
+        std::cout << "b: [";
+        for (size_t i = 0; i < M; ++i) {
+            std::cout << problem.b[i];
+            if (i < M - 1) {
+                std::cout << ", ";
+            }
+        }
+        std::cout << "]" << std::endl;
 
-        // std::cout << "b_vec:";
-        // b_vec.print();
-        // std::cout << "c: [";
-        // for (size_t i = 0; i < N; ++i) {
-        //     std::cout << problem.c[i];
-        //     if (i < N - 1) {
-        //         std::cout << ", ";
-        //     }
-        // }
-        // std::cout << "]" << std::endl;
+        std::cout << "b_vec:";
+        b_vec.print();
+        std::cout << "c: [";
+        for (size_t i = 0; i < N; ++i) {
+            std::cout << problem.c[i];
+            if (i < N - 1) {
+                std::cout << ", ";
+            }
+        }
+        std::cout << "]" << std::endl;
 
-        // std::cout << "problem.inB: [";
-        // for (size_t i = 0; i <M; ++i) {
-        //     std::cout << problem.inB[i];
-        //     if (i <M- 1) {
-        //         std::cout << ", ";
-        //     }
-        // }
-        // std::cout << "]" << std::endl;
-        // std::cout << "problem.inD: [";
-        // for (size_t i = 0; i <N-M; ++i) {
-        //     std::cout << problem.inD[i];
-        //     if (i <N-M- 1) {
-        //         std::cout << ", ";
-        //     }
-        // }
-        // std::cout << "]" << std::endl;
-        // std::cout << "e: [";
-        // for (size_t i = 0; i < N; ++i) {
-        //     std::cout << problem.e[i];
-        //     if (i < N- 1) {
-        //         std::cout << ", ";
-        //     }
-        // }
-        // std::cout << "]" << std::endl;
+        std::cout << "problem.inB: [";
+        for (size_t i = 0; i <M; ++i) {
+            std::cout << problem.inB[i];
+            if (i <M- 1) {
+                std::cout << ", ";
+            }
+        }
+        std::cout << "]" << std::endl;
+        std::cout << "problem.inD: [";
+        for (size_t i = 0; i <N-M; ++i) {
+            std::cout << problem.inD[i];
+            if (i <N-M- 1) {
+                std::cout << ", ";
+            }
+        }
+        std::cout << "]" << std::endl;
+        std::cout << "e: [";
+        for (size_t i = 0; i < N; ++i) {
+            std::cout << problem.e[i];
+            if (i < N- 1) {
+                std::cout << ", ";
+            }
+        }
+        std::cout << "]" << std::endl;
 
 
 
@@ -1510,7 +1571,6 @@ public:
         // DP_LPCA_problem.e[2] = false;
         // DP_LPCA_problem.e[3] = true;
         // DP_LPCA_problem.e[4] = true;
-        
         for(int i=0; i<DP_LPCA_problem.m; ++i)
         {
             float temp=0;
@@ -1574,7 +1634,222 @@ public:
         {
             Pre_DP_LPCA_problem.h[i+DP_LPCA_problem.n] = 2*std::abs(DP_LPCA_problem.b[i]);
         }
+        //================================== DPscaled_LPCA_problem ================================
+        std::cout << "DPscaled_LPCA_problem"<< std::endl; 
+        DPscaled_LPCA_problem.tol=1e-7;
+        DPscaled_LPCA_problem.itlim = 10;
+        float yd[3]={0.1,0.2,-0.1}; // random value for inital.
+        float my=yd[0]; // 存储最大的绝对值
+        int iy=0; // 存储最大绝对值的索引
+        for (int i = 0; i < ControlSize; ++i) {
+            float absValue = std::abs(yd[i]); // 计算 yd 中第 i 个元素的绝对值
+            if (absValue > my) { // 如果当前绝对值大于 my，则更新 my 和 iy
+                my = absValue;
+                iy = i;
+            }
+        }
+        std::cout << "DPscaled_LPCA_problem iy: "<< iy <<std::endl; 
+        std::cout << "DPscaled_LPCA_problem my: "<< my <<std::endl; 
+        // copy firstly!!!
+        float Bt[ControlSize][EffectorSize];
+        float ydt[ControlSize];
+        
+        for(int i=0;i<ControlSize;++i){
+            for (int j = 0; j <EffectorSize; ++j) {
+                Bt[i][j] = this->aircraft.controlEffectMatrix[i][j];
+            }
+        }
+        for(int i=0;i<ControlSize;++i){
+            ydt[i]=yd[i];
+        }
 
+        // move
+        for(int j=0;j<EffectorSize;++j){
+            Bt[0][j] = this->aircraft.controlEffectMatrix[iy][j];
+            for (int i = iy; i >0; i--) {
+                Bt[i][j] = this->aircraft.controlEffectMatrix[i-1][j];
+            }
+        }
+        ydt[0] = yd[iy];
+        for (int j = iy; j >0; j--) {
+            ydt[j] = yd[j-1];
+        }
+        float ydt2=ydt[1];
+        ydt[1]=ydt[2];
+        ydt[2]=ydt2;
+        // swap 2 3 col of Bt
+        for(int i=0;i<EffectorSize;++i){
+            float Bt2=Bt[1][i];
+            Bt[1][i]=Bt[2][i];
+            Bt[2][i]=Bt2;
+        }
+        
+        std::cout << "aircraft.controlEffectMatrix:" << std::endl;
+        for (size_t i = 0; i < ControlSize; ++i) {
+            for (size_t j = 0; j < EffectorSize; ++j) {
+                std::cout << aircraft.controlEffectMatrix[i][j] << " ";
+            }
+            std::cout << std::endl;
+        }
+        std::cout << "Bt:" << std::endl;
+        for (size_t i = 0; i < ControlSize; ++i) {
+            for (size_t j = 0; j < EffectorSize; ++j) {
+                std::cout << Bt[i][j] << " ";
+            }
+            std::cout << std::endl;
+        }
+
+        // M = [ydt(2:ControlSize) -ydt(1)*eye(ControlSize-1)];
+        float M[ControlSize-1][ControlSize];
+        M[0][0]=ydt[1];
+        M[1][0]=ydt[2];
+        M[0][1]=-ydt[0];
+        M[1][1]=0;
+        M[0][2]=0;
+        M[1][2]=-ydt[0];
+
+        std::cout << "M:" << std::endl;
+        for (size_t i = 0; i < ControlSize-1; ++i) {
+            for (size_t j = 0; j < ControlSize; ++j) {
+                std::cout << M[i][j] << " ";
+            }
+            std::cout << std::endl;
+        }
+        for (int i = 0; i < ControlSize-1; ++i) {
+            for (int j = 0; j < EffectorSize; ++j) {
+                DPscaled_LPCA_problem.A[i][j] = 0;
+                for (int k = 0; k < ControlSize; ++k) {
+                    DPscaled_LPCA_problem.A[i][j] += M[i][k] * Bt[k][j];
+                }
+            }
+        }
+        std::cout << "DPscaled_LPCA_problem.A:" << std::endl;
+        for (size_t i = 0; i < ControlSize-1; ++i) {
+            for (size_t j = 0; j < EffectorSize; ++j) {
+                std::cout << DPscaled_LPCA_problem.A[i][j] << " ";
+            }
+            std::cout << std::endl;
+        }
+        for(int i=0; i<ControlSize-1; ++i)
+        {
+            float temp=0;
+            for(int j=0; j<EffectorSize; ++j)
+            {
+                temp += -DPscaled_LPCA_problem.A[i][j]*aircraft.lowerLimits[j];
+            }
+            DPscaled_LPCA_problem.b[i] = temp;
+        }
+        for (int i = 0; i < EffectorSize; ++i) {
+            DPscaled_LPCA_problem.c[i] = 0;
+            for (int j = 0; j < ControlSize; ++j) {
+                DPscaled_LPCA_problem.c[i] += -Bt[j][i] * ydt[j];
+            }
+        }
+        for (int i = 0; i < EffectorSize; ++i) {
+            DPscaled_LPCA_problem.h[i] = aircraft.upperLimits[i]-aircraft.lowerLimits[i];
+        }
+        std::cout << "DPscaled_LPCA_problem b: [";
+        for (size_t i = 0; i < ControlSize-1; ++i) {
+            std::cout << DPscaled_LPCA_problem.b[i];
+            if (i < ControlSize-1 - 1) {
+                std::cout << ", ";
+            }
+        }
+        std::cout << "]" << std::endl;
+
+
+        std::cout << "DPscaled_LPCA_problem c: [";
+        for (size_t i = 0; i <EffectorSize; ++i) {
+            std::cout << DPscaled_LPCA_problem.c[i];
+            if (i <EffectorSize - 1) {
+                std::cout << ", ";
+            }
+        }
+        std::cout << "]" << std::endl;
+        std::cout << "DPscaled_LPCA_problem h: [";
+        for (size_t i = 0; i < EffectorSize; ++i) {
+            std::cout << DPscaled_LPCA_problem.h[i];
+            if (i < EffectorSize- 1) {
+                std::cout << ", ";
+            }
+        }
+        std::cout << "]" << std::endl;
+
+        //==================================Pre_DPscaled_LPCA_problem================================
+        std::cout << "Pre_DPscaled_LPCA_problem"<< std::endl; 
+        Pre_DPscaled_LPCA_problem.tol=1e-7;
+        Pre_DPscaled_LPCA_problem.itlim = 10;
+        for(int i=0; i<DPscaled_LPCA_problem.m; ++i)
+        {
+            for(int j=0; j<DPscaled_LPCA_problem.n; ++j)
+            {
+                Pre_DPscaled_LPCA_problem.A[i][j] = DPscaled_LPCA_problem.A[i][j];
+            }
+            Pre_DPscaled_LPCA_problem.b[i] = DPscaled_LPCA_problem.b[i]; // the same as DPscaled_LPCA_problem
+
+        }
+        for(int i=0; i<DPscaled_LPCA_problem.m; ++i)
+        {
+            Pre_DPscaled_LPCA_problem.A[i][i + DPscaled_LPCA_problem.n] = (DPscaled_LPCA_problem.b[i] > 0) ? 1 : -1; // sb = 2*(b > 0)-1; Ai = [A diag(sb)]; 
+        }
+        for(int i=0; i<DPscaled_LPCA_problem.n; ++i)
+        {
+            Pre_DPscaled_LPCA_problem.c[i] =0;
+        }
+        for(int i=0; i<DPscaled_LPCA_problem.m; ++i)
+        {
+            Pre_DPscaled_LPCA_problem.c[i+DPscaled_LPCA_problem.n] = 1;
+        }
+        for(int i=0; i<DPscaled_LPCA_problem.m; ++i)
+        {
+            Pre_DPscaled_LPCA_problem.inB[i] = DPscaled_LPCA_problem.n+i;
+        }
+        for(int i=0; i<DPscaled_LPCA_problem.m+DPscaled_LPCA_problem.n; ++i)
+        {
+            Pre_DPscaled_LPCA_problem.e[i] = true;
+        }
+        for(int i=0; i<DPscaled_LPCA_problem.n; ++i)
+        {
+            Pre_DPscaled_LPCA_problem.h[i] = DPscaled_LPCA_problem.h[i];
+        }
+        for(int i=0; i<DPscaled_LPCA_problem.m; ++i)
+        {
+            Pre_DPscaled_LPCA_problem.h[i+DPscaled_LPCA_problem.n] = 2*std::abs(DPscaled_LPCA_problem.b[i]);
+        }
+
+        std::cout << "Pre_DPscaled_LPCA_problem A:" << std::endl;
+        for (size_t i = 0; i < Pre_DPscaled_LPCA_problem.m; ++i) {
+            for (size_t j = 0; j < Pre_DPscaled_LPCA_problem.n; ++j) {
+                std::cout << Pre_DPscaled_LPCA_problem.A[i][j] << " ";
+            }
+            std::cout << std::endl;
+        }
+        std::cout << "Pre_DPscaled_LPCA_problem b: [";
+        for (size_t i = 0; i < Pre_DPscaled_LPCA_problem.m; ++i) {
+            std::cout << Pre_DPscaled_LPCA_problem.b[i];
+            if (i < Pre_DPscaled_LPCA_problem.m - 1) {
+                std::cout << ", ";
+            }
+        }
+        std::cout << "]" << std::endl;
+
+        std::cout << "Pre_DPscaled_LPCA_problem c: [";
+        for (size_t i = 0; i < Pre_DPscaled_LPCA_problem.n; ++i) {
+            std::cout << Pre_DPscaled_LPCA_problem.c[i];
+            if (i < Pre_DPscaled_LPCA_problem.n - 1) {
+                std::cout << ", ";
+            }
+        }
+        std::cout << "]" << std::endl;
+
+        std::cout << "Pre_DPscaled_LPCA_problem h: [";
+        for (size_t i = 0; i < Pre_DPscaled_LPCA_problem.n; ++i) {
+            std::cout << Pre_DPscaled_LPCA_problem.h[i];
+            if (i < Pre_DPscaled_LPCA_problem.n- 1) {
+                std::cout << ", ";
+            }
+        }
+        std::cout << "]" << std::endl;
     }
 
     // 设置算法参数函数
@@ -1783,7 +2058,7 @@ public:
         // 4/2024    Meng ChaoHeng  Implement in cpp 
         // DP_LPCA函数利用飞行器数据，将分配问题描述为DP_LP问题并用BoundedRevisedSimplex求解
         //=======================
-        std::cout << "DP_LPCA"<< std::endl; 
+        // std::cout << "DP_LPCA"<< std::endl; 
         float* EffectorCommand = new float[EffectorSize];
         // Initialize error code to zero
         int err = 0;
@@ -1930,12 +2205,412 @@ public:
         return EffectorCommand;
     }
     
+    
+    float* DPscaled_LPCA(float input[ControlSize]){
+        // Direction Preserving Control Allocation Linear Program
+        //     Reduced formulation (Solution Scaled from Boundary)
+
+        // function [u,errout] = DPscaled_LPCA(yd,B,uMin,uMax,itlim);
+
+        // Solves the control allocation problem while preserving the
+        // objective direction for unattainable commands. The reduced
+        // dimension of the linear program passed to the Bounded Revised
+        // Simplex solver is formed by forcing the solution to be on the
+        // boundary of the AMS and eliminating the highest magnitude
+        // objective by solving the other constraints in terms of it.
+
+        // For yd outside the AMS, the solution returned is that the
+        // maximum in the direction of yd
+        // B*u= lamda*yd
+        // max lamda s.t. uMin <= u <= uMax
+
+        // Reducing the degrees of freedom elminates the problems of redundant
+        // solutions for attainable objectives. If the desired objective is on the
+        // interior of the AMS the solution is scaled from the solution on the
+        // boundary, yielding the same controls as the Direct Allocation solution.
+
+        // (In the text this solution is discussed in section A.5.3)
+
+        // (See Bodson, M., "Evaluation of Optimization Methods for
+        //         Control Allocation",  AIAA 2001-4223).
+
+        // Inputs:
+        //         yd [n]    = Desired objective
+        //         B [n,m]   = Control Effectiveness matrix
+        //         uMin[m,1] = Lower bound for controls
+        //         uMax[m,1] = Upper bound for controls
+        //         itlim     = Number of allowed iterations limit
+        //                         (Sum of iterations in both branches)
+
+        // Outputs:
+        //         u[m,1]     = Control Solution
+        //         errout     = Error Status code
+        //                         0 = found solution
+        //                         <0 = Error in finding initial basic feasible solution
+        //                         >0 = Error in finding final solution
+        //                         -1,1 = Solver error (unbounded solution)
+        //                         -2   = Initial feasible solution not found
+        //                         -3,3 = Iteration limit exceeded
+
+        // Calls:
+        //         simplxuprevsol = Bounded Revised Simplex solver (simplxuprevsol.m)
+
+        // Notes:
+        // If yd is close to zero, u = 0;
+
+        // Error code < 0 implies an error in the initialization and there is no guarantee on
+        // the quality of the output solution other than the control limits.
+        // Error code > 0 for errors in final solution.
+
+        // Modification History
+        // 2002      Roger Beck  Original ( DPcaLP2.m)
+        // 8/2014    Roger Beck  Update
+        // 4/2024    Meng ChaoHeng  Implement in cpp 
+        // DPscaled_LPCA函数利用飞行器数据，将分配问题描述为DP_LP问题并用BoundedRevisedSimplex求解
+        //=======================
+        std::cout << "DPscaled_LPCA"<< std::endl; 
+        float* EffectorCommand = new float[EffectorSize];
+        // Initialize error code to zero
+        int err = 0;
+        // Figure out how big the problem is (use standard CA definitions for m & n)
+        // but in here we use [m,k] = size(B) instead of [n,m] = size(B) in matlab. just for adapt to BoundedRevisedSimplex
+        // we use [m,n] = size(A) in BoundedRevisedSimplex, that is, k + 1 = n.
+        // Check to see if yd == 0
+        // May want to adjust the tolerance to improve numerics of later steps
+        bool flag=false;
+        for(int i=0;i<ControlSize;++i){
+            if(std::abs(input[i]) > DPscaled_LPCA_problem.tol)
+            {
+                flag = true; // Check this condition
+                break;
+            }
+        }
+        if(!flag){
+            for(int i=0;i<EffectorSize;++i){
+                EffectorCommand[i]=0;
+            }
+            // std::cout << "return 0"<< std::endl;
+            return EffectorCommand;
+        }
+        //=======================  
+        // We inital this problem in constructor.
+        // Construct an LP using scaling parameter to enforce direction preserving
+        // To find Feasible solution construct problem with appended slack variables
+        // ref. is A.6.4 Initialization of the Simplex Algorithm of <Aircraft control allocation>
+
+        // now we update the problem by input data.
+        // update A b c but not h, h = uMax-uMin is assumpt always the same.
+        // float yd[3]={0.1,0.1,0.2}; // random value for inital.
+        float my=input[0]; // 存储最大的绝对值
+        
+        int iy=0; // 存储最大绝对值的索引
+        for (int i = 0; i < ControlSize; ++i) {
+            float absValue = std::abs(input[i]); // 计算 yd 中第 i 个元素的绝对值
+            if (absValue > my) { // 如果当前绝对值大于 my，则更新 my 和 iy
+                my = absValue;
+                iy = i;
+            }
+        }
+        // std::cout << "DPscaled_LPCA_problem iy"<< iy <<std::endl; 
+        // std::cout << "DPscaled_LPCA_problem my"<< my <<std::endl; 
+        // copy firstly!!!
+        float Bt[ControlSize][EffectorSize];
+        float ydt[ControlSize];
+        
+        for(int i=0;i<ControlSize;++i){
+            for (int j = 0; j <EffectorSize; ++j) {
+                Bt[i][j] = this->aircraft.controlEffectMatrix[i][j];
+            }
+        }
+        for(int i=0;i<ControlSize;++i){
+            ydt[i]=input[i];
+        }
+
+        // move
+        for(int j=0;j<EffectorSize;++j){
+            Bt[0][j] = this->aircraft.controlEffectMatrix[iy][j];
+            for (int i = iy; i >0; i--) {
+                Bt[i][j] = this->aircraft.controlEffectMatrix[i-1][j];
+            }
+        }
+        ydt[0] = input[iy];
+        for (int j = iy; j >0; j--) {
+            ydt[j] = input[j-1];
+        }
+        // swap 2 3 row of ydt
+        float ydt2=ydt[1];
+        ydt[1]=ydt[2];
+        ydt[2]=ydt2;
+        // swap 2 3 col of Bt
+        for(int i=0;i<EffectorSize;++i){
+            float Bt2=Bt[1][i];
+            Bt[1][i]=Bt[2][i];
+            Bt[2][i]=Bt2;
+        }
+        std::cout << "Bt:" << std::endl;
+        for (size_t i = 0; i < ControlSize; ++i) {
+            for (size_t j = 0; j < EffectorSize; ++j) {
+                std::cout << Bt[i][j] << " ";
+            }
+            std::cout << std::endl;
+        }
+
+        // M = [ydt(2:ControlSize) -ydt(1)*eye(ControlSize-1)];
+        float M[ControlSize-1][ControlSize];
+        M[0][0]=ydt[1];
+        M[1][0]=ydt[2];
+        M[0][1]=-ydt[0];
+        M[1][1]=0;
+        M[0][2]=0;
+        M[1][2]=-ydt[0];
+        std::cout << "M:" << std::endl;
+        for (size_t i = 0; i < ControlSize-1; ++i) {
+            for (size_t j = 0; j < ControlSize; ++j) {
+                std::cout << M[i][j] << " ";
+            }
+            std::cout << std::endl;
+        }
+        for (int i = 0; i < ControlSize-1; ++i) {
+            for (int j = 0; j < EffectorSize; ++j) {
+                DPscaled_LPCA_problem.A[i][j] = 0;
+                for (int k = 0; k < ControlSize; ++k) {
+                    DPscaled_LPCA_problem.A[i][j] += M[i][k] * Bt[k][j];
+                }
+            }
+        }
+        for(int i=0; i<ControlSize-1; ++i)
+        {
+            float temp=0;
+            for(int j=0; j<EffectorSize; ++j)
+            {
+                temp += -DPscaled_LPCA_problem.A[i][j]*this->aircraft.lowerLimits[j];
+            }
+            DPscaled_LPCA_problem.b[i] = temp;
+        }
+        for (int i = 0; i < EffectorSize; ++i) {
+            DPscaled_LPCA_problem.c[i] = 0;
+            for (int j = 0; j < ControlSize; ++j) {
+                DPscaled_LPCA_problem.c[i] += -Bt[j][i] * ydt[j];
+            }
+        }
+        //update Ai and part of hi
+        for(int i=0; i<DPscaled_LPCA_problem.m; ++i)
+        {
+            for(int j=0; j<DPscaled_LPCA_problem.n; ++j)
+            {
+                Pre_DPscaled_LPCA_problem.A[i][j] = DPscaled_LPCA_problem.A[i][j];
+            }
+            Pre_DPscaled_LPCA_problem.b[i] = DPscaled_LPCA_problem.b[i]; // the same as DPscaled_LPCA_problem
+
+        }
+        for(int i=0; i<DPscaled_LPCA_problem.m; ++i)
+        {
+            Pre_DPscaled_LPCA_problem.A[i][i + DPscaled_LPCA_problem.n] = (DPscaled_LPCA_problem.b[i] > 0) ? 1 : -1; // sb = 2*(b > 0)-1; Ai = [A diag(sb)]; 
+        }
+        for(int i=0; i<DPscaled_LPCA_problem.m; ++i)
+        {
+            Pre_DPscaled_LPCA_problem.h[i+DPscaled_LPCA_problem.n] = 2*std::abs(DPscaled_LPCA_problem.b[i]);
+        }
+        std::cout << "Pre_DPscaled_LPCA_problem A:" << std::endl;
+        for (size_t i = 0; i < Pre_DPscaled_LPCA_problem.m; ++i) {
+            for (size_t j = 0; j < Pre_DPscaled_LPCA_problem.n; ++j) {
+                std::cout << Pre_DPscaled_LPCA_problem.A[i][j] << " ";
+            }
+            std::cout << std::endl;
+        }
+        std::cout << "Pre_DPscaled_LPCA_problem b: [";
+        for (size_t i = 0; i < Pre_DPscaled_LPCA_problem.m; ++i) {
+            std::cout << Pre_DPscaled_LPCA_problem.b[i];
+            if (i < Pre_DPscaled_LPCA_problem.m - 1) {
+                std::cout << ", ";
+            }
+        }
+        std::cout << "]" << std::endl;
+
+        std::cout << "Pre_DPscaled_LPCA_problem c: [";
+        for (size_t i = 0; i < Pre_DPscaled_LPCA_problem.n; ++i) {
+            std::cout << Pre_DPscaled_LPCA_problem.c[i];
+            if (i < Pre_DPscaled_LPCA_problem.n - 1) {
+                std::cout << ", ";
+            }
+        }
+        std::cout << "]" << std::endl;
+
+        std::cout << "Pre_DPscaled_LPCA_problem h: [";
+        for (size_t i = 0; i < Pre_DPscaled_LPCA_problem.n; ++i) {
+            std::cout << Pre_DPscaled_LPCA_problem.h[i];
+            if (i < Pre_DPscaled_LPCA_problem.n- 1) {
+                std::cout << ", ";
+            }
+        }
+        std::cout << "]" << std::endl;
+        // Use Bounded Revised Simplex to find initial basic feasible point of original program
+        auto result_init = BoundedRevisedSimplex(Pre_DPscaled_LPCA_problem);
+
+        std::cout << "result_init"<< std::endl; 
+        std::cout << "result_init"<< std::endl; 
+        std::cout << "result_init"<< std::endl; 
+        std::cout << "result_init"<< std::endl; 
+        std::cout << "result_init"<< std::endl; 
+        std::cout << "result_init"<< std::endl; 
+        std::cout << "result_init"<< std::endl; 
+        std::cout << "result_init"<< std::endl; 
+
+
+
+        // Check that Feasible Solution was found
+        if(result_init.iters>=Pre_DPscaled_LPCA_problem.itlim){
+            err = 3;
+            std::cout << "Pre Too Many Iterations Finding Final Solution"<< std::endl; 
+            for (int i = 0; i < ControlSize; ++i) {
+                std::cout << this->generalizedMoment[i] << std::endl;
+            }
+        }
+        for(int i=0;i<ControlSize-1;++i){
+            if(result_init.inB[i]> EffectorSize-1) // DPscaled_LPCA_problem is origin problem, k=DPscaled_LPCA_problem.n-1 = EffectorSize 
+            {
+                // which mean inital basic index is out of the origin problem.
+                err = -2;
+                std::cout << "Pre No Initial Feasible Solution found"<< std::endl; 
+                for (int i = 0; i < ControlSize; ++i) {
+                    std::cout << this->generalizedMoment[i] << std::endl;
+                }
+                break;
+            }
+        }
+        if(result_init.errout){
+            err = -1;
+            std::cout << "Pre Solver error"<< std::endl; 
+            for (int i = 0; i < ControlSize; ++i) {
+                std::cout << this->generalizedMoment[i] << std::endl;
+            }
+        }
+        // solve Pre_DPscaled_LPCA_problem but proccess DPscaled_LPCA_problem
+        float xout[EffectorSize];
+        for(int i=0;i<DPscaled_LPCA_problem.n;++i){
+            xout[i]=0;
+        }
+        if(err!=0) // Construct an incorrect solution to accompany error flags
+        {
+            // use result_init data
+            // matlab: indv = inB1<=(k+1); xout(inB1(indv)) = y1(indv); % in matlab the index from 1 to k, but cpp is 0 to k-1
+            for(int i=0;i<ControlSize-1;++i){
+                xout[result_init.inB[i]]=result_init.y0[i];
+                
+            }
+            // xout(~e1(1:k+1)) = -xout(~e1(1:k+1))+h(~e1(1:k+1));
+            for(int i=0;i<EffectorSize;++i){
+                if(!result_init.e[i]){
+                    xout[i] = -xout[i] + DPscaled_LPCA_problem.h[i];
+                }
+            }
+        }
+        else //No Error continue to solve problem
+        { 
+            // Solve using initial problem from above
+            // Construct solution to original LP problem from bounded simplex output
+            // Set non-basic variables to 0 or h based on result_init.e
+            // Set basic variables to result_init.y0 or h-result_init.y0.
+
+            // update DPscaled_LPCA_problem.inB and DPscaled_LPCA_problem.e by result_init.inB and result_init.e[0 to k=EffectorSize] that is e1(1:k+1) in matlab.  k+1 at all, so int (i=0;i<EffectorSize+1;++i) or (int i=0;i<DPscaled_LPCA_problem.n;++i)
+            for(int i=0;i<DPscaled_LPCA_problem.m;++i){
+                DPscaled_LPCA_problem.inB[i]=result_init.inB[i];
+            }
+            for(int i=0;i<DPscaled_LPCA_problem.n;++i){
+                DPscaled_LPCA_problem.e[i]=result_init.e[i];
+            }
+            std::cout << "problem.inB: [";
+            for (size_t i = 0; i <DPscaled_LPCA_problem.m; ++i) {
+                std::cout << DPscaled_LPCA_problem.inB[i];
+                if (i <DPscaled_LPCA_problem.m- 1) {
+                    std::cout << ", ";
+                }
+            }
+            std::cout << "]" << std::endl;
+            std::cout << "e: [";
+                for (size_t i = 0; i < DPscaled_LPCA_problem.n; ++i) {
+                    std::cout << DPscaled_LPCA_problem.e[i];
+                    if (i < DPscaled_LPCA_problem.n- 1) {
+                        std::cout << ", ";
+                    }
+                }
+            std::cout << "]" << std::endl;
+            std::cout << "before"<< std::endl; 
+            std::cout << "before"<< std::endl; 
+            std::cout << "before"<< std::endl; 
+            std::cout << "before"<< std::endl; 
+            std::cout << "before"<< std::endl; 
+            std::cout << "before"<< std::endl; 
+            std::cout << "before"<< std::endl; 
+            std::cout << "before"<< std::endl; 
+            auto result = BoundedRevisedSimplex(DPscaled_LPCA_problem);
+            
+            for(int i=0;i<ControlSize-1;++i){
+                xout[result.inB[i]]=result.y0[i];
+            }
+            for(int i=0;i<EffectorSize;++i){
+                if(!result.e[i]){
+                    xout[i]=-xout[i]+DPscaled_LPCA_problem.h[i];
+                }
+            }
+
+            if(result.iters>=DPscaled_LPCA_problem.itlim){
+                err = 3;
+                std::cout << "Too Many Iterations Finding Final Solution"<< std::endl; 
+                for (int i = 0; i < ControlSize; ++i) {
+                    std::cout << this->generalizedMoment[i] << std::endl;
+                }
+            }
+            if(result.errout)
+            {
+                err = 1;
+                std::cout << "Solver error"<< std::endl;
+                for (int i = 0; i < ControlSize; ++i) {
+                    std::cout << this->generalizedMoment[i] << std::endl;
+                }
+            }
+        }
+        // Transform back to control variables
+        for(int i=0;i<EffectorSize;++i){
+            EffectorCommand[i]=xout[i]+this->aircraft.lowerLimits[i];
+            std::cout << "EffectorCommand[i]"<<EffectorCommand[i]<< std::endl;
+        }
+        // Use upper_lam to prevent control surfaces from approaching position limits
+        float rho = calculateRho(ydt, EffectorCommand, Bt);
+        std::cout << "Bt:" << std::endl;
+        for (size_t i = 0; i < ControlSize; ++i) {
+            for (size_t j = 0; j < EffectorSize; ++j) {
+                std::cout << Bt[i][j] << " ";
+            }
+            std::cout << std::endl;
+        }
+        std::cout << "ydt: [";
+        for (size_t i = 0; i < ControlSize; ++i) {
+            std::cout << ydt[i];
+            if (i < ControlSize - 1) {
+                std::cout << ", ";
+            }
+        }
+        std::cout << "]" << std::endl;
+
+        std::cout << "rho"<<rho<< std::endl;
+        if(rho>1){
+            for(int i=0;i<EffectorSize;++i){
+                EffectorCommand[i]/=rho;
+            }
+        }
+        return EffectorCommand;
+    }
+    
     // 其他成员函数和成员变量定义
     float generalizedMoment[ControlSize]; // 构造函数设置
     // 线性规划相关
     LinearProgrammingProblem<ControlSize, EffectorSize+1> DP_LPCA_problem;// 提前设置 inital by  aircraft data 
-    LinearProgrammingProblem<ControlSize, EffectorSize+4> Pre_DP_LPCA_problem;// 提前设置 inital by aircraft data
-    LinearProgrammingSolverForAC<ControlSize, EffectorSize+1> LPsolverForAC;
+    LinearProgrammingProblem<ControlSize, (EffectorSize+1) + ControlSize> Pre_DP_LPCA_problem;// 提前设置 inital by aircraft data
+    LinearProgrammingSolverForAC<ControlSize, EffectorSize+1> LPsolverForAC; // test the running time
+
+    LinearProgrammingProblem<ControlSize-1, EffectorSize> DPscaled_LPCA_problem;// 提前设置 inital by  aircraft data 
+    LinearProgrammingProblem<ControlSize-1, EffectorSize + (ControlSize-1)> Pre_DPscaled_LPCA_problem;// 提前设置 inital by aircraft data
     float upper_lam = 1e4;
     
 };

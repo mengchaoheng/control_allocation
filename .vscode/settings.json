@@ -124,6 +124,7 @@
         "fstream": "cpp",
         "ref_ptr": "cpp",
         "glextensions": "cpp",
-        "uniform": "cpp"
+        "uniform": "cpp",
+        "math": "cpp"
     }
 }

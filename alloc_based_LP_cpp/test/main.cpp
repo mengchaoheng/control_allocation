@@ -68,93 +68,93 @@ int main() {
     float yd[3]={-0.430392439767736,-0.236610246030909,-0.0936906572928623};
     
 
-    // 线性规划数据
-    LinearProgrammingProblem<3, 5> problem;
-    problem.tol=1e-7;
-    problem.itlim = 10;
-    //填数据
-    problem.inB[0]=0;
-    problem.inB[1]=1;
-    problem.inB[2]=3;
+    // // 线性规划数据
+    // LinearProgrammingProblem<3, 5> problem;
+    // problem.tol=1e-7;
+    // problem.itlim = 10;
+    // //填数据
+    // problem.inB[0]=0;
+    // problem.inB[1]=1;
+    // problem.inB[2]=3;
 
-    problem.e[0] = true;
-    problem.e[1] = true;
-    problem.e[2] = false;
-    problem.e[3] = true;
-    problem.e[4] = true;
+    // problem.e[0] = true;
+    // problem.e[1] = true;
+    // problem.e[2] = false;
+    // problem.e[3] = true;
+    // problem.e[4] = true;
     
-    float upper_lam=1e4;
-    for(int i=0; i<problem.m; ++i)
-    {
-        float temp=0;
-        for(int j=0; j<problem.n-1; ++j)
-        {
-            problem.A[i][j] =_B[i][j];
-            temp +=-_B[i][j]*_uMin[j];
-        }
-        problem.A[i][problem.n-1] =-yd[i];
-        problem.b[i] = temp;
-    }
-    for(int i=0; i<problem.n-1; ++i)
-    {
-        problem.c[i] =0;
-    }
-    problem.c[problem.n-1] =-1;
-    for(int i=0; i<problem.n; ++i)
-    {
-        problem.h[i] =_uMax[i]-_uMin[i];
-    }
-    problem.h[problem.n-1]=upper_lam;
+    // float upper_lam=1e4;
+    // for(int i=0; i<problem.m; ++i)
+    // {
+    //     float temp=0;
+    //     for(int j=0; j<problem.n-1; ++j)
+    //     {
+    //         problem.A[i][j] =_B[i][j];
+    //         temp +=-_B[i][j]*_uMin[j];
+    //     }
+    //     problem.A[i][problem.n-1] =-yd[i];
+    //     problem.b[i] = temp;
+    // }
+    // for(int i=0; i<problem.n-1; ++i)
+    // {
+    //     problem.c[i] =0;
+    // }
+    // problem.c[problem.n-1] =-1;
+    // for(int i=0; i<problem.n; ++i)
+    // {
+    //     problem.h[i] =_uMax[i]-_uMin[i];
+    // }
+    // problem.h[problem.n-1]=upper_lam;
 
-    // 调用函数模板
+    // // 调用函数模板
     auto start = std::chrono::high_resolution_clock::now();
-    LinearProgrammingResult<3, 5> result = BoundedRevisedSimplex(problem);
+    // LinearProgrammingResult<3, 5> result = BoundedRevisedSimplex(problem);
     auto finish = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = finish - start;
-    std::cout << "BoundedRevisedSimplex execution time: " << elapsed.count() << "s\n";
+    // std::cout << "BoundedRevisedSimplex execution time: " << elapsed.count() << "s\n";
     
-    // 使用结果
-    // result.y0, result.inB, result.e, result.errout
-    int err = 0;
-    float xout[problem.n];
-    for(int i=0;i<problem.n;++i){
-        xout[i]=0;
-    }
-    for(int i=0;i<problem.m;++i){
-        xout[result.inB[i]]=result.y0[i];
-    }
-    for(int i=0;i<problem.n;++i){
-        if(!result.e[i]){
-            xout[i]=-xout[i]+problem.h[i];
-        }
-    }
-    if(result.iters>=problem.itlim){
-        err = 3;
-        std::cout << "Too Many Iterations Finding Final Solution"<< std::endl; 
-    }
-	if(result.errout)
-    {
-        err = 1;
-        std::cout << "Solver error"<< std::endl;
-    }
-    float u_px4_matrix[problem.n-1];
-    for(int i=0;i<problem.n-1;++i){
-        u_px4_matrix[i]=xout[i]+_uMin[i];
-    }
-    if(xout[problem.n-1]>1){
-        for(int i=0;i<problem.n-1;++i){
-            u_px4_matrix[i]/=xout[problem.n-1];
-        }
-    }
+    // // 使用结果
+    // // result.y0, result.inB, result.e, result.errout
+    // int err = 0;
+    // float xout[problem.n];
+    // for(int i=0;i<problem.n;++i){
+    //     xout[i]=0;
+    // }
+    // for(int i=0;i<problem.m;++i){
+    //     xout[result.inB[i]]=result.y0[i];
+    // }
+    // for(int i=0;i<problem.n;++i){
+    //     if(!result.e[i]){
+    //         xout[i]=-xout[i]+problem.h[i];
+    //     }
+    // }
+    // if(result.iters>=problem.itlim){
+    //     err = 3;
+    //     std::cout << "Too Many Iterations Finding Final Solution"<< std::endl; 
+    // }
+	// if(result.errout)
+    // {
+    //     err = 1;
+    //     std::cout << "Solver error"<< std::endl;
+    // }
+    // float u_px4_matrix[problem.n-1];
+    // for(int i=0;i<problem.n-1;++i){
+    //     u_px4_matrix[i]=xout[i]+_uMin[i];
+    // }
+    // if(xout[problem.n-1]>1){
+    //     for(int i=0;i<problem.n-1;++i){
+    //         u_px4_matrix[i]/=xout[problem.n-1];
+    //     }
+    // }
     
-    std::cout << "u_px4_matrix: [";
-    for (size_t i = 0; i < problem.n-1; ++i) {
-        std::cout << u_px4_matrix[i];
-        if (i < problem.n-2) {
-            std::cout << ", ";
-        }
-    }
-    std::cout << "]" << std::endl;
+    // std::cout << "u_px4_matrix: [";
+    // for (size_t i = 0; i < problem.n-1; ++i) {
+    //     std::cout << u_px4_matrix[i];
+    //     if (i < problem.n-2) {
+    //         std::cout << ", ";
+    //     }
+    // }
+    // std::cout << "]" << std::endl;
 
 
 
@@ -181,6 +181,7 @@ int main() {
     for(int i=0;i<num;i++)
 	{
         float yd[3]={(float) data[i][0],  (float) data[i][1],   (float) data[i][2]};
+        // float yd[3]={0.1,  0.2,   -0.1}; // for test
 
 
 
@@ -289,7 +290,7 @@ int main() {
         //=====================================================
         float* u3 = new float[4];
         start = std::chrono::high_resolution_clock::now();
-        u3 = DP_LPCA.DP_LPCA(yd);
+        u3 = DP_LPCA.DPscaled_LPCA(yd);
         // u = DP_LPCA.allocateControl(yd);
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;

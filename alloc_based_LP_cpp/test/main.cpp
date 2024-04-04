@@ -253,8 +253,7 @@ int main() {
         // std::cout << "]" << std::endl;
         //=====================================================
 
-        //=====================================================
-        //  调用 u = DP_LP_ControlAllocator.allocateControl(yd)
+        //==========================allocateControl===========================
         // float* u = new float[4];
         // start = std::chrono::high_resolution_clock::now();
         // u = Allocator.allocateControl(yd); // Allocator.allocateControl execution time: 1.66e-07s
@@ -270,13 +269,13 @@ int main() {
         //     }
         // }
         // std::cout << "]" << std::endl;
-        //=====================================================
-        float* u2 = new float[4];
-        start = std::chrono::high_resolution_clock::now();
-        u2 = Allocator.allocateControl_bases_solver(yd); // Allocator.allocateControl_bases_solver execution time: 6.66e-07s
-        finish = std::chrono::high_resolution_clock::now();
-        elapsed = finish - start;
-        std::cout << "Allocator.allocateControl_bases_solver execution time: " << elapsed.count() << "s\n";
+        //=========================allocateControl_bases_solver============================
+        // float* u2 = new float[4];
+        // start = std::chrono::high_resolution_clock::now();
+        // u2 = Allocator.allocateControl_bases_solver(yd); // Allocator.allocateControl_bases_solver execution time: 6.66e-07s
+        // finish = std::chrono::high_resolution_clock::now();
+        // elapsed = finish - start;
+        // std::cout << "Allocator.allocateControl_bases_solver execution time: " << elapsed.count() << "s\n";
 
         // std::cout << "u2: [";
         // for (size_t i = 0; i < 4; ++i) {
@@ -286,14 +285,14 @@ int main() {
         //     }
         // }
         // std::cout << "]" << std::endl;
-        //=====================================================
-        // float* u3 = new float[4];
-        // start = std::chrono::high_resolution_clock::now();
-        // u3 = Allocator.DPscaled_LPCA(yd);  // Allocator.DPscaled_LPCA execution time: 4.17e-07s
-        // // u = Allocator.allocateControl(yd);
-        // finish = std::chrono::high_resolution_clock::now();
-        // elapsed = finish - start;
-        // std::cout << "Allocator.DPscaled_LPCA execution time: " << elapsed.count() << "s\n";
+        //=========================DPscaled_LPCA============================
+        float* u3 = new float[4];
+        start = std::chrono::high_resolution_clock::now();
+        u3 = Allocator.DPscaled_LPCA(yd);  // Allocator.DPscaled_LPCA execution time: 4.17e-07s
+        // u = Allocator.allocateControl(yd);
+        finish = std::chrono::high_resolution_clock::now();
+        elapsed = finish - start;
+        std::cout << "Allocator.DPscaled_LPCA execution time: " << elapsed.count() << "s\n";
         // std::cout << "u3: [";
         // for (size_t i = 0; i < 4; ++i) {
         //     std::cout << u3[i];
@@ -302,7 +301,7 @@ int main() {
         //     }
         // }
         // std::cout << "]" << std::endl;
-
+        //========================DP_LPCA=============================
         // float* u4 = new float[4];
         // start = std::chrono::high_resolution_clock::now();
         // u4 = Allocator.DP_LPCA(yd);  // Allocator.DP_LPCA execution time: 1.583e-06s
@@ -313,7 +312,7 @@ int main() {
 
         // 写入CSV文件
         for (size_t i = 0; i < array_size; ++i) {
-            outFile << u2[i] << (i < array_size - 1 ? "," : "\n");
+            outFile << u3[i] << (i < array_size - 1 ? "," : "\n");
         }
     }
     // 关闭文件

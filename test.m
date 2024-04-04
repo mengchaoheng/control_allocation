@@ -141,29 +141,29 @@ subplot(4,1,4)
 plot(t,x1(4,:),'r-');hold on;
 plot(t,x2(4,:),'b--');hold on;
 % plot(t,u_px4(:,4),'g.');hold on;
-figure,
-subplot(3,1,1)
-plot(t,error1(1,:),'Color','r','LineStyle','-','Marker','+','MarkerIndices',tt);hold on;
-plot(t,error2(1,:),'Color','b','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
-% plot(t,error1(1,:)-error2(1,:),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
-% plot(t,U1(1,:),'Color','b','LineStyle','-.','Marker','+','MarkerIndices',tt);hold on;
-% plot(t,U2(1,:),'Color','g','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
-% plot(t,command_px4(:,1),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
-
-subplot(3,1,2)
-plot(t,error1(2,:),'Color','r','LineStyle','-','Marker','+','MarkerIndices',tt);hold on;
-plot(t,error2(2,:),'Color','b','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
-% plot(t,error1(2,:)-error2(2,:),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
-% plot(t,U1(2,:),'Color','b','LineStyle','-.','Marker','+','MarkerIndices',tt);hold on;
-% plot(t,U2(2,:),'Color','g','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
-% plot(t,command_px4(:,2),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
-subplot(3,1,3)
-plot(t,error1(3,:),'Color','r','LineStyle','-','Marker','+','MarkerIndices',tt);hold on;
-plot(t,error2(3,:),'Color','b','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
-% plot(t,error1(3,:)-error2(3,:),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
-% plot(t,U1(3,:),'Color','b','LineStyle','-.','Marker','+','MarkerIndices',tt);hold on;
-% plot(t,U2(3,:),'Color','g','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
-% plot(t,command_px4(:,3),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
+% figure,
+% subplot(3,1,1)
+% plot(t,error1(1,:),'Color','r','LineStyle','-','Marker','+','MarkerIndices',tt);hold on;
+% plot(t,error2(1,:),'Color','b','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
+% % plot(t,error1(1,:)-error2(1,:),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
+% % plot(t,U1(1,:),'Color','b','LineStyle','-.','Marker','+','MarkerIndices',tt);hold on;
+% % plot(t,U2(1,:),'Color','g','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
+% % plot(t,command_px4(:,1),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
+% 
+% subplot(3,1,2)
+% plot(t,error1(2,:),'Color','r','LineStyle','-','Marker','+','MarkerIndices',tt);hold on;
+% plot(t,error2(2,:),'Color','b','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
+% % plot(t,error1(2,:)-error2(2,:),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
+% % plot(t,U1(2,:),'Color','b','LineStyle','-.','Marker','+','MarkerIndices',tt);hold on;
+% % plot(t,U2(2,:),'Color','g','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
+% % plot(t,command_px4(:,2),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
+% subplot(3,1,3)
+% plot(t,error1(3,:),'Color','r','LineStyle','-','Marker','+','MarkerIndices',tt);hold on;
+% plot(t,error2(3,:),'Color','b','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
+% % plot(t,error1(3,:)-error2(3,:),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
+% % plot(t,U1(3,:),'Color','b','LineStyle','-.','Marker','+','MarkerIndices',tt);hold on;
+% % plot(t,U2(3,:),'Color','g','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
+% % plot(t,command_px4(:,3),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
 
 outside_x1=output(:,len_command_px4+1:end);
 outside_x2=x_LPwrap(:,len_command_px4+1:end);
@@ -172,5 +172,5 @@ outside_U2=B*outside_x2;
 outside_err=outside_x1-outside_x2;
 figure,
 plot3(outside_U1(1,:),outside_U1(2,:),outside_U1(3,:),'r*');
-figure,
-plot3(outside_U2(1,:),outside_U2(2,:),outside_U2(3,:),'g*');
+% figure,
+% plot3(outside_U2(1,:),outside_U2(2,:),outside_U2(3,:),'g*');

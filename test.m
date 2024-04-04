@@ -56,9 +56,19 @@ for i=1:N
     
     IN_MAT(1:3,end) =  v(:,i);%[-0.430392439767736;-0.236610246030909;-0.0936906572928623];
 % % [-0.475528, 0, -0.154509]'; %[0.1,  0.2,   -0.1]';%
+
+    tic;
     u = LPwrap(IN_MAT); % function of ACA lib
+    elapsed_time = toc;
+    disp(['函数运行时间：', num2str(elapsed_time), ' 秒']);
     x_LPwrap(:,i) = Constrain(u,umin,umax);
-    % 
+
+    % IN_MAT(end,end)=3;
+    % tic;
+    % u = LPwrap(IN_MAT);
+    % elapsed_time = toc;
+    % disp(['DPscaled_LPCA函数运行时间：', num2str(elapsed_time), ' 秒']);
+    
     % u= CGIwrap(IN_MAT);
     % x_CGIwrapp(:,i) = Constrain(u,umin,umax);
 

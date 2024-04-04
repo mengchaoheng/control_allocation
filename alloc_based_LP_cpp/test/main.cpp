@@ -8,6 +8,16 @@
 #include <stdio.h>
 #include <math.h>
 #include <chrono>
+
+#include "allocator_dir_LPwrap_4.h"
+#include "rt_nonfinite.h"
+extern "C" {
+    void allocator_dir_LPwrap_4(const float B[12], const float v[3],
+                            const float umin[4], const float umax[4],
+                            float u[4], float *z, unsigned int *iters);
+}
+
+
 using namespace matrix;
 
 
@@ -277,13 +287,14 @@ int main() {
         // }
         // std::cout << "]" << std::endl;
         //=========================DPscaled_LPCA============================
-        float* u3 = new float[4];
-        start = std::chrono::high_resolution_clock::now();
-        u3 = Allocator.DPscaled_LPCA(yd);  // Allocator.DPscaled_LPCA execution time: 4.17e-07s
-        // u = Allocator.allocateControl(yd);
-        finish = std::chrono::high_resolution_clock::now();
-        elapsed = finish - start;
-        std::cout << "Allocator.DPscaled_LPCA execution time: " << elapsed.count() << "s\n";
+        // float* u3 = new float[4];
+        // start = std::chrono::high_resolution_clock::now();
+        // u3 = Allocator.DPscaled_LPCA(yd);  // Allocator.DPscaled_LPCA execution time: 4.17e-07s
+        // // u = Allocator.allocateControl(yd);
+        // finish = std::chrono::high_resolution_clock::now();
+        // elapsed = finish - start;
+        // std::cout << "Allocator.DPscaled_LPCA execution time: " << elapsed.count() << "s\n";
+
         // std::cout << "u3: [";
         // for (size_t i = 0; i < 4; ++i) {
         //     std::cout << u3[i];
@@ -301,9 +312,25 @@ int main() {
         // std::cout << "Allocator.DP_LPCA execution time: " << elapsed.count() << "s\n";
 
 
+        float u_all[4]={ 0.0,  0.0,   0.0,   0.0};
+        float z_all= 0.0;
+        unsigned int iters_all= 0;
+        start = std::chrono::high_resolution_clock::now();
+        allocator_dir_LPwrap_4(_B_array, yd, _uMin, _uMax, u_all, &z_all, &iters_all); // allocator_dir_LPwrap_4 execution time: 7.08e-07s
+        finish = std::chrono::high_resolution_clock::now();
+        elapsed = finish - start;
+        std::cout << "allocator_dir_LPwrap_4 execution time: " << elapsed.count() << "s\n";
+        // 使用循环打印数组元素
+        std::cout << "u_all: " << " ";
+        for (int i = 0; i < 4; ++i) {
+            std::cout << u_all[i] << " ";
+        }
+        std::cout << std::endl; 
+
+
         // 写入CSV文件
         for (size_t i = 0; i < array_size; ++i) {
-            outFile << u3[i] << (i < array_size - 1 ? "," : "\n");
+            outFile << u_all[i] << (i < array_size - 1 ? "," : "\n");
         }
     }
     // 关闭文件

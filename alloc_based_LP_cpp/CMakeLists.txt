@@ -33,13 +33,12 @@ include_directories(${CMAKE_SOURCE_DIR}/matrix)
 
 
 # 添加可执行文件
-add_executable(main test/main.cpp)
-add_executable(minlp_basic test/minlp_basic.cpp)
-add_executable(LPwrap_test test/LPwrap_test.cpp src/LPwrap/allocator_dir_LPwrap_4.c src/LPwrap/rt_nonfinite.c)
-add_executable(new_simplex test/new_simplex.cpp src/LPwrap/allocator_dir_LPwrap_4.c src/LPwrap/rt_nonfinite.c)
-add_executable(px4_matrix_alloc test/px4_matrix_alloc.cpp src/LPwrap/allocator_dir_LPwrap_4.c src/LPwrap/rt_nonfinite.c)
+add_executable(main test/main.cpp src/LPwrap/allocator_dir_LPwrap_4.c src/LPwrap/rt_nonfinite.c)
+add_executable(alglib_based_minlp_basic test/alglib_based_minlp_basic.cpp)
+add_executable(matlab_code_gen_LPwrap_test test/matlab_code_gen_LPwrap_test.cpp src/LPwrap/allocator_dir_LPwrap_4.c src/LPwrap/rt_nonfinite.c)
+add_executable(Eingen_based_simplex test/Eingen_based_simplex.cpp src/LPwrap/allocator_dir_LPwrap_4.c src/LPwrap/rt_nonfinite.c)
 # 添加链接的库
 target_link_libraries(main alglib)
-target_link_libraries(minlp_basic alglib)
-target_link_libraries(LPwrap_test alglib)
-target_link_libraries(new_simplex  alglib)
+target_link_libraries(alglib_based_minlp_basic alglib)
+target_link_libraries(matlab_code_gen_LPwrap_test alglib)
+target_link_libraries(Eingen_based_simplex  alglib)

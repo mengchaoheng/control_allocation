@@ -3,7 +3,23 @@
 #include <iostream>
 
 using namespace matrix;
+// Add the min_user function definition here
+template<typename Type, size_t M, size_t N>
+inline void min_user(const Matrix<Type, M, N> &x, Type &x_min, size_t &x_index)
+{
+    const Matrix<Type, M, N> &self = x;
+    x_min = self(0, 0);
+    x_index = 0;
 
+    for (size_t i = 0; i < M; ++i) {
+        for (size_t j = 0; j < N; ++j) {
+            if (self(i, j) < x_min) {
+                x_min = self(i, j);
+                x_index = i; // Assuming that you want the index along the row
+            }
+        }
+    }
+}
 // 计算 rho 的函数, for DPscaled_LPCA
 const int SIZE_ydt = 3; // 假设 ydt 是一个包含 5 个元素的一维数组
 const int SIZE_Bt_row = 3; // 假设 Bt 是一个 5x5 的二维数组
@@ -518,7 +534,7 @@ public:
             float minr;
             size_t qind;
             // Find minimum relative cost
-            min(rdt.transpose(), minr, qind);
+            min_user(rdt.transpose(), minr, qind);
             // std::cout << "minr:"<<minr<<std::endl;
             // std::cout << "qind:"<<qind<<std::endl;
             if(minr >=0)  // If all relative costs are positive then the solution is optimal. have to compare with 0 !
@@ -577,10 +593,10 @@ public:
             }
             // std::cout << "rat:";
             // rat.print();
-            // Variable to exit is moving to its minimum value--Note that min returns the lowest index minimum
+            // Variable to exit is moving to its minimum value--Note that min_user returns the lowest index minimum
             float minrat=rat(0);
             size_t p=0;
-            min(rat, minrat, p);
+            min_user(rat, minrat, p);
             // std::cout << "minrat:"<<minrat<<std::endl;
             // std::cout << "p:"<<p<<std::endl;
 
@@ -648,10 +664,10 @@ public:
                 }
                 // std::cout << "rat:";
                 // rat.print();
-                // Variable to exit is moving to its minimum value--Note that min returns the lowest index minimum
+                // Variable to exit is moving to its minimum value--Note that min_user returns the lowest index minimum
                 minrat=rat(0);
                 p=0;
-                min(rat, minrat, p);
+                min_user(rat, minrat, p);
                 // std::cout << "minrat:"<<minrat<<std::endl;
                 // std::cout << "p:"<<p<<std::endl;
             }
@@ -1113,7 +1129,7 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
         float minr;
         size_t qind;
         // Find minimum relative cost
-        min(rdt.transpose(), minr, qind);
+        min_user(rdt.transpose(), minr, qind);
         // std::cout << "minr:"<<minr<<std::endl;
         // std::cout << "qind:"<<qind<<std::endl;
         if(minr >=0)  // If all relative costs are positive then the solution is optimal. have to compare with 0 !
@@ -1172,10 +1188,10 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
         }
         // std::cout << "rat:";
         // rat.print();
-         // Variable to exit is moving to its minimum value--Note that min returns the lowest index minimum
+         // Variable to exit is moving to its minimum value--Note that min_user returns the lowest index minimum
         float minrat=rat(0);
         size_t p=0;
-        min(rat, minrat, p);
+        min_user(rat, minrat, p);
         // std::cout << "minrat:"<<minrat<<std::endl;
         // std::cout << "p:"<<p<<std::endl;
 
@@ -1243,10 +1259,10 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
             }
             // std::cout << "rat:";
             // rat.print();
-            // Variable to exit is moving to its minimum value--Note that min returns the lowest index minimum
+            // Variable to exit is moving to its minimum value--Note that min_user returns the lowest index minimum
             minrat=rat(0);
             p=0;
-            min(rat, minrat, p);
+            min_user(rat, minrat, p);
             // std::cout << "minrat:"<<minrat<<std::endl;
             // std::cout << "p:"<<p<<std::endl;
         }

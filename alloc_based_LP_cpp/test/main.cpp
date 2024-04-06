@@ -288,7 +288,7 @@ int main() {
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
         total_elapsed2 += elapsed.count();
-        std::cout << "DPscaled_LPCA rho: "<< rho <<std::endl; 
+        // std::cout << "DPscaled_LPCA rho: "<< rho <<std::endl; 
         // std::cout << "Allocator.DPscaled_LPCA execution time: " << elapsed.count() << "s\n";
 
         // std::cout << "u2: [";
@@ -333,9 +333,9 @@ int main() {
         // }
         // std::cout << std::endl; 
 
-        // 写入CSV文件
+        // 写入CSV文件 change to u1 u2 u3 u4 for your test.
         for (size_t i = 0; i < array_size; ++i) {
-            outFile << u_all[i] << (i < array_size - 1 ? "," : "\n");
+            outFile << u3[i] << (i < array_size - 1 ? "," : "\n");
         }
     }
     // 求平均运行时间
@@ -347,6 +347,7 @@ int main() {
     std::cout << "Allocator.DP_LPCA Average execution time: " << average_elapsed3 << "s" << std::endl;
     double average_elapsed4 = total_elapsed3 / num;
     std::cout << "allocator_dir_LPwrap_4 Average execution time: " << average_elapsed4 << "s" << std::endl;
+    // running on M1 pro MacOS: 
     // Allocator.allocateControl Average execution time: 7.1138e-07s
     // Allocator.DPscaled_LPCA Average execution time: 5.03832e-07s
     // Allocator.DP_LPCA Average execution time: 1.50543e-06s

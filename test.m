@@ -13,7 +13,7 @@ B=k_v*[-l1     0       l1     0;
 umin=ones(m,1)*(-20)*pi/180;
 umax=ones(m,1)*20*pi/180;
 % run Generate_input_data;
-load 'input.mat'; % get unit_vector and the len_command_px4 (len_command_px4 is size of command_px4, which come from flght log data)
+load 'input.mat'; % get v and the len_command_px4 (len_command_px4 is size of command_px4, which come from flght log data)
 [~,N]=size(v);
 %% setup function of allocation lib
 % ========
@@ -109,10 +109,11 @@ for i=1:N
 end
 
 %% Determine the variables to use for comparison.
-% run lp_tiny and run test_input_alloc to generate output.csv
-output = readmatrix('output.csv')';
-% just use the flight data to compare.
+% run target of alloc_based_LP_cpp (./main) to generate output.csv
+output = readmatrix('output.csv')';% or delete this line to just compare the matlab implement method
 command_px4=v(:,1:len_command_px4);
+% just use the flight data to compare.
+
 x1=output(:,1:len_command_px4);
 x2=x_LPwrap(:,1:len_command_px4);
 

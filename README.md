@@ -32,6 +32,7 @@ cd build
 cmake ..
 make && ./main ## or other target: matlab_code_gen_LPwrap_test, Eingen_based_simplex, alglib_based_minlp_basic.
 ```
+and then you can run `test.m` to compare the output of different implement of the algorithm.
 
 2. `LP_lib/alglib_demo`: cd to build folder and run 
 ```Console

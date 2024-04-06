@@ -255,8 +255,9 @@ int main() {
         //=====================================================
 
         //==========================allocateControl===========================
+        float u1[4];
         start = std::chrono::high_resolution_clock::now();
-        float* u = Allocator.allocateControl(yd); // Allocator.allocateControl execution time: 1.66e-07s
+        Allocator.allocateControl(yd,u1); // Allocator.allocateControl execution time: 1.66e-07s
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
         std::cout << "Allocator.allocateControl execution time: " << elapsed.count() << "s\n";
@@ -269,12 +270,13 @@ int main() {
         //     }
         // }
         // std::cout << "]" << std::endl;
-        //=========================allocateControl_bases_solver============================
+        //=========================DPscaled_LPCA============================INFO  [mixer_module] dir_alloc_sim time: 16
+        float u2[4];
         start = std::chrono::high_resolution_clock::now();
-        float* u2 = Allocator.allocateControl_bases_solver(yd); // Allocator.allocateControl_bases_solver execution time: 6.66e-07s
+        Allocator.DPscaled_LPCA(yd, u2);  // Allocator.DPscaled_LPCA execution time: 4.17e-07s
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
-        std::cout << "Allocator.allocateControl_bases_solver execution time: " << elapsed.count() << "s\n";
+        std::cout << "Allocator.DPscaled_LPCA execution time: " << elapsed.count() << "s\n";
 
         // std::cout << "u2: [";
         // for (size_t i = 0; i < 4; ++i) {
@@ -284,12 +286,13 @@ int main() {
         //     }
         // }
         // std::cout << "]" << std::endl;
-        //=========================DPscaled_LPCA============================INFO  [mixer_module] dir_alloc_sim time: 16
+        //========================DP_LPCA=============================
+        float u3[4];
         start = std::chrono::high_resolution_clock::now();
-        float* u3 = Allocator.DPscaled_LPCA(yd);  // Allocator.DPscaled_LPCA execution time: 4.17e-07s
+        Allocator.DP_LPCA(yd, u3);  // Allocator.DP_LPCA execution time: 1.583e-06s
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
-        std::cout << "Allocator.DPscaled_LPCA execution time: " << elapsed.count() << "s\n";
+        std::cout << "Allocator.DP_LPCA execution time: " << elapsed.count() << "s\n";
 
         // std::cout << "u3: [";
         // for (size_t i = 0; i < 4; ++i) {
@@ -299,14 +302,7 @@ int main() {
         //     }
         // }
         // std::cout << "]" << std::endl;
-        //========================DP_LPCA=============================
-        start = std::chrono::high_resolution_clock::now();
-        float* u4 = Allocator.DP_LPCA(yd);  // Allocator.DP_LPCA execution time: 1.583e-06s
-        finish = std::chrono::high_resolution_clock::now();
-        elapsed = finish - start;
-        std::cout << "Allocator.DP_LPCA execution time: " << elapsed.count() << "s\n";
-
-
+        //========================allocator_dir_LPwrap_4=============================
         // float u_all[4]={ 0.0,  0.0,   0.0,   0.0};
         // float z_all= 0.0;
         // unsigned int iters_all= 0;
@@ -326,10 +322,6 @@ int main() {
         for (size_t i = 0; i < array_size; ++i) {
             outFile << u3[i] << (i < array_size - 1 ? "," : "\n");
         }
-        delete[] u;
-        delete[] u2;
-        delete[] u3;
-        delete[] u4;
     }
     // 关闭文件
     outFile.close();

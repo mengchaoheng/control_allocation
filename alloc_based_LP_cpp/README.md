@@ -17,6 +17,14 @@ cd to build path, and run
 ./main ## or other target: matlab_code_gen_LPwrap_test, Eingen_based_simplex, alglib_based_minlp_basic.
 ```
 then the main target will write data to `output.csv`, and you can run the `test.m` to compare the output to that generate by matlab code.
+## Usage
+1. Initialize an aircraft object and allocator object.
+```C++
+Aircraft<3, 4> df_4(_B, -0.3491, 0.3491); // Create an aircraft object with 4 steering vectors and 3 generalized moments
+DP_LP_ControlAllocator<3, 4> Allocator(df_4); // Create a control distributor object for an aircraft with 4 steering vectors and 3 generalized moments (translated into a linear programming problem with dimensions related to parameters <3, 4>.)
+```
+2. After the input is updated, run `Allocator.DP_LPCA(input, u, err)` for example.
+
 ## Test report
 running time test on MacOS
 

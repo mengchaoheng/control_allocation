@@ -1264,6 +1264,7 @@ public:
         // 如果有需要释放的资源，可以在这里添加代码
     }
 
+    // 最初测试算法使用本函数，由于DP_LPCA和4片舵涵道的特殊性，初始基本解是可以预先确定且不变的。所以可以省略第一步寻找基本初始解。后续可以将本函数改为切换使用DP_LPCA和DPscaled_LPCA。
     void allocateControl(float input[ControlSize], float output[EffectorSize], int& err) override {
         // 重写控制分配器函数
         // 实现控制分配算法

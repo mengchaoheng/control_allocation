@@ -22,7 +22,7 @@ This project will take the control allocation problem of ducted fan UAV as an ex
 3. Run `test.m` or `test_xxx.m` file to test the allocator and plot some figure.
 
 4. ToDo: fix the bug of `LP_lib/linear-programming-using-MATLAB`.
-5. build and run target of the project `alloc_based_LP_cpp`, to generate the output data `output.csv`, and then run `test.m`, to compare the effector by allocator. 
+5. build and run target of the project `alloc_based_LP_cpp`, to generate the output data `output.csv`, and then run `test.m`, to compare the effector by allocator. see README of `alloc_based_LP_cpp`.
 
 ### For C/C++ project:
 1. `alloc_based_LP_cpp`: see readme in the folder.

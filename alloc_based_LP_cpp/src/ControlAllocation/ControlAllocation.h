@@ -498,7 +498,7 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
         if(!flag)
         {
             unbounded = true; // Check this condition
-            std::cout << "simplex loop Solution is unbounded"<< std::endl; 
+            // std::cout << "simplex loop Solution is unbounded"<< std::endl; 
             break;
         }
         // Compute ratio how much each current basic variable will have to move for the entering variable.
@@ -572,7 +572,7 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
             if(!flag1)
             {
                 unbounded = true; // Check this condition
-                std::cout << "simplex loop Solution is unbounded"<< std::endl; 
+                // std::cout << "simplex loop Solution is unbounded"<< std::endl; 
                 break;
             }
             // Recompute rations and determine variable to leave

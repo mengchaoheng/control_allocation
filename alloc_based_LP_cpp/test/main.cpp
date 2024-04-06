@@ -117,10 +117,10 @@ int main() {
     // problem.h[problem.n-1]=upper_lam;
 
     // // 调用函数模板
-    auto start = std::chrono::high_resolution_clock::now();
+    // auto start = std::chrono::high_resolution_clock::now();
     // LinearProgrammingResult<3, 5> result = BoundedRevisedSimplex(problem);
-    auto finish = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> elapsed = finish - start;
+    // auto finish = std::chrono::high_resolution_clock::now();
+    // std::chrono::duration<double> elapsed = finish - start;
     // std::cout << "BoundedRevisedSimplex execution time: " << elapsed.count() << "s\n";
     
     // // 使用结果
@@ -182,6 +182,16 @@ int main() {
    
 
     size_t array_size =4;
+
+    auto start = std::chrono::high_resolution_clock::now();
+    auto finish = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed;
+
+    double total_elapsed1 = 0.0;
+    double total_elapsed2 = 0.0;
+    double total_elapsed3 = 0.0;
+    double total_elapsed4 = 0.0;
+
     // main loop
     for(int i=0;i<num;i++)
 	{
@@ -257,10 +267,11 @@ int main() {
         //==========================allocateControl===========================
         float u1[4];
         start = std::chrono::high_resolution_clock::now();
-        Allocator.allocateControl(yd,u1); // Allocator.allocateControl execution time: 1.66e-07s
+        Allocator.allocateControl(yd,u1); 
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
-        std::cout << "Allocator.allocateControl execution time: " << elapsed.count() << "s\n";
+        total_elapsed1 += elapsed.count();
+        // std::cout << "Allocator.allocateControl execution time: " << elapsed.count() << "s\n";
 
         // std::cout << "u: [";
         // for (size_t i = 0; i < 4; ++i) {
@@ -273,10 +284,11 @@ int main() {
         //=========================DPscaled_LPCA============================INFO  [mixer_module] dir_alloc_sim time: 16
         float u2[4];
         start = std::chrono::high_resolution_clock::now();
-        Allocator.DPscaled_LPCA(yd, u2);  // Allocator.DPscaled_LPCA execution time: 4.17e-07s
+        Allocator.DPscaled_LPCA(yd, u2);  
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
-        std::cout << "Allocator.DPscaled_LPCA execution time: " << elapsed.count() << "s\n";
+        total_elapsed2 += elapsed.count();
+        // std::cout << "Allocator.DPscaled_LPCA execution time: " << elapsed.count() << "s\n";
 
         // std::cout << "u2: [";
         // for (size_t i = 0; i < 4; ++i) {
@@ -289,10 +301,11 @@ int main() {
         //========================DP_LPCA=============================
         float u3[4];
         start = std::chrono::high_resolution_clock::now();
-        Allocator.DP_LPCA(yd, u3);  // Allocator.DP_LPCA execution time: 1.583e-06s
+        Allocator.DP_LPCA(yd, u3);  
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
-        std::cout << "Allocator.DP_LPCA execution time: " << elapsed.count() << "s\n";
+        total_elapsed3 += elapsed.count();
+        // std::cout << "Allocator.DP_LPCA execution time: " << elapsed.count() << "s\n";
 
         // std::cout << "u3: [";
         // for (size_t i = 0; i < 4; ++i) {
@@ -302,14 +315,15 @@ int main() {
         //     }
         // }
         // std::cout << "]" << std::endl;
-        //========================allocator_dir_LPwrap_4=============================
-        // float u_all[4]={ 0.0,  0.0,   0.0,   0.0};
-        // float z_all= 0.0;
-        // unsigned int iters_all= 0;
-        // start = std::chrono::high_resolution_clock::now();
-        // allocator_dir_LPwrap_4(_B_array, yd, _uMin, _uMax, u_all, &z_all, &iters_all); // allocator_dir_LPwrap_4 execution time: 7.08e-07s
-        // finish = std::chrono::high_resolution_clock::now();
-        // elapsed = finish - start;
+        //========================allocator_dir_LPwrap_4 (generate by matlab) =============================
+        float u_all[4]={ 0.0,  0.0,   0.0,   0.0};
+        float z_all= 0.0;
+        unsigned int iters_all= 0;
+        start = std::chrono::high_resolution_clock::now();
+        allocator_dir_LPwrap_4(_B_array, yd, _uMin, _uMax, u_all, &z_all, &iters_all); // allocator_dir_LPwrap_4 execution time: 7.08e-07s
+        finish = std::chrono::high_resolution_clock::now();
+        elapsed = finish - start;
+        total_elapsed4 += elapsed.count();
         // std::cout << "allocator_dir_LPwrap_4 execution time: " << elapsed.count() << "s\n";
         // // 使用循环打印数组元素
         // std::cout << "u_all: " << " ";
@@ -320,9 +334,22 @@ int main() {
 
         // 写入CSV文件
         for (size_t i = 0; i < array_size; ++i) {
-            outFile << u3[i] << (i < array_size - 1 ? "," : "\n");
+            outFile << u_all[i] << (i < array_size - 1 ? "," : "\n");
         }
     }
+    // 求平均运行时间
+    double average_elapsed1 = total_elapsed1 / num;
+    std::cout << "Allocator.allocateControl Average execution time: " << average_elapsed1 << "s" << std::endl;
+    double average_elapsed2 = total_elapsed2 / num;
+    std::cout << "Allocator.DPscaled_LPCA Average execution time: " << average_elapsed2 << "s" << std::endl;
+    double average_elapsed3 = total_elapsed3 / num;
+    std::cout << "Allocator.DP_LPCA Average execution time: " << average_elapsed3 << "s" << std::endl;
+    double average_elapsed4 = total_elapsed3 / num;
+    std::cout << "allocator_dir_LPwrap_4 Average execution time: " << average_elapsed4 << "s" << std::endl;
+    // Allocator.allocateControl Average execution time: 7.1138e-07s
+    // Allocator.DPscaled_LPCA Average execution time: 5.03832e-07s
+    // Allocator.DP_LPCA Average execution time: 1.50543e-06s
+    // allocator_dir_LPwrap_4 Average execution time: 1.41764e-06s
     // 关闭文件
     outFile.close();
     // 释放内存

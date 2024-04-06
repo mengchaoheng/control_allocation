@@ -1023,7 +1023,7 @@ public:
             Pre_DP_LPCA_problem.h[i+DP_LPCA_problem.n] = 2*std::abs(DP_LPCA_problem.b[i]);
         }
         //================================== DPscaled_LPCA_problem ================================
-        std::cout << "DPscaled_LPCA_problem"<< std::endl; 
+        // std::cout << "DPscaled_LPCA_problem"<< std::endl; 
         DPscaled_LPCA_problem.tol=1e-7;
         DPscaled_LPCA_problem.itlim = 10;
         float yd[3]={0.1,0.2,-0.1}; // random value for inital.
@@ -1036,9 +1036,9 @@ public:
                 iy = i;
             }
         }
-        std::cout << "DPscaled_LPCA_problem iy: "<< iy <<std::endl; 
-        std::cout << "DPscaled_LPCA_problem my: "<< my <<std::endl; 
-        // copy firstly!!!
+        // std::cout << "DPscaled_LPCA_problem iy: "<< iy <<std::endl; 
+        // std::cout << "DPscaled_LPCA_problem my: "<< my <<std::endl; 
+        // copy firstly !!!
         float Bt[ControlSize][EffectorSize];
         float ydt[ControlSize];
         
@@ -1062,6 +1062,7 @@ public:
         for (int j = iy; j >0; j--) {
             ydt[j] = yd[j-1];
         }
+        // swap 2 3 row of ydt
         float ydt2=ydt[1];
         ydt[1]=ydt[2];
         ydt[2]=ydt2;
@@ -1072,37 +1073,53 @@ public:
             Bt[2][i]=Bt2;
         }
         
-        std::cout << "aircraft.controlEffectMatrix:" << std::endl;
-        for (size_t i = 0; i < ControlSize; ++i) {
-            for (size_t j = 0; j < EffectorSize; ++j) {
-                std::cout << this->aircraft.controlEffectMatrix[i][j] << " ";
-            }
-            std::cout << std::endl;
-        }
-        std::cout << "Bt:" << std::endl;
-        for (size_t i = 0; i < ControlSize; ++i) {
-            for (size_t j = 0; j < EffectorSize; ++j) {
-                std::cout << Bt[i][j] << " ";
-            }
-            std::cout << std::endl;
-        }
+        // std::cout << "aircraft.controlEffectMatrix:" << std::endl;
+        // for (size_t i = 0; i < ControlSize; ++i) {
+        //     for (size_t j = 0; j < EffectorSize; ++j) {
+        //         std::cout << this->aircraft.controlEffectMatrix[i][j] << " ";
+        //     }
+        //     std::cout << std::endl;
+        // }
+        // std::cout << "Bt:" << std::endl;
+        // for (size_t i = 0; i < ControlSize; ++i) {
+        //     for (size_t j = 0; j < EffectorSize; ++j) {
+        //         std::cout << Bt[i][j] << " ";
+        //     }
+        //     std::cout << std::endl;
+        // }
 
         // M = [ydt(2:ControlSize) -ydt(1)*eye(ControlSize-1)];
         float M[ControlSize-1][ControlSize];
-        M[0][0]=ydt[1];
-        M[1][0]=ydt[2];
-        M[0][1]=-ydt[0];
-        M[1][1]=0;
-        M[0][2]=0;
-        M[1][2]=-ydt[0];
-
-        std::cout << "M:" << std::endl;
-        for (size_t i = 0; i < ControlSize-1; ++i) {
-            for (size_t j = 0; j < ControlSize; ++j) {
-                std::cout << M[i][j] << " ";
+        // M[0][0]=ydt[1];
+        // M[1][0]=ydt[2];
+        // M[0][1]=-ydt[0];
+        // M[1][1]=0;
+        // M[0][2]=0;
+        // M[1][2]=-ydt[0];
+        // or 
+        // 将 M 的所有元素初始化为0，并同时填充 M 的第一列和对角线元素
+        for (int i = 0; i < ControlSize - 1; ++i) {
+            for (int j = 0; j < ControlSize; ++j) {
+                if (j == 0) {
+                    // 填充 M 的第一列
+                    M[i][0] = ydt[i + 1];
+                } else if (j == i + 1) {
+                    // 填充对角线元素
+                    M[i][j] = -ydt[0];
+                } else {
+                    // 初始化其他元素为0
+                    M[i][j] = 0.0f;
+                }
             }
-            std::cout << std::endl;
         }
+
+        // std::cout << "M:" << std::endl;
+        // for (size_t i = 0; i < ControlSize-1; ++i) {
+        //     for (size_t j = 0; j < ControlSize; ++j) {
+        //         std::cout << M[i][j] << " ";
+        //     }
+        //     std::cout << std::endl;
+        // }
         for (int i = 0; i < ControlSize-1; ++i) {
             for (int j = 0; j < EffectorSize; ++j) {
                 DPscaled_LPCA_problem.A[i][j] = 0;
@@ -1111,13 +1128,13 @@ public:
                 }
             }
         }
-        std::cout << "DPscaled_LPCA_problem.A:" << std::endl;
-        for (size_t i = 0; i < ControlSize-1; ++i) {
-            for (size_t j = 0; j < EffectorSize; ++j) {
-                std::cout << DPscaled_LPCA_problem.A[i][j] << " ";
-            }
-            std::cout << std::endl;
-        }
+        // std::cout << "DPscaled_LPCA_problem.A:" << std::endl;
+        // for (size_t i = 0; i < ControlSize-1; ++i) {
+        //     for (size_t j = 0; j < EffectorSize; ++j) {
+        //         std::cout << DPscaled_LPCA_problem.A[i][j] << " ";
+        //     }
+        //     std::cout << std::endl;
+        // }
         for(int i=0; i<ControlSize-1; ++i)
         {
             float temp=0;
@@ -1136,35 +1153,35 @@ public:
         for (int i = 0; i < EffectorSize; ++i) {
             DPscaled_LPCA_problem.h[i] = this->aircraft.upperLimits[i]-this->aircraft.lowerLimits[i];
         }
-        std::cout << "DPscaled_LPCA_problem b: [";
-        for (size_t i = 0; i < ControlSize-1; ++i) {
-            std::cout << DPscaled_LPCA_problem.b[i];
-            if (i < ControlSize-1 - 1) {
-                std::cout << ", ";
-            }
-        }
-        std::cout << "]" << std::endl;
+        // std::cout << "DPscaled_LPCA_problem b: [";
+        // for (size_t i = 0; i < ControlSize-1; ++i) {
+        //     std::cout << DPscaled_LPCA_problem.b[i];
+        //     if (i < ControlSize-1 - 1) {
+        //         std::cout << ", ";
+        //     }
+        // }
+        // std::cout << "]" << std::endl;
 
 
-        std::cout << "DPscaled_LPCA_problem c: [";
-        for (size_t i = 0; i <EffectorSize; ++i) {
-            std::cout << DPscaled_LPCA_problem.c[i];
-            if (i <EffectorSize - 1) {
-                std::cout << ", ";
-            }
-        }
-        std::cout << "]" << std::endl;
-        std::cout << "DPscaled_LPCA_problem h: [";
-        for (size_t i = 0; i < EffectorSize; ++i) {
-            std::cout << DPscaled_LPCA_problem.h[i];
-            if (i < EffectorSize- 1) {
-                std::cout << ", ";
-            }
-        }
-        std::cout << "]" << std::endl;
+        // std::cout << "DPscaled_LPCA_problem c: [";
+        // for (size_t i = 0; i <EffectorSize; ++i) {
+        //     std::cout << DPscaled_LPCA_problem.c[i];
+        //     if (i <EffectorSize - 1) {
+        //         std::cout << ", ";
+        //     }
+        // }
+        // std::cout << "]" << std::endl;
+        // std::cout << "DPscaled_LPCA_problem h: [";
+        // for (size_t i = 0; i < EffectorSize; ++i) {
+        //     std::cout << DPscaled_LPCA_problem.h[i];
+        //     if (i < EffectorSize- 1) {
+        //         std::cout << ", ";
+        //     }
+        // }
+        // std::cout << "]" << std::endl;
 
         //==================================Pre_DPscaled_LPCA_problem================================
-        std::cout << "Pre_DPscaled_LPCA_problem"<< std::endl; 
+        // std::cout << "Pre_DPscaled_LPCA_problem"<< std::endl; 
         Pre_DPscaled_LPCA_problem.tol=1e-7;
         Pre_DPscaled_LPCA_problem.itlim = 10;
         for(int i=0; i<DPscaled_LPCA_problem.m; ++i)
@@ -1205,39 +1222,39 @@ public:
             Pre_DPscaled_LPCA_problem.h[i+DPscaled_LPCA_problem.n] = 2*std::abs(DPscaled_LPCA_problem.b[i]);
         }
 
-        std::cout << "Pre_DPscaled_LPCA_problem A:" << std::endl;
-        for (int i = 0; i < Pre_DPscaled_LPCA_problem.m; ++i) {
-            for (int j = 0; j < Pre_DPscaled_LPCA_problem.n; ++j) {
-                std::cout << Pre_DPscaled_LPCA_problem.A[i][j] << " ";
-            }
-            std::cout << std::endl;
-        }
-        std::cout << "Pre_DPscaled_LPCA_problem b: [";
-        for (int i = 0; i < Pre_DPscaled_LPCA_problem.m; ++i) {
-            std::cout << Pre_DPscaled_LPCA_problem.b[i];
-            if (i < Pre_DPscaled_LPCA_problem.m - 1) {
-                std::cout << ", ";
-            }
-        }
-        std::cout << "]" << std::endl;
+        // std::cout << "Pre_DPscaled_LPCA_problem A:" << std::endl;
+        // for (int i = 0; i < Pre_DPscaled_LPCA_problem.m; ++i) {
+        //     for (int j = 0; j < Pre_DPscaled_LPCA_problem.n; ++j) {
+        //         std::cout << Pre_DPscaled_LPCA_problem.A[i][j] << " ";
+        //     }
+        //     std::cout << std::endl;
+        // }
+        // std::cout << "Pre_DPscaled_LPCA_problem b: [";
+        // for (int i = 0; i < Pre_DPscaled_LPCA_problem.m; ++i) {
+        //     std::cout << Pre_DPscaled_LPCA_problem.b[i];
+        //     if (i < Pre_DPscaled_LPCA_problem.m - 1) {
+        //         std::cout << ", ";
+        //     }
+        // }
+        // std::cout << "]" << std::endl;
 
-        std::cout << "Pre_DPscaled_LPCA_problem c: [";
-        for (int i = 0; i < Pre_DPscaled_LPCA_problem.n; ++i) {
-            std::cout << Pre_DPscaled_LPCA_problem.c[i];
-            if (i < Pre_DPscaled_LPCA_problem.n - 1) {
-                std::cout << ", ";
-            }
-        }
-        std::cout << "]" << std::endl;
+        // std::cout << "Pre_DPscaled_LPCA_problem c: [";
+        // for (int i = 0; i < Pre_DPscaled_LPCA_problem.n; ++i) {
+        //     std::cout << Pre_DPscaled_LPCA_problem.c[i];
+        //     if (i < Pre_DPscaled_LPCA_problem.n - 1) {
+        //         std::cout << ", ";
+        //     }
+        // }
+        // std::cout << "]" << std::endl;
 
-        std::cout << "Pre_DPscaled_LPCA_problem h: [";
-        for (int i = 0; i < Pre_DPscaled_LPCA_problem.n; ++i) {
-            std::cout << Pre_DPscaled_LPCA_problem.h[i];
-            if (i < Pre_DPscaled_LPCA_problem.n- 1) {
-                std::cout << ", ";
-            }
-        }
-        std::cout << "]" << std::endl;
+        // std::cout << "Pre_DPscaled_LPCA_problem h: [";
+        // for (int i = 0; i < Pre_DPscaled_LPCA_problem.n; ++i) {
+        //     std::cout << Pre_DPscaled_LPCA_problem.h[i];
+        //     if (i < Pre_DPscaled_LPCA_problem.n- 1) {
+        //         std::cout << ", ";
+        //     }
+        // }
+        // std::cout << "]" << std::endl;
     }
 
     // 设置算法参数函数
@@ -1281,10 +1298,22 @@ public:
         DP_LPCA_problem.e[3] = true;
         DP_LPCA_problem.e[4] = true;
         //=======================
+        // update A b h
         for(int i=0; i<DP_LPCA_problem.m; ++i)
         {
-            DP_LPCA_problem.A[i][DP_LPCA_problem.n-1] =-input[i];
+            float temp=0;
+            for(int j=0; j<DP_LPCA_problem.n-1; ++j)
+            {
+                DP_LPCA_problem.A[i][j] = this->aircraft.controlEffectMatrix[i][j];
+                temp += -this->aircraft.controlEffectMatrix[i][j]*this->aircraft.lowerLimits[j];
+            }
+            DP_LPCA_problem.A[i][DP_LPCA_problem.n-1] = -input[i];
             this->generalizedMoment[i] = input[i]; // just record.
+            DP_LPCA_problem.b[i] = temp;
+        }
+        for(int i=0; i<DP_LPCA_problem.n-1; ++i)
+        {
+            DP_LPCA_problem.h[i] = this->aircraft.upperLimits[i]-this->aircraft.lowerLimits[i];
         }
         
         auto result = BoundedRevisedSimplex(DP_LPCA_problem);
@@ -1424,14 +1453,44 @@ public:
         // ref. is A.6.4 Initialization of the Simplex Algorithm of <Aircraft control allocation>
 
         // now we update the problem by input data.
-        // update A
-        for (int i = 0; i < ControlSize; ++i) {
-            DP_LPCA_problem.A[i][EffectorSize]=-input[i];
-            this->generalizedMoment[i] = input[i];
+        // update A b h
+        for(int i=0; i<DP_LPCA_problem.m; ++i)
+        {
+            float temp=0;
+            for(int j=0; j<DP_LPCA_problem.n-1; ++j)
+            {
+                DP_LPCA_problem.A[i][j] = this->aircraft.controlEffectMatrix[i][j];
+                temp += -this->aircraft.controlEffectMatrix[i][j]*this->aircraft.lowerLimits[j];
+            }
+            DP_LPCA_problem.A[i][DP_LPCA_problem.n-1] = -input[i];
+            this->generalizedMoment[i] = input[i]; // just record.
+            DP_LPCA_problem.b[i] = temp;
         }
-        // update Ai
-        for (int i = 0; i < ControlSize; ++i) {
-            Pre_DP_LPCA_problem.A[i][EffectorSize]=-input[i];
+        for(int i=0; i<DP_LPCA_problem.n-1; ++i)
+        {
+            DP_LPCA_problem.h[i] = this->aircraft.upperLimits[i]-this->aircraft.lowerLimits[i];
+        }
+        // update sb(since b is update) Ai hi
+        for(int i=0; i<DP_LPCA_problem.m; ++i)
+        {
+            for(int j=0; j<DP_LPCA_problem.n; ++j)
+            {
+                Pre_DP_LPCA_problem.A[i][j] = DP_LPCA_problem.A[i][j];
+            }
+            Pre_DP_LPCA_problem.b[i] = DP_LPCA_problem.b[i]; // the same as DP_LPCA_problem
+
+        }
+        for(int i=0; i<DP_LPCA_problem.m; ++i)
+        {
+            Pre_DP_LPCA_problem.A[i][i + DP_LPCA_problem.n] = (DP_LPCA_problem.b[i] > 0) ? 1 : -1; // sb = 2*(b > 0)-1; Ai = [A diag(sb)]; 
+        }
+        for(int i=0; i<DP_LPCA_problem.n; ++i)
+        {
+            Pre_DP_LPCA_problem.h[i] = DP_LPCA_problem.h[i];
+        }
+        for(int i=0; i<DP_LPCA_problem.m; ++i)
+        {
+            Pre_DP_LPCA_problem.h[i+DP_LPCA_problem.n] = 2*std::abs(DP_LPCA_problem.b[i]);
         }
 
         // Use Bounded Revised Simplex to find initial basic feasible point of original program
@@ -1636,7 +1695,6 @@ public:
         // update A b c but not h, h = uMax-uMin is assumpt always the same.
         // float yd[3]={0.1,0.1,0.2}; // random value for inital.
         float my=input[0]; // 存储最大的绝对值
-        
         int iy=0; // 存储最大绝对值的索引
         for (int i = 0; i < ControlSize; ++i) {
             float absValue = std::abs(input[i]); // 计算 yd 中第 i 个元素的绝对值
@@ -1645,9 +1703,9 @@ public:
                 iy = i;
             }
         }
-        // std::cout << "DPscaled_LPCA_problem iy"<< iy <<std::endl; 
-        // std::cout << "DPscaled_LPCA_problem my"<< my <<std::endl; 
-        // copy firstly!!!
+        // std::cout << "DPscaled_LPCA_problem iy: "<< iy <<std::endl; 
+        // std::cout << "DPscaled_LPCA_problem my: "<< my <<std::endl; 
+        // copy firstly !!!
         float Bt[ControlSize][EffectorSize];
         float ydt[ControlSize];
         
@@ -1681,6 +1739,14 @@ public:
             Bt[1][i]=Bt[2][i];
             Bt[2][i]=Bt2;
         }
+        
+        // std::cout << "aircraft.controlEffectMatrix:" << std::endl;
+        // for (size_t i = 0; i < ControlSize; ++i) {
+        //     for (size_t j = 0; j < EffectorSize; ++j) {
+        //         std::cout << this->aircraft.controlEffectMatrix[i][j] << " ";
+        //     }
+        //     std::cout << std::endl;
+        // }
         // std::cout << "Bt:" << std::endl;
         // for (size_t i = 0; i < ControlSize; ++i) {
         //     for (size_t j = 0; j < EffectorSize; ++j) {
@@ -1691,12 +1757,28 @@ public:
 
         // M = [ydt(2:ControlSize) -ydt(1)*eye(ControlSize-1)];
         float M[ControlSize-1][ControlSize];
-        M[0][0]=ydt[1];
-        M[1][0]=ydt[2];
-        M[0][1]=-ydt[0];
-        M[1][1]=0;
-        M[0][2]=0;
-        M[1][2]=-ydt[0];
+        // M[0][0]=ydt[1];
+        // M[1][0]=ydt[2];
+        // M[0][1]=-ydt[0];
+        // M[1][1]=0;
+        // M[0][2]=0;
+        // M[1][2]=-ydt[0];
+        // or 
+        // 将 M 的所有元素初始化为0，并同时填充 M 的第一列和对角线元素
+        for (int i = 0; i < ControlSize - 1; ++i) {
+            for (int j = 0; j < ControlSize; ++j) {
+                if (j == 0) {
+                    // 填充 M 的第一列
+                    M[i][0] = ydt[i + 1];
+                } else if (j == i + 1) {
+                    // 填充对角线元素
+                    M[i][j] = -ydt[0];
+                } else {
+                    // 初始化其他元素为0
+                    M[i][j] = 0.0f;
+                }
+            }
+        }
         // std::cout << "M:" << std::endl;
         // for (size_t i = 0; i < ControlSize-1; ++i) {
         //     for (size_t j = 0; j < ControlSize; ++j) {
@@ -1712,6 +1794,13 @@ public:
                 }
             }
         }
+        // std::cout << "DPscaled_LPCA_problem.A:" << std::endl;
+        // for (size_t i = 0; i < ControlSize-1; ++i) {
+        //     for (size_t j = 0; j < EffectorSize; ++j) {
+        //         std::cout << DPscaled_LPCA_problem.A[i][j] << " ";
+        //     }
+        //     std::cout << std::endl;
+        // }
         for(int i=0; i<ControlSize-1; ++i)
         {
             float temp=0;
@@ -1727,7 +1816,40 @@ public:
                 DPscaled_LPCA_problem.c[i] += -Bt[j][i] * ydt[j];
             }
         }
-        //update Ai and part of hi
+        for (int i = 0; i < EffectorSize; ++i) {
+            DPscaled_LPCA_problem.h[i] = this->aircraft.upperLimits[i]-this->aircraft.lowerLimits[i];
+        }
+        // std::cout << "DPscaled_LPCA_problem b: [";
+        // for (size_t i = 0; i < ControlSize-1; ++i) {
+        //     std::cout << DPscaled_LPCA_problem.b[i];
+        //     if (i < ControlSize-1 - 1) {
+        //         std::cout << ", ";
+        //     }
+        // }
+        // std::cout << "]" << std::endl;
+
+
+        // std::cout << "DPscaled_LPCA_problem c: [";
+        // for (size_t i = 0; i <EffectorSize; ++i) {
+        //     std::cout << DPscaled_LPCA_problem.c[i];
+        //     if (i <EffectorSize - 1) {
+        //         std::cout << ", ";
+        //     }
+        // }
+        // std::cout << "]" << std::endl;
+        // std::cout << "DPscaled_LPCA_problem h: [";
+        // for (size_t i = 0; i < EffectorSize; ++i) {
+        //     std::cout << DPscaled_LPCA_problem.h[i];
+        //     if (i < EffectorSize- 1) {
+        //         std::cout << ", ";
+        //     }
+        // }
+        // std::cout << "]" << std::endl;
+        // update Ai and hi
+        //==================================Pre_DPscaled_LPCA_problem================================
+        // std::cout << "Pre_DPscaled_LPCA_problem"<< std::endl; 
+        // Pre_DPscaled_LPCA_problem.tol=1e-7;
+        // Pre_DPscaled_LPCA_problem.itlim = 10;
         for(int i=0; i<DPscaled_LPCA_problem.m; ++i)
         {
             for(int j=0; j<DPscaled_LPCA_problem.n; ++j)
@@ -1740,6 +1862,10 @@ public:
         for(int i=0; i<DPscaled_LPCA_problem.m; ++i)
         {
             Pre_DPscaled_LPCA_problem.A[i][i + DPscaled_LPCA_problem.n] = (DPscaled_LPCA_problem.b[i] > 0) ? 1 : -1; // sb = 2*(b > 0)-1; Ai = [A diag(sb)]; 
+        }
+        for(int i=0; i<DPscaled_LPCA_problem.n; ++i)
+        {
+            Pre_DPscaled_LPCA_problem.h[i] = DPscaled_LPCA_problem.h[i];
         }
         for(int i=0; i<DPscaled_LPCA_problem.m; ++i)
         {

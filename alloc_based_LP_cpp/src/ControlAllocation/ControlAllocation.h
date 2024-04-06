@@ -936,7 +936,7 @@ public:
         // std::cout << "ControlAllocatorBase使用传入的aircraft对象初始化aircraft成员"<< std::endl;
     }
 
-    virtual void allocateControl(float input[ControlSize], float output[EffectorSize]) = 0;
+    virtual void allocateControl(float input[ControlSize], float output[EffectorSize], int& err) = 0;
 
     // 其他数学函数和成员变量定义
     Aircraft<ControlSize, EffectorSize> aircraft; // 构造函数设置
@@ -1264,7 +1264,7 @@ public:
         // 如果有需要释放的资源，可以在这里添加代码
     }
 
-    void allocateControl(float input[ControlSize], float output[EffectorSize]) override {
+    void allocateControl(float input[ControlSize], float output[EffectorSize], int& err) override {
         // 重写控制分配器函数
         // 实现控制分配算法
         // DP_LPCA（generalizedMoment, aircraft） 
@@ -1333,19 +1333,19 @@ public:
             }
         }
         if(result.iters>=DP_LPCA_problem.itlim){
-            // err = 3;
-            std::cout << "Too Many Iterations Finding Final Solution"<< std::endl; 
-            for (int i = 0; i < ControlSize; ++i) {
-                std::cout << this->generalizedMoment[i] << std::endl;
-            }
+            err = 3;
+            // std::cout << "Too Many Iterations Finding Final Solution"<< std::endl; 
+            // for (int i = 0; i < ControlSize; ++i) {
+            //     std::cout << this->generalizedMoment[i] << std::endl;
+            // }
         }
         if(result.errout)
         {
-            // err = 1;
-            std::cout << "Solver error"<< std::endl;
-            for (int i = 0; i < ControlSize; ++i) {
-                std::cout << this->generalizedMoment[i] << std::endl;
-            }
+            err = 1;
+            // std::cout << "Solver error"<< std::endl;
+            // for (int i = 0; i < ControlSize; ++i) {
+            //     std::cout << this->generalizedMoment[i] << std::endl;
+            // }
         }
         for(int i=0;i<EffectorSize;++i){
             output[i]=xout[i]+this->aircraft.lowerLimits[i];
@@ -1360,7 +1360,7 @@ public:
     
     // To find an initial condition, many linear programming solvers treat the solution in two phases. Phase one solves a specially constructed problem designed to yield a basic feasible solution that is used to initialize the original problem in phase two.
     // So we have DP_LPCA and DPscaled_LPCA
-    void DP_LPCA(float input[ControlSize], float output[EffectorSize]){
+    void DP_LPCA(float input[ControlSize], float output[EffectorSize], int& err){
         // Direction Preserving Control Allocation Linear Program
 
         // function [u, errout] = DP_LPCA(yd,B,uMin,uMax,itlim,upper_lam);
@@ -1425,7 +1425,7 @@ public:
         //=======================
         // std::cout << "DP_LPCA"<< std::endl; 
         // Initialize error code to zero
-        int err = 0;
+        // int err = 0;
         // Figure out how big the problem is (use standard CA definitions for m & n)
         // but in here we use [m,k] = size(B) instead of [n,m] = size(B) in matlab. just for adapt to BoundedRevisedSimplex
         // we use [m,n] = size(A) in BoundedRevisedSimplex, that is, k + 1 = n.
@@ -1498,30 +1498,30 @@ public:
 
         // Check that Feasible Solution was found
         if(result_init.iters>=Pre_DP_LPCA_problem.itlim){
-            err = 3;
-            std::cout << "Pre Too Many Iterations Finding Final Solution"<< std::endl; 
-            for (int i = 0; i < ControlSize; ++i) {
-                std::cout << this->generalizedMoment[i] << std::endl;
-            }
+            err = -3;
+            // std::cout << "Pre Too Many Iterations Finding Final Solution"<< std::endl; 
+            // for (int i = 0; i < ControlSize; ++i) {
+            //     std::cout << this->generalizedMoment[i] << std::endl;
+            // }
         }
         for(int i=0;i<ControlSize;++i){
             if(result_init.inB[i]> EffectorSize) // DP_LPCA_problem is origin problem, k=DP_LPCA_problem.n-1 = EffectorSize 
             {
                 // which mean inital basic index is out of the origin problem.
                 err = -2;
-                std::cout << "Pre No Initial Feasible Solution found"<< std::endl; 
-                for (int k = 0; k < ControlSize; ++k) {
-                    std::cout << this->generalizedMoment[k] << std::endl;
-                }
+                // std::cout << "Pre No Initial Feasible Solution found"<< std::endl; 
+                // for (int k = 0; k < ControlSize; ++k) {
+                //     std::cout << this->generalizedMoment[k] << std::endl;
+                // }
                 break;
             }
         }
         if(result_init.errout){
             err = -1;
-            std::cout << "Pre Solver error"<< std::endl; 
-            for (int i = 0; i < ControlSize; ++i) {
-                std::cout << this->generalizedMoment[i] << std::endl;
-            }
+            // std::cout << "Pre Solver error"<< std::endl; 
+            // for (int i = 0; i < ControlSize; ++i) {
+            //     std::cout << this->generalizedMoment[i] << std::endl;
+            // }
         }
         // solve Pre_DP_LPCA_problem but proccess DP_LPCA_problem
         float xout[DP_LPCA_problem.n];
@@ -1572,18 +1572,18 @@ public:
 
             if(result.iters>=DP_LPCA_problem.itlim){
                 err = 3;
-                std::cout << "Too Many Iterations Finding Final Solution"<< std::endl; 
-                for (int i = 0; i < ControlSize; ++i) {
-                    std::cout << this->generalizedMoment[i] << std::endl;
-                }
+                // std::cout << "Too Many Iterations Finding Final Solution"<< std::endl; 
+                // for (int i = 0; i < ControlSize; ++i) {
+                //     std::cout << this->generalizedMoment[i] << std::endl;
+                // }
             }
             if(result.errout)
             {
                 err = 1;
-                std::cout << "Solver error"<< std::endl;
-                for (int i = 0; i < ControlSize; ++i) {
-                    std::cout << this->generalizedMoment[i] << std::endl;
-                }
+                // std::cout << "Solver error"<< std::endl;
+                // for (int i = 0; i < ControlSize; ++i) {
+                //     std::cout << this->generalizedMoment[i] << std::endl;
+                // }
             }
         }
         // Transform back to control variables
@@ -1600,7 +1600,7 @@ public:
     }
     
     
-    void DPscaled_LPCA(float input[ControlSize], float output[EffectorSize]){
+    void DPscaled_LPCA(float input[ControlSize], float output[EffectorSize], int& err, float & rho){
         // Direction Preserving Control Allocation Linear Program
         //     Reduced formulation (Solution Scaled from Boundary)
 
@@ -1664,7 +1664,7 @@ public:
         //=======================
         // std::cout << "DPscaled_LPCA"<< std::endl; 
         // Initialize error code to zero
-        int err = 0;
+        // int err = 0;
         // Figure out how big the problem is (use standard CA definitions for m & n)
         // but in here we use [m,k] = size(B) instead of [n,m] = size(B) in matlab. just for adapt to BoundedRevisedSimplex
         // we use [m,n] = size(A) in BoundedRevisedSimplex, that is, k + 1 = n.
@@ -1911,11 +1911,11 @@ public:
 
         // Check that Feasible Solution was found
         if(result_init.iters>=Pre_DPscaled_LPCA_problem.itlim){
-            err = 3;
-            std::cout << "Pre Too Many Iterations Finding Final Solution"<< std::endl; 
-            for (int i = 0; i < ControlSize; ++i) {
-                std::cout << this->generalizedMoment[i] << std::endl;
-            }
+            err = -3;
+            // std::cout << "Pre Too Many Iterations Finding Final Solution"<< std::endl; 
+            // for (int i = 0; i < ControlSize; ++i) {
+            //     std::cout << this->generalizedMoment[i] << std::endl;
+            // }
         }
         for(int i=0;i<ControlSize-1;++i){
             if(result_init.inB[i]> EffectorSize-1) // DPscaled_LPCA_problem is origin problem, k=DPscaled_LPCA_problem.n-1 = EffectorSize 
@@ -2000,18 +2000,18 @@ public:
 
             if(result.iters>=DPscaled_LPCA_problem.itlim){
                 err = 3;
-                std::cout << "Too Many Iterations Finding Final Solution"<< std::endl; 
-                for (int i = 0; i < ControlSize; ++i) {
-                    std::cout << this->generalizedMoment[i] << std::endl;
-                }
+                // std::cout << "Too Many Iterations Finding Final Solution"<< std::endl; 
+                // for (int i = 0; i < ControlSize; ++i) {
+                //     std::cout << this->generalizedMoment[i] << std::endl;
+                // }
             }
             if(result.errout)
             {
                 err = 1;
-                std::cout << "Solver error"<< std::endl;
-                for (int i = 0; i < ControlSize; ++i) {
-                    std::cout << this->generalizedMoment[i] << std::endl;
-                }
+                // std::cout << "Solver error"<< std::endl;
+                // for (int i = 0; i < ControlSize; ++i) {
+                //     std::cout << this->generalizedMoment[i] << std::endl;
+                // }
             }
         }
         // Transform back to control variables
@@ -2020,7 +2020,7 @@ public:
             // std::cout << "output[i]"<<output[i]<< std::endl;
         }
         // Use upper_lam to prevent control surfaces from approaching position limits
-        float rho = calculateRho(ydt, output, Bt, DPscaled_LPCA_problem.tol);
+        rho = calculateRho(ydt, output, Bt, DPscaled_LPCA_problem.tol);
         // std::cout << "Bt:" << std::endl;
         // for (size_t i = 0; i < ControlSize; ++i) {
         //     for (size_t j = 0; j < EffectorSize; ++j) {

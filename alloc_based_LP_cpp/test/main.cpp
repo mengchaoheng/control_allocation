@@ -265,9 +265,9 @@ int main() {
         //=====================================================
 
         //==========================allocateControl===========================
-        float u1[4];
+        float u1[4]; int err1=0;
         start = std::chrono::high_resolution_clock::now();
-        Allocator.allocateControl(yd,u1); 
+        Allocator.allocateControl(yd, u1, err1); 
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
         total_elapsed1 += elapsed.count();
@@ -282,12 +282,13 @@ int main() {
         // }
         // std::cout << "]" << std::endl;
         //=========================DPscaled_LPCA============================INFO  [mixer_module] dir_alloc_sim time: 16
-        float u2[4];
+        float u2[4];int err2=0;float rho=0;
         start = std::chrono::high_resolution_clock::now();
-        Allocator.DPscaled_LPCA(yd, u2);  
+        Allocator.DPscaled_LPCA(yd, u2, err2, rho);  
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
         total_elapsed2 += elapsed.count();
+        std::cout << "DPscaled_LPCA rho: "<< rho <<std::endl; 
         // std::cout << "Allocator.DPscaled_LPCA execution time: " << elapsed.count() << "s\n";
 
         // std::cout << "u2: [";
@@ -299,9 +300,9 @@ int main() {
         // }
         // std::cout << "]" << std::endl;
         //========================DP_LPCA=============================
-        float u3[4];
+        float u3[4];int err3=0;
         start = std::chrono::high_resolution_clock::now();
-        Allocator.DP_LPCA(yd, u3);  
+        Allocator.DP_LPCA(yd, u3, err3);  
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
         total_elapsed3 += elapsed.count();

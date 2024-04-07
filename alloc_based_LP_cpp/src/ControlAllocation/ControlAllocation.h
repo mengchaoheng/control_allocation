@@ -1923,19 +1923,19 @@ public:
             {
                 // which mean inital basic index is out of the origin problem.
                 err = -2;
-                std::cout << "Pre No Initial Feasible Solution found"<< std::endl; 
-                for (int k = 0; k < ControlSize; ++k) {
-                    std::cout << this->generalizedMoment[k] << std::endl;
-                }
+                // std::cout << "Pre No Initial Feasible Solution found"<< std::endl; 
+                // for (int k = 0; k < ControlSize; ++k) {
+                //     std::cout << this->generalizedMoment[k] << std::endl;
+                // }
                 break;
             }
         }
         if(result_init.errout){
             err = -1;
-            std::cout << "Pre Solver error"<< std::endl; 
-            for (int i = 0; i < ControlSize; ++i) {
-                std::cout << this->generalizedMoment[i] << std::endl;
-            }
+            // std::cout << "Pre Solver error"<< std::endl; 
+            // for (int i = 0; i < ControlSize; ++i) {
+            //     std::cout << this->generalizedMoment[i] << std::endl;
+            // }
         }
         // solve Pre_DPscaled_LPCA_problem but proccess DPscaled_LPCA_problem
         float xout[EffectorSize];

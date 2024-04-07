@@ -176,7 +176,6 @@ int main() {
     // 例如：
     float l1=0.148;float l2=0.069;float k_v=3;
     Aircraft<3, 4> df_4(_B, -0.3491, 0.3491); // 创建一个具有 4 个操纵向量和 3 个广义力矩的飞行器对象
-    // 分配器数据：
     DP_LP_ControlAllocator<3, 4> Allocator(df_4); // 创建一个控制分配器对象，用于具有 4 个操纵向量和 3 个广义力矩的飞行器(转化为线性规划问题，其维数和参数 <3, 4> 有关。)
     // 然后可以使用飞行器对象和控制分配器对象进行操作
    
@@ -317,19 +316,19 @@ int main() {
         // }
         // std::cout << "]" << std::endl;
         //========================allocator_dir_LPwrap_4 (generate by matlab) =============================
-        float u_all[4]={ 0.0,  0.0,   0.0,   0.0};
-        float z_all= 0.0;
-        unsigned int iters_all= 0;
+        float u4[4]={ 0.0,  0.0,   0.0,   0.0};
+        float z_allocator_dir_LPwrap_4= 0.0;
+        unsigned int iters_allocator_dir_LPwrap_4= 0;
         start = std::chrono::high_resolution_clock::now();
-        allocator_dir_LPwrap_4(_B_array, yd, _uMin, _uMax, u_all, &z_all, &iters_all); // allocator_dir_LPwrap_4 execution time: 7.08e-07s
+        allocator_dir_LPwrap_4(_B_array, yd, _uMin, _uMax, u4, &z_allocator_dir_LPwrap_4, &iters_allocator_dir_LPwrap_4); // allocator_dir_LPwrap_4 execution time: 7.08e-07s
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
         total_elapsed4 += elapsed.count();
         // std::cout << "allocator_dir_LPwrap_4 execution time: " << elapsed.count() << "s\n";
         // // 使用循环打印数组元素
-        // std::cout << "u_all: " << " ";
+        // std::cout << "u4: " << " ";
         // for (int i = 0; i < 4; ++i) {
-        //     std::cout << u_all[i] << " ";
+        //     std::cout << u4[i] << " ";
         // }
         // std::cout << std::endl; 
 

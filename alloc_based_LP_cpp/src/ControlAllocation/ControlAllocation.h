@@ -1,7 +1,7 @@
 
 #include <matrix/math.hpp>
 #include <iostream>
-
+#include <stdlib.h>
 using namespace matrix;
 // Add the min_user function definition here
 template<typename Type, size_t M, size_t N>
@@ -42,7 +42,7 @@ inline float calculateRho(float ydt[], float u[], float Bt[][SIZE_Bt_col], float
         denominator += ydt[i] * ydt[i];
     }
     // 避免除以零  // ydt的模不会很小
-    if (std::abs(denominator) < tol ) {
+    if (fabs(denominator) < tol ) {
         // std::cerr << "Error: Division by zero." << std::endl;
         return 0.0f;
     }
@@ -68,15 +68,15 @@ inline void setdiff(int setA[], int sizeA, int setB[], int sizeB, int result[]) 
         }
     }
 }
-inline int* generateSequence(int i, int n) {
-    int* result = new int[n - i + 1]; // 动态分配数组内存
+// inline int* generateSequence(int i, int n) {
+//     int* result = new int[n - i + 1]; // 动态分配数组内存
 
-    for (int num = i, index = 0; num <= n; ++num, ++index) {
-        result[index] = num;
-    }
+//     for (int num = i, index = 0; num <= n; ++num, ++index) {
+//         result[index] = num;
+//     }
 
-    return result;
-}
+//     return result;
+// }
 // 定义线性规划问题结构体
 template<int M, int N>
 struct LinearProgrammingProblem {
@@ -251,7 +251,11 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
     // 使用 problem.inB, problem.inD, problem.itlim, problem.A, problem.b, problem.c, problem.h, problem.e, problem.tol
     const int n_m=N-M;
     // Index list for non-basic variables, that is 1 2 3 4 ... n
-    int* nind = generateSequence(0, n_m-1);
+    // int* nind = generateSequence(0, n_m-1);
+    int nind[n_m];
+    for (int num = 0, index = 0; num < n_m; ++num, ++index) {
+        nind[index] = num;
+    }
     // std::cout << "nind: [";
     // for (size_t i = 0; i <N- M; ++i) {
     //     std::cout << nind[i];
@@ -262,7 +266,11 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
     // std::cout << "]" << std::endl;
     //=============
     // Index list for all variables 
-    int* ind_all = generateSequence(0, N-1);
+    // int* ind_all = generateSequence(0, N-1);
+    int ind_all[N];
+    for (int num = 0, index = 0; num < N; ++num, ++index) {
+        ind_all[index] = num;
+    }
     //=============
     // std::cout << "ind_all: [";
     // for (size_t i = 0; i <N; ++i) {
@@ -489,7 +497,7 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
          // Check wether all the abs of yq[i] is greater than tol.
         bool flag=false;
         for(int i=0;i<M;++i){
-            if(std::abs(yq(i)) > problem.tol) 
+            if(fabs(yq(i)) > problem.tol) 
             {
                 flag = true; 
                 break;
@@ -506,7 +514,7 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
         float hinB[M];
         for(int i=0;i<M;++i)
         {
-            if(std::abs(yq(i))>problem.tol)
+            if(fabs(yq(i))>problem.tol)
             {
                 rat(i)=y0(i)/yq(i);
                 hinB[i]=problem.h[problem.inB[i]];
@@ -534,7 +542,7 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
         // If the minimum ratio is zero, then the solution is degenerate and the entering
         // variable will not change the basis---invoke Bland's selection rule to avoid
         // cycling.
-        if (std::abs(minrat) <= problem.tol)
+        if (fabs(minrat) <= problem.tol)
         {
             // Find negative relative cost
             // std::cout << " Find negative relative cost "<< std::endl; 
@@ -563,7 +571,7 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
             // yq.print();
             bool flag1=false;
             for(int i=0;i<M;++i){
-                if(std::abs(yq(i)) > problem.tol)
+                if(fabs(yq(i)) > problem.tol)
                 {
                     flag1 = true; 
                     break;
@@ -580,7 +588,7 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
             for(int i=0;i<M;++i)
             {
                 hinB1[i]=problem.h[problem.inB[i]];
-                if(std::abs(yq(i))>problem.tol) 
+                if(fabs(yq(i))>problem.tol) 
                 {
                     rat(i)=y0(i)/yq(i);
                     if(yq(i)<0) // If yq < 0 then increasing variable when it leaves the basis will minimize cost
@@ -958,8 +966,14 @@ public:
         //=====================================DP_LPCA_problem================================
         DP_LPCA_problem.tol=1e-7;
         DP_LPCA_problem.itlim = 10;
-        //填数据
-        
+        for(int i=0; i<DP_LPCA_problem.n-1; ++i)
+        {
+            DP_LPCA_problem.c[i] = 0;
+        }
+        DP_LPCA_problem.c[DP_LPCA_problem.n-1] = -1;
+
+        DP_LPCA_problem.h[DP_LPCA_problem.n-1] = upper_lam;
+        // update A b h every time
         for(int i=0; i<DP_LPCA_problem.m; ++i)
         {
             float temp=0;
@@ -973,31 +987,11 @@ public:
         }
         for(int i=0; i<DP_LPCA_problem.n-1; ++i)
         {
-            DP_LPCA_problem.c[i] = 0;
-        }
-        DP_LPCA_problem.c[DP_LPCA_problem.n-1] = -1;
-        for(int i=0; i<DP_LPCA_problem.n-1; ++i)
-        {
             DP_LPCA_problem.h[i] = this->aircraft.upperLimits[i]-this->aircraft.lowerLimits[i];
         }
-        DP_LPCA_problem.h[DP_LPCA_problem.n-1] = upper_lam;
-        
         //==================================PreDP_LPCA_problem================================
         Pre_DP_LPCA_problem.tol=1e-7;
         Pre_DP_LPCA_problem.itlim = 10;
-        for(int i=0; i<DP_LPCA_problem.m; ++i)
-        {
-            for(int j=0; j<DP_LPCA_problem.n; ++j)
-            {
-                Pre_DP_LPCA_problem.A[i][j] = DP_LPCA_problem.A[i][j];
-            }
-            Pre_DP_LPCA_problem.b[i] = DP_LPCA_problem.b[i]; // the same as DP_LPCA_problem
-
-        }
-        for(int i=0; i<DP_LPCA_problem.m; ++i)
-        {
-            Pre_DP_LPCA_problem.A[i][i + DP_LPCA_problem.n] = (DP_LPCA_problem.b[i] > 0) ? 1 : -1; // sb = 2*(b > 0)-1; Ai = [A diag(sb)]; 
-        }
         for(int i=0; i<DP_LPCA_problem.n; ++i)
         {
             Pre_DP_LPCA_problem.c[i] =0;
@@ -1014,23 +1008,38 @@ public:
         {
             Pre_DP_LPCA_problem.e[i] = true;
         }
+        // update sb(since b is update) Ai bi hi every time
+        for(int i=0; i<DP_LPCA_problem.m; ++i)
+        {
+            for(int j=0; j<DP_LPCA_problem.n; ++j)
+            {
+                Pre_DP_LPCA_problem.A[i][j] = DP_LPCA_problem.A[i][j];
+            }
+            Pre_DP_LPCA_problem.b[i] = DP_LPCA_problem.b[i]; // the same as DP_LPCA_problem
+
+        }
+        for(int i=0; i<DP_LPCA_problem.m; ++i)
+        {
+            Pre_DP_LPCA_problem.A[i][i + DP_LPCA_problem.n] = (DP_LPCA_problem.b[i] > 0) ? 1 : -1; // sb = 2*(b > 0)-1; Ai = [A diag(sb)]; 
+        }
         for(int i=0; i<DP_LPCA_problem.n; ++i)
         {
             Pre_DP_LPCA_problem.h[i] = DP_LPCA_problem.h[i];
         }
         for(int i=0; i<DP_LPCA_problem.m; ++i)
         {
-            Pre_DP_LPCA_problem.h[i+DP_LPCA_problem.n] = 2*std::abs(DP_LPCA_problem.b[i]);
+            Pre_DP_LPCA_problem.h[i+DP_LPCA_problem.n] = 2*fabs(DP_LPCA_problem.b[i]);
         }
         //================================== DPscaled_LPCA_problem ================================
         // std::cout << "DPscaled_LPCA_problem"<< std::endl; 
         DPscaled_LPCA_problem.tol=1e-7;
         DPscaled_LPCA_problem.itlim = 10;
         float yd[3]={0.1,0.2,-0.1}; // random value for inital.
+        // update A b c h every time
         float my=yd[0]; // 存储最大的绝对值
         int iy=0; // 存储最大绝对值的索引
         for (int i = 0; i < ControlSize; ++i) {
-            float absValue = std::abs(yd[i]); // 计算 yd 中第 i 个元素的绝对值
+            float absValue = fabs(yd[i]); // 计算 yd 中第 i 个元素的绝对值
             if (absValue > my) { // 如果当前绝对值大于 my，则更新 my 和 iy
                 my = absValue;
                 iy = i;
@@ -1184,19 +1193,6 @@ public:
         // std::cout << "Pre_DPscaled_LPCA_problem"<< std::endl; 
         Pre_DPscaled_LPCA_problem.tol=1e-7;
         Pre_DPscaled_LPCA_problem.itlim = 10;
-        for(int i=0; i<DPscaled_LPCA_problem.m; ++i)
-        {
-            for(int j=0; j<DPscaled_LPCA_problem.n; ++j)
-            {
-                Pre_DPscaled_LPCA_problem.A[i][j] = DPscaled_LPCA_problem.A[i][j];
-            }
-            Pre_DPscaled_LPCA_problem.b[i] = DPscaled_LPCA_problem.b[i]; // the same as DPscaled_LPCA_problem
-
-        }
-        for(int i=0; i<DPscaled_LPCA_problem.m; ++i)
-        {
-            Pre_DPscaled_LPCA_problem.A[i][i + DPscaled_LPCA_problem.n] = (DPscaled_LPCA_problem.b[i] > 0) ? 1 : -1; // sb = 2*(b > 0)-1; Ai = [A diag(sb)]; 
-        }
         for(int i=0; i<DPscaled_LPCA_problem.n; ++i)
         {
             Pre_DPscaled_LPCA_problem.c[i] =0;
@@ -1213,15 +1209,28 @@ public:
         {
             Pre_DPscaled_LPCA_problem.e[i] = true;
         }
+        // update Ai bi hi every time
+        for(int i=0; i<DPscaled_LPCA_problem.m; ++i)
+        {
+            for(int j=0; j<DPscaled_LPCA_problem.n; ++j)
+            {
+                Pre_DPscaled_LPCA_problem.A[i][j] = DPscaled_LPCA_problem.A[i][j];
+            }
+            Pre_DPscaled_LPCA_problem.b[i] = DPscaled_LPCA_problem.b[i]; // the same as DPscaled_LPCA_problem
+
+        }
+        for(int i=0; i<DPscaled_LPCA_problem.m; ++i)
+        {
+            Pre_DPscaled_LPCA_problem.A[i][i + DPscaled_LPCA_problem.n] = (DPscaled_LPCA_problem.b[i] > 0) ? 1 : -1; // sb = 2*(b > 0)-1; Ai = [A diag(sb)]; 
+        }
         for(int i=0; i<DPscaled_LPCA_problem.n; ++i)
         {
             Pre_DPscaled_LPCA_problem.h[i] = DPscaled_LPCA_problem.h[i];
         }
         for(int i=0; i<DPscaled_LPCA_problem.m; ++i)
         {
-            Pre_DPscaled_LPCA_problem.h[i+DPscaled_LPCA_problem.n] = 2*std::abs(DPscaled_LPCA_problem.b[i]);
+            Pre_DPscaled_LPCA_problem.h[i+DPscaled_LPCA_problem.n] = 2*fabs(DPscaled_LPCA_problem.b[i]);
         }
-
         // std::cout << "Pre_DPscaled_LPCA_problem A:" << std::endl;
         // for (int i = 0; i < Pre_DPscaled_LPCA_problem.m; ++i) {
         //     for (int j = 0; j < Pre_DPscaled_LPCA_problem.n; ++j) {
@@ -1274,7 +1283,7 @@ public:
         //=======================
         bool flag=false;
         for(int i=0;i<ControlSize;++i){
-            if(std::abs(input[i]) > DP_LPCA_problem.tol)
+            if(fabs(input[i]) > DP_LPCA_problem.tol)
             {
                 flag = true; // Check this condition
                 break;
@@ -1299,7 +1308,7 @@ public:
         DP_LPCA_problem.e[3] = true;
         DP_LPCA_problem.e[4] = true;
         //=======================
-        // update A b h
+        // update A b h every time
         for(int i=0; i<DP_LPCA_problem.m; ++i)
         {
             float temp=0;
@@ -1434,7 +1443,7 @@ public:
         // May want to adjust the tolerance to improve numerics of later steps
         bool flag=false;
         for(int i=0;i<ControlSize;++i){
-            if(std::abs(input[i]) > DP_LPCA_problem.tol)
+            if(fabs(input[i]) > DP_LPCA_problem.tol)
             {
                 flag = true; // Check this condition
                 break;
@@ -1454,7 +1463,7 @@ public:
         // ref. is A.6.4 Initialization of the Simplex Algorithm of <Aircraft control allocation>
 
         // now we update the problem by input data.
-        // update A b h
+        // update A b h every time
         for(int i=0; i<DP_LPCA_problem.m; ++i)
         {
             float temp=0;
@@ -1471,7 +1480,7 @@ public:
         {
             DP_LPCA_problem.h[i] = this->aircraft.upperLimits[i]-this->aircraft.lowerLimits[i];
         }
-        // update sb(since b is update) Ai hi
+        // update sb(since b is update) Ai bi hi every time
         for(int i=0; i<DP_LPCA_problem.m; ++i)
         {
             for(int j=0; j<DP_LPCA_problem.n; ++j)
@@ -1491,7 +1500,7 @@ public:
         }
         for(int i=0; i<DP_LPCA_problem.m; ++i)
         {
-            Pre_DP_LPCA_problem.h[i+DP_LPCA_problem.n] = 2*std::abs(DP_LPCA_problem.b[i]);
+            Pre_DP_LPCA_problem.h[i+DP_LPCA_problem.n] = 2*fabs(DP_LPCA_problem.b[i]);
         }
 
         // Use Bounded Revised Simplex to find initial basic feasible point of original program
@@ -1673,7 +1682,7 @@ public:
         // May want to adjust the tolerance to improve numerics of later steps
         bool flag=false;
         for(int i=0;i<ControlSize;++i){
-            if(std::abs(input[i]) > DPscaled_LPCA_problem.tol)
+            if(fabs(input[i]) > DPscaled_LPCA_problem.tol)
             {
                 flag = true; // Check this condition
                 break;
@@ -1695,10 +1704,12 @@ public:
         // now we update the problem by input data.
         // update A b c but not h, h = uMax-uMin is assumpt always the same.
         // float yd[3]={0.1,0.1,0.2}; // random value for inital.
+        //================================== DPscaled_LPCA_problem ================================
+        // update A b c h every time
         float my=input[0]; // 存储最大的绝对值
         int iy=0; // 存储最大绝对值的索引
         for (int i = 0; i < ControlSize; ++i) {
-            float absValue = std::abs(input[i]); // 计算 yd 中第 i 个元素的绝对值
+            float absValue = fabs(input[i]); // 计算 yd 中第 i 个元素的绝对值
             if (absValue > my) { // 如果当前绝对值大于 my，则更新 my 和 iy
                 my = absValue;
                 iy = i;
@@ -1717,6 +1728,7 @@ public:
         }
         for(int i=0;i<ControlSize;++i){
             ydt[i]=input[i];
+            this->generalizedMoment[i] = input[i]; // just record.
         }
 
         // move
@@ -1780,6 +1792,7 @@ public:
                 }
             }
         }
+
         // std::cout << "M:" << std::endl;
         // for (size_t i = 0; i < ControlSize-1; ++i) {
         //     for (size_t j = 0; j < ControlSize; ++j) {
@@ -1846,11 +1859,10 @@ public:
         //     }
         // }
         // std::cout << "]" << std::endl;
-        // update Ai and hi
+
         //==================================Pre_DPscaled_LPCA_problem================================
         // std::cout << "Pre_DPscaled_LPCA_problem"<< std::endl; 
-        // Pre_DPscaled_LPCA_problem.tol=1e-7;
-        // Pre_DPscaled_LPCA_problem.itlim = 10;
+        // update Ai bi hi every time
         for(int i=0; i<DPscaled_LPCA_problem.m; ++i)
         {
             for(int j=0; j<DPscaled_LPCA_problem.n; ++j)
@@ -1870,17 +1882,17 @@ public:
         }
         for(int i=0; i<DPscaled_LPCA_problem.m; ++i)
         {
-            Pre_DPscaled_LPCA_problem.h[i+DPscaled_LPCA_problem.n] = 2*std::abs(DPscaled_LPCA_problem.b[i]);
+            Pre_DPscaled_LPCA_problem.h[i+DPscaled_LPCA_problem.n] = 2*fabs(DPscaled_LPCA_problem.b[i]);
         }
         // std::cout << "Pre_DPscaled_LPCA_problem A:" << std::endl;
-        // for (size_t i = 0; i < Pre_DPscaled_LPCA_problem.m; ++i) {
-        //     for (size_t j = 0; j < Pre_DPscaled_LPCA_problem.n; ++j) {
+        // for (int i = 0; i < Pre_DPscaled_LPCA_problem.m; ++i) {
+        //     for (int j = 0; j < Pre_DPscaled_LPCA_problem.n; ++j) {
         //         std::cout << Pre_DPscaled_LPCA_problem.A[i][j] << " ";
         //     }
         //     std::cout << std::endl;
         // }
         // std::cout << "Pre_DPscaled_LPCA_problem b: [";
-        // for (size_t i = 0; i < Pre_DPscaled_LPCA_problem.m; ++i) {
+        // for (int i = 0; i < Pre_DPscaled_LPCA_problem.m; ++i) {
         //     std::cout << Pre_DPscaled_LPCA_problem.b[i];
         //     if (i < Pre_DPscaled_LPCA_problem.m - 1) {
         //         std::cout << ", ";
@@ -1889,7 +1901,7 @@ public:
         // std::cout << "]" << std::endl;
 
         // std::cout << "Pre_DPscaled_LPCA_problem c: [";
-        // for (size_t i = 0; i < Pre_DPscaled_LPCA_problem.n; ++i) {
+        // for (int i = 0; i < Pre_DPscaled_LPCA_problem.n; ++i) {
         //     std::cout << Pre_DPscaled_LPCA_problem.c[i];
         //     if (i < Pre_DPscaled_LPCA_problem.n - 1) {
         //         std::cout << ", ";
@@ -1898,13 +1910,14 @@ public:
         // std::cout << "]" << std::endl;
 
         // std::cout << "Pre_DPscaled_LPCA_problem h: [";
-        // for (size_t i = 0; i < Pre_DPscaled_LPCA_problem.n; ++i) {
+        // for (int i = 0; i < Pre_DPscaled_LPCA_problem.n; ++i) {
         //     std::cout << Pre_DPscaled_LPCA_problem.h[i];
         //     if (i < Pre_DPscaled_LPCA_problem.n- 1) {
         //         std::cout << ", ";
         //     }
         // }
         // std::cout << "]" << std::endl;
+
         // Use Bounded Revised Simplex to find initial basic feasible point of original program
         auto result_init = BoundedRevisedSimplex(Pre_DPscaled_LPCA_problem);
 

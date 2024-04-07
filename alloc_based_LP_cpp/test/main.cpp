@@ -334,7 +334,7 @@ int main() {
 
         // 写入CSV文件 change to u1 u2 u3 u4 for your test.
         for (size_t i = 0; i < array_size; ++i) {
-            outFile << u3[i] << (i < array_size - 1 ? "," : "\n");
+            outFile << u4[i] << (i < array_size - 1 ? "," : "\n");
         }
     }
     // 求平均运行时间

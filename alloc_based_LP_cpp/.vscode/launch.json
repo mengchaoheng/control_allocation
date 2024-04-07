@@ -2,18 +2,19 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug with LLDB",
+            "name": "Debug with GDB",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/MyExecutable", // 可执行文件路径
+            "program": "${workspaceFolder}/build/main", // 可执行文件路径
             "args": [], // 可执行文件的启动参数，如果有的话
             "stopAtEntry": false, // 是否在程序入口处停止
             "cwd": "${workspaceFolder}", // 可执行文件所在目录，可根据实际情况调整
             "environment": [], // 环境变量，可根据需要设置
             "externalConsole": false, // 是否在外部终端中显示程序输出
-            "MIMode": "lldb", // 调试器类型，这里使用 LLDB
-            // "preLaunchTask": "build", // 调试器启动前执行的任务，这里指定了一个预构建任务
-            "lldbPath": "/usr/bin/lldb",
+            "MIMode": "gdb", // 调试器类型，这里使用 LLDB
+            "preLaunchTask": "cmake", // 调试器启动前执行的任务，这里指定了一个预构建任务
+            // "lldbPath": "/usr/bin/lldb",
+            "miDebuggerPath": "/usr/local/bin/gdb",
             "setupCommands": [ // 设置命令，可根据需要进行配置
                 {
                     "description": "Enable pretty-printing for gdb",

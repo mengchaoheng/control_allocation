@@ -97,7 +97,7 @@ for i=1:N
 end
 
 %% Determine the variables to use for comparison.
-% run target of alloc_based_LP_cpp (./main) to generate output.csv
+% run target of alloc_cpp (./main) to generate output.csv
 output = readmatrix('output.csv')';% or delete this line to just compare the matlab implement method
 command_px4=v(:,1:len_command_px4);
 % just use the flight data to compare.

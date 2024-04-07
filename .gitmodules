@@ -16,6 +16,6 @@
 [submodule "LP_lib/lp_tiny"]
 	path = LP_lib/lp_tiny
 	url = https://github.com/mengchaoheng/lp_tiny.git
-[submodule "alloc_based_LP_cpp/matrix"]
-	path = alloc_based_LP_cpp/matrix
+[submodule "alloc_cpp/matrix"]
+	path = alloc_cpp/matrix
 	url = https://github.com/mengchaoheng/PX4-Matrix.git

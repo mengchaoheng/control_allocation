@@ -1,7 +1,7 @@
 # About
  This project refers to the `control_allocation_lib` of [control allocation library](https://github.com/mengchaoheng/control_allocation.git) , especially the code of [ simulation of the book "aircraft control allocation"](https://github.com/mengchaoheng/aircraft-control-allocation), and using C++ to implement the LP-based control allocation algorithm.
  ## Dependencies
- This project depends on [PX4-matrix](https://github.com/mengchaoheng/PX4-Matrix.git). PX4-matrix is a submodule of this project now. If you want to apply these algorithms to your project, please clone the PX4-matrix library to your project first, and copy `alloc_based_LP_cpp/src/ControlAllocation/ControlAllocation.h` to the project , just include ControlAllocation.h when using it.
+ This project depends on [PX4-matrix](https://github.com/mengchaoheng/PX4-Matrix.git). PX4-matrix is a submodule of this project now. If you want to apply these algorithms to your project, please clone the PX4-matrix library to your project first, and copy `alloc_cpp/src/ControlAllocation/ControlAllocation.h` to the project , just include ControlAllocation.h when using it.
 ### download alglib (option)
 If you want to test the algorithm based alglib, download and Unzip alglib to the root folder of this project. rename as `alglib`. 
 

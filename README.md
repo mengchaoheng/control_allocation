@@ -22,10 +22,10 @@ This project will take the control allocation problem of ducted fan UAV as an ex
 3. Run `test.m` or `test_xxx.m` file to test the allocator and plot some figure.
 
 4. ToDo: fix the bug of `LP_lib/linear-programming-using-MATLAB`.
-5. build and run target of the project `alloc_based_LP_cpp`, to generate the output data `output.csv`, and then run `test.m`, to compare the effector by allocator. see README of `alloc_based_LP_cpp`.
+5. build and run target of the project `alloc_cpp`, to generate the output data `output.csv`, and then run `test.m`, to compare the effector by allocator. see README of `alloc_cpp`.
 
 ### For C/C++ project:
-1. `alloc_based_LP_cpp`: see readme in the folder.
+1. `alloc_cpp`: see readme in the folder.
 
 ```sh
 cd build
@@ -75,10 +75,10 @@ It is not the right u but optimal is right.
 
 ## File structure 
 
-- `alloc_based_LP_cpp`: The C++ implementation of control allocation based on linear programming algorithm implemented by eigen is a subfolder that can be run independently.
+- `alloc_cpp`: The C++ implementation of control allocation based on linear programming algorithm implemented by eigen is a subfolder that can be run independently.
   - `src/LPwrap`: the `test/main.cpp` file used to test the running time of alforithm.
-  - `src/ControlAllocation`: `ControlAllocation.h` implement `simplxuprevsol`, the `DP_LPCA` and `DPscaled_LPCA` by cpp. to test some function, cd to `alloc_based_LP_cpp/build`, then build and run the target by `main.cpp`. the output can be used in `test.m`.
-  - more to see README of `alloc_based_LP_cpp`.
+  - `src/ControlAllocation`: `ControlAllocation.h` implement `simplxuprevsol`, the `DP_LPCA` and `DPscaled_LPCA` by cpp. to test some function, cd to `alloc_cpp/build`, then build and run the target by `main.cpp`. the output can be used in `test.m`.
+  - more to see README of `alloc_cpp`.
 - `control_allocation_lib`: some open source allocation lib, be used as submodules.
   - aircraft-control-allocation-book-simulation
   - qcat

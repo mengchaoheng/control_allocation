@@ -13,7 +13,7 @@ handle_fly_log/*.ulg
 */slprj/
 slprj/
 
-alloc_based_LP_cpp/build
+alloc_cpp/build
 
 !handle_fly_log/14_29_39.ulg
 !handle_fly_log/14_29_39.mat

@@ -46,11 +46,11 @@ v1=1*[X1(i);Y1(i);Z1(i)]; % 虚拟指令
 v2=1*[X2(i);Y2(i);Z2(i)];
 v=1*[X(i);Y(i);Z(i)];
 % % %==================有效集=====================
-u = allocator_dir_LPwrap_4(B,v, umin,umax);  
+[u,~,~] = allocator_dir_LPwrap_4(B,v, umin,umax);  
 x(:,i)=u;
-u1 = allocator_dir_LPwrap_4(B,v1, umin,umax); 
+[u1,~,~]  = allocator_dir_LPwrap_4(B,v1, umin,umax); 
 x1(:,i)=u1;
-u2 = allocator_dir_LPwrap_4(B,v2, umin,umax);
+[u2,~,~]  = allocator_dir_LPwrap_4(B,v2, umin,umax);
 x2(:,i)=u2;
 % 改进
 u3=two_dir_alloc_df4(B,v1, v2, umin,umax);

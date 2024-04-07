@@ -54,21 +54,10 @@ x_use_LP_lib=zeros(m,N);
 %% simulate flight process  
 for i=1:N
     
-    IN_MAT(1:3,end) =   v(:,i);%[-0.430392439767736;-0.236610246030909;-0.0936906572928623];
-% % [-0.475528, 0, -0.154509]'; %[0.1,  0.2,   -0.1]';%
+    IN_MAT(1:3,end) = v(:,i);
 
-    % tic;
     u = LPwrap(IN_MAT); % function of ACA lib
     x_LPwrap(:,i) = Constrain(u,umin,umax);
-    % elapsed_time = toc;
-    % disp(['函数运行时间：', num2str(elapsed_time), ' 秒']);
-    
-    % IN_MAT(end,end)=3;
-    % tic;
-    % u = LPwrap(IN_MAT);
-    % x_LPwrap(:,i) = Constrain(u,umin,umax);
-    % elapsed_time = toc;
-    % disp(['DPscaled_LPCA函数运行时间：', num2str(elapsed_time), ' 秒']);
     
     % u= CGIwrap(IN_MAT);
     % x_CGIwrapp(:,i) = Constrain(u,umin,umax);
@@ -113,7 +102,7 @@ output = readmatrix('output.csv')';% or delete this line to just compare the mat
 command_px4=v(:,1:len_command_px4);
 % just use the flight data to compare.
 
-x1=output(:,1:len_command_px4);
+x1=output(:,1:len_command_px4); % or x_xxx above
 x2=x_LPwrap(:,1:len_command_px4);
 
 % actual moments produced. The B matrix have to be the same.

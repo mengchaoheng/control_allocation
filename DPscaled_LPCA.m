@@ -62,7 +62,7 @@ function [u,itlim,errout,rho] = DPscaled_LPCA(yd,B,uMin,uMax,itlim);
 
 %Initialize error code to zero
 errout = 0;
-
+rho=0;
 %Figure out how big the problem is (use standard CA definitions for m & n)
 [n,m] = size(B);
 

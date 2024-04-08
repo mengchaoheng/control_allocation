@@ -1,6 +1,7 @@
 clear all;
 close all;
 addpath(genpath(pwd))
+
 %% setup aircraft and load input data
 % B=[-0.5     0       0.5     0;
 %      0      -0.5     0       0.5;
@@ -18,7 +19,7 @@ load 'input.mat'; % get v and the len_command_px4 (len_command_px4 is size of co
 %% setup function of allocation lib
 % ========
 %% setup ACA
-global NumU
+% global NumU
 NumU=m;
 LPmethod=3; % LPmethod should be an integer between 0 and 5. when LPmethod=2 set upper of lambda to Inf can't save this method!!! but big number is the same as that based linprog
 INDX=ones(1,m);  % active effectors
@@ -50,52 +51,53 @@ x_dir_alloc_linprog=zeros(m,N);
 x_dir_alloc_linprog_re=zeros(m,N);
 x_dir_alloc_linprog_re_bound=zeros(m,N);
 x_use_LP_lib=zeros(m,N);
-
+tic;
 %% simulate flight process  
-for i=1:N
+parfor idx=1:N
     
-    IN_MAT(1:3,end) = v(:,i);
+    % IN_MAT(1:3,end) = v(:,idx);
 
-    u = LPwrap(IN_MAT); % function of ACA lib
-    x_LPwrap(:,i) = Constrain(u,umin,umax);
+    u = LPwrap(IN_MAT,v(:,idx),NumU); % function of ACA lib
+    x_LPwrap(:,idx) = min(max(u, umin), umax);
     
-    % u= CGIwrap(IN_MAT);
-    % x_CGIwrapp(:,i) = Constrain(u,umin,umax);
+    % u= CGIwrap(IN_MAT,v(:,idx),NumU);
+    % x_CGIwrapp(:,idx) = min(max(u, umin), umax);
 
-    % u = DAwrap(IN_MAT);
-    % x_DAwrap(:,i) = Constrain(u,umin,umax);
+    % u = DAwrap(IN_MAT,v(:,idx),NumU);
+    % x_DAwrap(:,idx) = min(max(u, umin), umax);
 
-    % u = VJAwrap(IN_MAT);
-    % x_VJAwrap(:,i) = Constrain(u,umin,umax);
+    % u = VJAwrap(IN_MAT,v(:,idx),NumU);
+    % x_VJAwrap(:,idx) = min(max(u, umin), umax);
 
-    % u=pinv(B)*v(:,i);
-    % x_inv(:,i) = Constrain(u,umin,umax);
+    % u=pinv(B)*v(:,idx);
+    % x_inv(:,idx) = min(max(u, umin), umax);
     % 
-    % [u,~,~] = wls_alloc(B,v(:,i),umin,umax,Wv,Wu,ud,gam,u0,W0,imax);
-    % x_wls(:,i) = Constrain(u,umin,umax);
+    % [u,~,~] = wls_alloc(B,v(:,idx),umin,umax,Wv,Wu,ud,gam,u0,W0,imax);
+    % x_wls(:,idx) = min(max(u, umin), umax);
     % 
-    % u =wls_alloc_gen(B,v(:,i),umin,umax,eye(k),eye(m),zeros(m,1),1e6,zeros(m,1),zeros(m,1),100,4);
-    % x_wls_gen(:,i) = Constrain(u,umin,umax);
+    % u =wls_alloc_gen(B,v(:,idx),umin,umax,eye(k),eye(m),zeros(m,1),1e6,zeros(m,1),zeros(m,1),100,4);
+    % x_wls_gen(:,idx) = min(max(u, umin), umax);
     % 
-    % [u,~] = dir_alloc_linprog(B,v(:,i), umin, umax, 1e4); % LPmethod=2 and lam=1 of dir_alloc_linprog is lager but similar
-    % x_dir_alloc_linprog(:,i) = Constrain(u,umin,umax);
+    % [u,~] = dir_alloc_linprog(B,v(:,idx), umin, umax, 1e4); % LPmethod=2 and lam=1 of dir_alloc_linprog is lager but similar
+    % x_dir_alloc_linprog(:,idx) = min(max(u, umin), umax);
     % 
-    % [u,~] = dir_alloc_linprog_re(B,v(:,i), umin, umax);
-    % x_dir_alloc_linprog_re(:,i) = Constrain(u,umin,umax);
+    % [u,~] = dir_alloc_linprog_re(B,v(:,idx), umin, umax);
+    % x_dir_alloc_linprog_re(:,idx) = min(max(u, umin), umax);
     % 
-    % [u,~] = dir_alloc_linprog_re_bound(B,v(:,i), umin, umax, 1e4);% the
+    % [u,~] = dir_alloc_linprog_re_bound(B,v(:,idx), umin, umax, 1e4);% the
     % same as dir_alloc_linprog for any lam >=1, lam have to be >1 when use
     % linprog, that will be the same as LPmethod=3
-    % x_dir_alloc_linprog_re_bound(:,i) = Constrain(u,umin,umax);
+    % x_dir_alloc_linprog_re_bound(:,idx) = min(max(u, umin), umax);
     % 
-    % [u,~] = use_LP_lib(B,v(:,i), umin, umax); % ToDo: use the LP lib
-    % x_use_LP_lib(:,i)=Constrain(u,umin,umax);
+    % [u,~] = use_LP_lib(B,v(:,idx), umin, umax); % ToDo: use the LP lib
+    % x_use_LP_lib(:,idx)=min(max(u, umin), umax);
     % 
-    % [u,~,~] =allocator_dir_LPwrap_4(single(B), single( v(:,i)), single(umin),single(umax)); % ToDo: 警告: 矩阵接近奇异值，或者缩放不良。结果可能不准确。RCOND =  1.914283e-09。 
-    % x_allocator_dir_LPwrap_4(:,i) = Constrain(u,umin,umax);
+    % [u,~,~] =allocator_dir_LPwrap_4(single(B), single( v(:,idx)), single(umin),single(umax)); % ToDo: 警告: 矩阵接近奇异值，或者缩放不良。结果可能不准确。RCOND =  1.914283e-09。 
+    % x_allocator_dir_LPwrap_4(:,idx) = min(max(u, umin), umax);
     
 end
-
+elapsed_time = toc;
+fprintf('代码执行时间：%.2f 秒\n', elapsed_time);
 %% Determine the variables to use for comparison.
 % run target of alloc_cpp (./main) to generate output.csv
 output = readmatrix('output.csv')';% or delete this line to just compare the matlab implement method
@@ -103,6 +105,7 @@ command_px4=v(:,1:len_command_px4);
 % just use the flight data to compare.
 
 x1=output(:,1:len_command_px4); % or x_xxx above
+% x1=x_wls(:,1:len_command_px4);
 x2=x_LPwrap(:,1:len_command_px4);
 
 % actual moments produced. The B matrix have to be the same.

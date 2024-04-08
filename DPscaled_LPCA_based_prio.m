@@ -45,16 +45,16 @@ disp('原问题解：');
 [u2, errout2, lambda2] = DP_LPCA(m2,m1,B,umin,umax,100,1/tol)
 if(errout2~=0) % No Initial Feasible Solution found
     % 构造新问题
-    disp('无解，即m1不可达且调节m2无法穿过边界');
+    disp('无解，即m1不可达且m1+m2无法通过调节m2穿过边界');
     [u3, errout3, lambda3] = DP_LPCA(m1,[0;0;0],B,umin,umax,100,1/tol)
     m_real3=B*u3
     m_real3/lambda3
 else % get a feasible solultion.
-    disp('有解，调节m2穿过边界');
+    disp('有解，m1可达或者m1+m2通过调节m2穿过边界');
     disp('原问题解产生的力矩');
     m_real2=B*u2
-    if(lambda2>=1)%
-        disp('有两种可能：1.m1可达,m1+m2可达，2.m1不可达,但调节m2穿过边界');% 倾向于使用穿透的m2
+    if(lambda2>=1) % 拉伸
+        disp('有两种可能：1.m1可达,m1+m2可达，2.m1不可达,但m1+m2通过调节m2穿过边界（m1+lambda*m2可达）');% 倾向于使用穿透的m2
         disp('计算m1的分配结果');
         [u4, errout4, lambda4] = DP_LPCA(m1,[0;0;0],B,umin,umax,100,1/tol)
         if(lambda4>1)
@@ -77,7 +77,7 @@ else % get a feasible solultion.
             disp('最终力矩为：');
             m_m1=B*u_m1
         else
-            disp('计算得知：m1不可达,但调节m2穿过边界');
+            disp('计算得知：m1不可达,但m1+m2通过调节m2穿过边界');
             disp('m1不可达统一删除m2,构造新问题,两种思路：1.计算m1+m2。2.计算m1');
 
             [u3, errout3, lambda3] = DP_LPCA(m1,[0;0;0],B,umin,umax,100,1/tol)
@@ -86,11 +86,11 @@ else % get a feasible solultion.
             u3
         end
 
-    else
+    else % 缩短
         disp('m1可达,m1+m2不可达，原问题解自然满足需求');
 
         disp('原问题解沿m2方向收缩');
-        disp('原问题解沿m1+m2方向收缩');
+        disp('若沿m1+m2方向收缩，进一步计算');
         [u_m, ~, ~] = DP_LPCA(m1+m2,[0;0;0],B,umin,umax,100,1/tol)
         B*u_m
 
@@ -133,7 +133,11 @@ if(lambda_all<1)
 else
     disp('m1+m2可达, 从m1+m2方向收缩');
     disp('最终分配结果：');
+    u_all
+    disp('最终力矩：');
     B*u_all
+    disp('如果从m2方向收缩，会出现不符合要求对值，特别是m1不可达时');
+    
 end
 
 

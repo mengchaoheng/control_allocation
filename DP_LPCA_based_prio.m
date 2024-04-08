@@ -32,7 +32,7 @@ imax = 100;	     % no of iterations
 % then we can set lambda = 1/tol.
 %% simulate flight process  
 m1=[0;0;0.5];
-m2=[0.1;0.1;0.2];
+m2=[0.1;0.1;-0.4];
 disp('原问题解：');
 [u, errout, lambda] = DP_LPCA(m2,m1,B,umin,umax,100,1)
 
@@ -49,7 +49,7 @@ else % get a feasible solultion.
     disp('解统一表达式是m1+lambda*m2');
     m1+lambda*m2
     if(lambda<1)
-        disp('m1可达（无论m1+m2取何值），lamb<1');
+        disp('m1可达（无论m1+m2取何值总能有解），但lamb<1表示m1+m2不可达');
         disp('解是m1+lambda*m2:');
         m1+lambda*m2
     else

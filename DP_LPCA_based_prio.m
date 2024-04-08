@@ -38,11 +38,11 @@ disp('原问题解：');
 
 if(errout~=0)
     % 构造新问题
-    disp('无解，即m1+m2不可达且m1不可达');
+    disp('无解，即m1+m2不可达且m1不可达');% 不可通过单独收缩m2实现
     [u1, errout1, lambda1] = DP_LPCA(m1,[0;0;0],B,umin,umax,100,1)
     m_real1=B*u1
     m_real1/lambda1
-else % get a feasible solultion.
+else % get a feasible solultion.  % 可通过单独收缩m2实现，
     disp('有解，m1可达或者m1+m2可达');
     disp('原问题解产生的力矩总是满足要求');
     m_real=B*u

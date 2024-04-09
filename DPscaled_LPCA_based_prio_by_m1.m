@@ -40,39 +40,39 @@ m1=[0.0;0.0;0.5];
 %  m_real1=B*u1
 % (m_real1)/lambda1
 %% 
-m2=[0.1;0.1;0.1];
-disp('原问题解：');
-[u2, errout2, lambda2] = DP_LPCA(m2,m1,B,umin,umax,100,1/tol)
-B*u2
-if(errout2~=0) % No Initial Feasible Solution found
-    % 构造新问题
-    disp('无解，m1+m2无法通过缩放m2穿过边界.隐含m1不可达'); 
-    disp('构造新问题'); 
-    [u3, errout3, lambda3] = DP_LPCA(m1,[0;0;0],B,umin,umax,100,1/tol)
-    m_real3=B*u3
-    m_real3/lambda3
-    disp('或者采取m1+m2的保方向分配，这种情况对应没有更多优先级分解的量'); 
-    [u_all, errout_all, lambda_all] = DP_LPCA(m2+m1,[0;0;0],B,umin,umax,100,1/tol)
-    disp('最终力矩：');
-    B*u_all
-else % get a feasible solultion.  % 利用m1可不可达划分
-    disp('有解，m1+m2通过缩放m2穿过边界');
-    disp('计算m1');
-    [u_m1, errout_m1, lambda_m1] = DP_LPCA(m1,[0;0;0],B,umin,umax,100,1/tol)
-    if(lambda_m1<1)  
-        disp('m1不可达,采取m1+m2的保方向分配'); % 包含m1不可达但m1+m2可达的情况，还包括其他仅仅是缩放穿过的情况
-        [u_all, errout_all, lambda_all] = DP_LPCA(m2+m1,[0;0;0],B,umin,umax,100,1/tol)
-        disp('最终力矩：');
-        B*u_all
-    else
-        disp('m1可达');
-        disp('需要修正');
-        u=(u2*lambda2-u_m1)/lambda2+u_m1
-        B*u
-    end 
-
-
-end
+m2=[0.0;0.5;-0.3];
+% disp('原问题解：');
+% [u2, errout2, lambda2] = DP_LPCA(m2,m1,B,umin,umax,100,1/tol)
+% B*u2
+% if(errout2~=0) % No Initial Feasible Solution found
+%     % 构造新问题
+%     disp('无解，m1+m2无法通过缩放m2穿过边界.隐含m1不可达'); 
+%     disp('构造新问题'); 
+%     [u3, errout3, lambda3] = DP_LPCA(m1,[0;0;0],B,umin,umax,100,1/tol)
+%     m_real3=B*u3
+%     m_real3/lambda3
+%     disp('或者采取m1+m2的保方向分配，这种情况对应没有更多优先级分解的量'); 
+%     [u_all, errout_all, lambda_all] = DP_LPCA(m2+m1,[0;0;0],B,umin,umax,100,1/tol)
+%     disp('最终力矩：');
+%     B*u_all
+% else % get a feasible solultion.  % 利用m1可不可达划分
+%     disp('有解，m1+m2通过缩放m2穿过边界');
+%     disp('计算m1');
+%     [u_m1, errout_m1, lambda_m1] = DP_LPCA(m1,[0;0;0],B,umin,umax,100,1/tol)
+%     if(lambda_m1<1)  
+%         disp('m1不可达,采取m1+m2的保方向分配'); % 包含m1不可达但m1+m2可达的情况，还包括其他仅仅是缩放穿过的情况
+%         [u_all, errout_all, lambda_all] = DP_LPCA(m2+m1,[0;0;0],B,umin,umax,100,1/tol)
+%         disp('最终力矩：');
+%         B*u_all
+%     else
+%         disp('m1可达');
+%         disp('需要修正');
+%         u=(u2*lambda2-u_m1)/lambda2+u_m1
+%         B*u
+%     end 
+% 
+% 
+% end
 %% for DPscaled_LPCA
 % m可达。lambda对应拉伸到达边界的缩放因子。
 % m不可达，lambda对应衰减到达边界的缩放因子。
@@ -100,10 +100,21 @@ end
 %     [u_m1, errout_m1, lambda_m1] = DP_LPCA(m1,[0;0;0],B,umin,umax,100,1/tol)
 %     if(lambda_m1<1)
 %         disp('m1不可达, 重新构造问题');
+%         disp('使用m1+m2的分配结果, 从m1+m2方向收缩');
+%         disp('最终力矩：');
+%         B*u_all
 % 
 %     else 
 %         disp('m1可达，利用原始问题');
 %         [u, errout, lambda] = DP_LPCA(m2,m1,B,umin,umax,100,1/tol)
+%         disp('最终力矩：');
+%         B*u
+%         disp('或者重新计算');
+%         [u_m2, errout_m2, lambda_m2] = DP_LPCA(m2,[0;0;0],B,umin-u_m1,umax-u_m1,100,1/tol)
+%         disp('最终分配结果：');
+%         u_m1+u_m2
+%         disp('最终力矩：');
+%         B*(u_m1+u_m2)
 %     end
 % 
 % else
@@ -112,11 +123,40 @@ end
 %     u_all
 %     disp('最终力矩：');
 %     B*u_all
-%     disp('如果从m2方向收缩，会出现不符合要求对值，特别是m1不可达时');
+%     disp('如果从m2方向收缩，会出现不符合要求的值，特别是m1不可达时');
 % 
 % end
 
 
 % 不考虑m1不可达的问题可以使问题简单。即m1可达，利用原始问题即为所提出优先级分配
 
+%% 使用 DPscaled_LPCA 替换DP_LPCA
+[u_all, errout_all, lambda_all] = DPscaled_LPCA(m1+m2,B,umin,umax,100)
+% the problem above always have solution
+if(lambda_all<1)
+    disp('m1+m2不可达, 计算m1可达性');
+    [u_m1, errout_m1, lambda_m1] = DPscaled_LPCA(m1,B,umin,umax,100)
+    if(lambda_m1<1)
+        disp('m1不可达, 重新构造问题');
+        disp('使用m1+m2的分配结果, 从m1+m2方向收缩');
+        disp('最终力矩：');
+        B*u_all
 
+    else 
+        disp('m1可达，重新计算');
+        [u_m2, errout_m2, lambda_m2] = DPscaled_LPCA(m2,B,umin-u_m1,umax-u_m1,100)
+        disp('最终分配结果：');
+        u_m1+u_m2
+        disp('最终力矩：');
+        B*(u_m1+u_m2)
+    end
+
+else
+    disp('m1+m2可达, 从m1+m2方向收缩');
+    disp('最终分配结果：');
+    u_all
+    disp('最终力矩：');
+    B*u_all
+    disp('如果从m2方向收缩，会出现不符合要求的值，特别是m1不可达时');
+
+end

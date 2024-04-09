@@ -1,4 +1,4 @@
-function [u,itlim,errout,rho] = DPscaled_LPCA(yd,B,uMin,uMax,itlim);
+function [u,errout,rho] = DPscaled_LPCA(yd,B,uMin,uMax,itlim);
 % Direction Preserving Control Allocation Linear Program
 %     Reduced formulation (Solution Scaled from Boundary)
 %

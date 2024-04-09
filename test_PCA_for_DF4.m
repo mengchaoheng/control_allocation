@@ -53,7 +53,8 @@ x1(:,i)=u1;
 [u2,~,~]  = allocator_dir_LPwrap_4(B,v2, umin,umax);
 x2(:,i)=u2;
 % 改进
-u3=two_dir_alloc_df4(B,v1, v2, umin,umax);
+% u3=two_dir_alloc_df4(B,v1, v2, umin,umax);
+u3=prioritized_control_allocator(v1,v2,B,umin,umax,100);
 x3(:,i)=u3;
 % u4=wls_ca_4df_pv_limit(v, u4, p_limits, 1);
 % x4(:,i)=u4;

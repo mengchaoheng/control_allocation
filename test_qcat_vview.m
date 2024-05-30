@@ -1,5 +1,5 @@
 clear all;
-% close all;
+close all;
 addpath(genpath(pwd))
 
 
@@ -23,5 +23,17 @@ B=[0.25 0.25 0 -0.25 -0.25 0;-0.125 0.125 0.25 0.125 -0.125 -0.25;1/6 1/6 1/6 1/
 
 plim=[-ones(6,1)*30*pi/180 ones(6,1)*30*pi/180];
 
-% q=vview(B,plim,pinv(B))
-q=vview(B,plim,B_inv)
+q=vview(B,plim,pinv(B))
+% q=vview(B,plim,B_inv)
+
+
+% l1=0.148;l2=0.069;k_v=3;
+% B=k_v*[-l1     0       l1     0;
+%      0      -l1     0       l1;
+%      l2    l2    l2    l2];
+% [k,m] = size(B);
+% 
+% umin=ones(m,1)*(-20)*pi/180;
+% umax=ones(m,1)*20*pi/180;
+% plim=[umin umax];
+% q1=vview(B,plim,pinv(B))

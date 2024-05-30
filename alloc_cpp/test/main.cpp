@@ -103,7 +103,16 @@ int main() {
     for(int i=0;i<num;i++)
 	{
         float yd[3]={(float) data[i][0],  (float) data[i][1],   (float) data[i][2]};
-        // float yd[3]={0.1,  0.2,   -0.1}; // for test
+        // float yd[3]={0.00047929178,  0.0010364822,   0.00025974715}; // for test
+
+        // if(i==2041) // change limits
+        // {
+        //     for (int i = 0; i < 4; ++i) {
+        //         Allocator.aircraft.upperLimits[i] = _uMax[i] - 0.000000;
+        //         Allocator.aircraft.lowerLimits[i] = _uMin[i] + 0.000000;
+        //     }
+        //         // std::cout << "]" << std::endl;
+        // }
 
         //==========================allocateControl===========================
         float u1[4]; int err1=0;
@@ -149,14 +158,14 @@ int main() {
         total_elapsed3 += elapsed.count();
         // std::cout << "Allocator.DP_LPCA execution time: " << elapsed.count() << "s\n";
 
-        // std::cout << "u3: [";
-        // for (size_t i = 0; i < 4; ++i) {
-        //     std::cout << u3[i];
-        //     if (i < 3) {
-        //         std::cout << ", ";
-        //     }
-        // }
-        // std::cout << "]" << std::endl;
+        std::cout << "u3: [";
+        for (size_t i = 0; i < 4; ++i) {
+            std::cout << u3[i];
+            if (i < 3) {
+                std::cout << ", ";
+            }
+        }
+        std::cout << "]" << std::endl;
         //========================allocator_dir_LPwrap_4 (generate by matlab) =============================
         float u4[4]={ 0.0,  0.0,   0.0,   0.0};
         float z_allocator_dir_LPwrap_4= 0.0;
@@ -168,15 +177,18 @@ int main() {
         total_elapsed4 += elapsed.count();
         // std::cout << "allocator_dir_LPwrap_4 execution time: " << elapsed.count() << "s\n";
         // // 使用循环打印数组元素
-        // std::cout << "u4: " << " ";
-        // for (int i = 0; i < 4; ++i) {
-        //     std::cout << u4[i] << " ";
+        // std::cout << "u4: [";
+        // for (size_t i = 0; i < 4; ++i) {
+        //     std::cout << u4[i];
+        //     if (i < 3) {
+        //         std::cout << ", ";
+        //     }
         // }
-        // std::cout << std::endl; 
+        // std::cout << "]" << std::endl;
 
         // 写入CSV文件 change to u1 u2 u3 u4 for your test.
         for (size_t i = 0; i < array_size; ++i) {
-            outFile << u1[i] << (i < array_size - 1 ? "," : "\n");
+            outFile << u4[i] << (i < array_size - 1 ? "," : "\n");
         }
     }
     // 求平均运行时间

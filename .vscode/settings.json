@@ -125,6 +125,7 @@
         "ref_ptr": "cpp",
         "glextensions": "cpp",
         "uniform": "cpp",
-        "math": "cpp"
+        "math": "cpp",
+        "execution": "cpp"
     }
 }

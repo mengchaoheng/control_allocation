@@ -2,6 +2,7 @@
 #include <matrix/math.hpp>
 #include <iostream>
 #include <stdlib.h>
+#include <limits>
 using namespace matrix;
 // Add the min_user function definition here
 template<typename Type, size_t M, size_t N>
@@ -24,6 +25,7 @@ inline void min_user(const Matrix<Type, M, N> &x, Type &x_min, size_t &x_index)
 const int SIZE_ydt = 3; // 假设 ydt 是一个包含 5 个元素的一维数组
 const int SIZE_Bt_row = 3; // 假设 Bt 是一个 5x5 的二维数组
 const int SIZE_Bt_col = 4;
+//rho = ydt'*Bt*u/(ydt'*ydt)
 inline float calculateRho(float ydt[], float u[], float Bt[][SIZE_Bt_col], float tol) {
     float numerator = 0.0f;
     float denominator = 0.0f;
@@ -37,14 +39,41 @@ inline float calculateRho(float ydt[], float u[], float Bt[][SIZE_Bt_col], float
     for (int k = 0; k < SIZE_Bt_col; ++k) {
         numerator += ydt_T_Bt[k] * u[k];
     }
-    // 计算 ydt 的模的平方
+    // 计算 ydt 的2范数
+    // std::cout << "ydt: [";
+    //     for (size_t i = 0; i < SIZE_ydt; ++i) {
+    //         std::cout << ydt[i];
+    //         if (i < SIZE_ydt - 1) {
+    //             std::cout << ", ";
+    //         }
+    //     }
+    //     std::cout << "]" << std::endl;
     for (int i = 0; i < SIZE_ydt; ++i) {
         denominator += ydt[i] * ydt[i];
+        // std::cout <<"denominator"<< denominator<< std::endl;
     }
     // 避免除以零  // ydt的模不会很小
-    if (fabs(denominator) < tol ) {
-        // std::cerr << "Error: Division by zero." << std::endl;
-        return 0.0f;
+    // std::cout <<"denominator"<< denominator<< std::endl;
+    // std::cout <<"fabs(denominator)"<< fabs(denominator)<< std::endl;
+    // std::cout <<"tol"<< tol<< std::endl;
+    float relativeEpsilon = tol * fabs(numerator); // 动态阈值
+
+    // //或者
+    // const double ABSOLUTE_EPSILON = 1e-10;
+    // const double RELATIVE_EPSILON = 1e-10;
+
+    // double safeDivide(double numerator, double denominator) {
+    //     if (abs(denominator) < ABSOLUTE_EPSILON) {
+    //         if (abs(denominator) < RELATIVE_EPSILON * abs(numerator)) {
+    //             throw invalid_argument("Denominator is too close to zero compared to the numerator.");
+    //         }
+    //     }
+    //     return numerator / denominator;
+    // }
+
+    if (fabs(denominator) < relativeEpsilon ) {
+        std::cerr << "Error: Division by zero." << std::endl;
+        return 1.0f;
     }
     // 计算 rho
     return numerator / denominator;
@@ -82,7 +111,7 @@ struct LinearProgrammingProblem {
     float c[N];
     float h[N];
     bool e[N];
-    float tol=1e-8;
+    float tol=std::numeric_limits<float>::epsilon();
     // 默认构造函数，将所有成员变量初始化为0
     LinearProgrammingProblem() : m(M), n(N), itlim(0) {
         // 将数组成员变量初始化为0
@@ -686,6 +715,14 @@ public:
         // 在此处用aircraft, generalizedMoment初始化 成员变量 DP_LPCA_problem 和 Pre_DP_LPCA_problem 
         // 线性规划数据
         //=====================================DP_LPCA_problem================================
+        // float cs_max=this->aircraft.upperLimits[0]-this->aircraft.lowerLimits[0]; // 存储最大的绝对值
+        // for (int i = 0; i < ControlSize; ++i) {
+        //     float absValue = fabs(this->aircraft.upperLimits[i]-this->aircraft.lowerLimits[i]); // 计算 yd 中第 i 个元素的绝对值
+        //     if (absValue > cs_max) { // 如果当前绝对值大于 my，则更新 my 和 iy
+        //         cs_max = absValue;
+        //     }
+        // }
+        // upper_lam = cs_max/std::numeric_limits<float>::epsilon();
         DP_LPCA_problem.tol=1e-7;
         DP_LPCA_problem.itlim = 10;
         for(int i=0; i<DP_LPCA_problem.n-1; ++i)
@@ -1513,7 +1550,7 @@ public:
 
     LinearProgrammingProblem<ControlSize-1, EffectorSize> DPscaled_LPCA_problem;// 提前设置 inital by  aircraft data 
     LinearProgrammingProblem<ControlSize-1, EffectorSize + (ControlSize-1)> Pre_DPscaled_LPCA_problem;// 提前设置 inital by aircraft data
-    float upper_lam = 3.4E+38; // max float
+    float upper_lam=1e10; // 
     
 };
 // and user can define more...

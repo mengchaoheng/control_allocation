@@ -9,7 +9,8 @@ handle_fly_log/*.ulg
 */*.asv
 */*.a
 *.asv
-
+*_*_*.mat
+*_*_*.ulg
 */slprj/
 slprj/
 

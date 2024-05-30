@@ -27,7 +27,7 @@ addpath(genpath(pwd));
 d2r=pi/180;
 r2d=180/pi;
 %% two offline can be use, something different. px4 v12.3.0
-ulgFileName = '14_29_39'; % the ulog file name  17_48_41, have to in the same folder
+ulgFileName = '15_45_40'; % the ulog file name  17_48_41, have to in the same folder
 tmp=[ ulgFileName '.mat'];
 % exist tmp var
 if exist(tmp,"file")
@@ -35,7 +35,7 @@ if exist(tmp,"file")
 else
     if ismac
         % on macOS, run " which ulog2csv " on terminal to get it.
-        command = ['!/Users/mch/opt/anaconda3/bin/ulog2csv ' ulgFileName '.ulg']; % /usr/local/bin/ is the path of ulog2csv, 
+        command = ['!/Users/mch/opt/anaconda3/bin/ulog2csv ' ulgFileName '.ulg']; % /usr/local/bin/ is the path of ulog2csv, or /Users/mch/Library/Python/3.9/bin/ulog2csv or /Users/mch/opt/anaconda3/bin/ulog2csv 
     else
         % on windows and linux just make sure you have installed pyulog
         command = ['!ulog2csv ' ulgFileName '.ulg']; % have installed ulog2csv,
@@ -184,7 +184,7 @@ ylabel('V_z (m/s)')
 
 command_px4=log.data.actuator_controls_0_0{:,3:5};
 u_px4=log.data.allocation_value_0{:,11:14}; 
-time_us=log.data.allocation_value_0{:,1}; 
+time_us=log.data.actuator_controls_0_0{:,1}; 
 delta_t=time_us(2:end)-time_us(1:end-1);
 delta_t_s=delta_t*1e-6;
 % 指定保存路径及文件名

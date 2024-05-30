@@ -6,6 +6,12 @@
 If you want to test the algorithm based alglib, download and Unzip alglib to the root folder of this project. rename as `alglib`. 
 
 ## Build and run
+To get input data:
+
+1. Run `plot_fly_log_states.m` to get the `handle_fly_log/flight.mat` file.
+
+2. Run `Generate_input_data.m` t get input data `input.csv`.
+ and then 
 ```sh
 cd build
 cmake ..

@@ -122,7 +122,7 @@ int main() {
         //     }
         // }
         // std::cout << "]" << std::endl;
-        //=========================DPscaled_LPCA============================INFO  [mixer_module] dir_alloc_sim time: 16
+        //=========================DPscaled_LPCA=======have problem=====================INFO  [mixer_module] dir_alloc_sim time: 16
         float u2[4];int err2=0;float rho=0;
         start = std::chrono::high_resolution_clock::now();
         Allocator.DPscaled_LPCA(yd, u2, err2, rho);  
@@ -176,7 +176,7 @@ int main() {
 
         // 写入CSV文件 change to u1 u2 u3 u4 for your test.
         for (size_t i = 0; i < array_size; ++i) {
-            outFile << u1[i] << (i < array_size - 1 ? "," : "\n");
+            outFile << u4[i] << (i < array_size - 1 ? "," : "\n");
         }
     }
     // 求平均运行时间

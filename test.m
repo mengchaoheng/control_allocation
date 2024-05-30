@@ -11,8 +11,15 @@ B=k_v*[-l1     0       l1     0;
      0      -l1     0       l1;
      l2    l2    l2    l2];
 [k,m] = size(B);
+% u_0=ones(m,1)*20*pi/180;
+u_0=[0.0122;
+     0.0122;
+     0.3491;
+     0.3491];
 umin=ones(m,1)*(-20)*pi/180;
 umax=ones(m,1)*20*pi/180;
+% plim=[umin-u_0 umax-u_0];
+% q=vview(B,plim,pinv(B));
 % run Generate_input_data;
 load 'input.mat'; % get v and the len_command_px4 (len_command_px4 is size of command_px4, which come from flght log data)
 [~,N]=size(v);
@@ -27,6 +34,10 @@ IN_MAT = [B     zeros(k,1)
           umin' 0
           umax' 0
           INDX  LPmethod];
+IN_MAT1 = [B     zeros(k,1)
+          (umin-u_0)' 0
+          (umax-u_0)' 0
+          INDX  LPmethod];
 %% setup qcat. just wls_alloc and not a Hotstart setting here, use test_qcat.m for more test, 
 Wv   = eye(k);     % QP allocation
 Wu   = eye(m);
@@ -40,6 +51,7 @@ imax = 100;	     % no of iterations
 %%
 u=zeros(m,1);
 x_LPwrap=zeros(m,N);
+x_LPwrap_incre=zeros(m,N);
 x_allocator_dir_LPwrap_4=zeros(m,N);
 x_CGIwrapp=zeros(m,N);
 x_DAwrap=zeros(m,N);
@@ -53,13 +65,16 @@ x_dir_alloc_linprog_re_bound=zeros(m,N);
 x_use_LP_lib=zeros(m,N);
 tic;
 %% simulate flight process  
-parfor idx=1:N
+for idx=1:N
     
     % IN_MAT(1:3,end) = v(:,idx);
 
     u = LPwrap(IN_MAT,v(:,idx),NumU); % function of ACA lib
     x_LPwrap(:,idx) = min(max(u, umin), umax);
-    
+
+    % u = LPwrap(IN_MAT1,v(:,idx),NumU); % incremental form. 0 have to be a feasible solution.
+    % x_LPwrap_incre(:,idx) = min(max(u, umin-u_0), umax-u_0)+u_0;
+
     % u= CGIwrap(IN_MAT,v(:,idx),NumU);
     % x_CGIwrapp(:,idx) = min(max(u, umin), umax);
 
@@ -105,7 +120,7 @@ command_px4=v(:,1:len_command_px4);
 % just use the flight data to compare.
 
 x1=output(:,1:len_command_px4); % or x_xxx above
-% x1=x_wls(:,1:len_command_px4);
+% x1=x_LPwrap_incre(:,1:len_command_px4);
 x2=x_LPwrap(:,1:len_command_px4);
 
 % actual moments produced. The B matrix have to be the same.
@@ -159,12 +174,14 @@ plot(t,x2(4,:),'b--');hold on;
 % % plot(t,U2(3,:),'Color','g','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
 % % plot(t,command_px4(:,3),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
 
-outside_x1=output(:,len_command_px4+1:end);
-outside_x2=x_LPwrap(:,len_command_px4+1:end);
-outside_U1=B*outside_x1;
-outside_U2=B*outside_x2;
-outside_err=outside_x1-outside_x2;
-figure,
-plot3(outside_U1(1,:),outside_U1(2,:),outside_U1(3,:),'r*');
+% outside_x1=output(:,len_command_px4+1:end);
+% outside_x1=x_LPwrap_incre(:,len_command_px4+1:end);
+% outside_x2=x_LPwrap(:,len_command_px4+1:end);
+% outside_U1=B*outside_x1;
+% outside_U2=B*outside_x2;
+% outside_err=outside_x1-outside_x2;
 % figure,
+% plot3(outside_U1(1,:),outside_U1(2,:),outside_U1(3,:),'r*');hold on;
+% % figure,
 % plot3(outside_U2(1,:),outside_U2(2,:),outside_U2(3,:),'g*');
+

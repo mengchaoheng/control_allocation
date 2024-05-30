@@ -1513,7 +1513,7 @@ public:
 
     LinearProgrammingProblem<ControlSize-1, EffectorSize> DPscaled_LPCA_problem;// 提前设置 inital by  aircraft data 
     LinearProgrammingProblem<ControlSize-1, EffectorSize + (ControlSize-1)> Pre_DPscaled_LPCA_problem;// 提前设置 inital by aircraft data
-    float upper_lam = 1e4;
+    float upper_lam = 3.4E+38; // max float
     
 };
 // and user can define more...

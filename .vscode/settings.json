@@ -126,6 +126,9 @@
         "glextensions": "cpp",
         "uniform": "cpp",
         "math": "cpp",
-        "execution": "cpp"
+        "execution": "cpp",
+        "codecvt": "cpp",
+        "boundingbox": "cpp",
+        "shape": "cpp"
     }
 }

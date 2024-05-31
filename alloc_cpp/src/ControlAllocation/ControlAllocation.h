@@ -111,7 +111,7 @@ struct LinearProgrammingProblem {
     float c[N];
     float h[N];
     bool e[N];
-    float tol=std::numeric_limits<float>::epsilon();
+    float tol=FLT_EPSILON;
     // 默认构造函数，将所有成员变量初始化为0
     LinearProgrammingProblem() : m(M), n(N), itlim(0) {
         // 将数组成员变量初始化为0
@@ -723,7 +723,6 @@ public:
         //     }
         // }
         // upper_lam = cs_max/std::numeric_limits<float>::epsilon();
-        DP_LPCA_problem.tol=1e-7;
         DP_LPCA_problem.itlim = 10;
         for(int i=0; i<DP_LPCA_problem.n-1; ++i)
         {
@@ -749,7 +748,6 @@ public:
             DP_LPCA_problem.h[i] = this->aircraft.upperLimits[i]-this->aircraft.lowerLimits[i];
         }
         //==================================PreDP_LPCA_problem================================
-        Pre_DP_LPCA_problem.tol=1e-7;
         Pre_DP_LPCA_problem.itlim = 10;
         for(int i=0; i<DP_LPCA_problem.n; ++i)
         {
@@ -790,7 +788,6 @@ public:
             Pre_DP_LPCA_problem.h[i+DP_LPCA_problem.n] = 2*fabs(DP_LPCA_problem.b[i]);
         }
         //================================== DPscaled_LPCA_problem ================================
-        DPscaled_LPCA_problem.tol=1e-7;
         DPscaled_LPCA_problem.itlim = 10;
         float yd[3]={0.1,0.2,-0.1}; // random value for inital.
         // update A b c h every time
@@ -888,7 +885,6 @@ public:
             DPscaled_LPCA_problem.h[i] = this->aircraft.upperLimits[i]-this->aircraft.lowerLimits[i];
         }
         //==================================Pre_DPscaled_LPCA_problem================================
-        Pre_DPscaled_LPCA_problem.tol=1e-7;
         Pre_DPscaled_LPCA_problem.itlim = 10;
         for(int i=0; i<DPscaled_LPCA_problem.n; ++i)
         {
@@ -1550,7 +1546,7 @@ public:
 
     LinearProgrammingProblem<ControlSize-1, EffectorSize> DPscaled_LPCA_problem;// 提前设置 inital by  aircraft data 
     LinearProgrammingProblem<ControlSize-1, EffectorSize + (ControlSize-1)> Pre_DPscaled_LPCA_problem;// 提前设置 inital by aircraft data
-    float upper_lam=1e10; // 
+    float upper_lam=FLT_MAX; // 
     
 };
 // and user can define more...

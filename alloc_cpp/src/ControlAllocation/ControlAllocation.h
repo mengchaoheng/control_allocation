@@ -1020,7 +1020,7 @@ public:
     
     // To find an initial condition, many linear programming solvers treat the solution in two phases. Phase one solves a specially constructed problem designed to yield a basic feasible solution that is used to initialize the original problem in phase two.
     // So we have DP_LPCA and DPscaled_LPCA
-    void DP_LPCA(float input[ControlSize], float output[EffectorSize], int& err){
+    void DP_LPCA(float input[ControlSize], float output[EffectorSize], int& err, float & rho){
         // Direction Preserving Control Allocation Linear Program
 
         // function [u, errout] = DP_LPCA(yd,B,uMin,uMax,itlim,upper_lam);
@@ -1228,9 +1228,10 @@ public:
             output[i]=xout[i]+this->aircraft.lowerLimits[i];
         }
         // Use upper_lam to prevent control surfaces from approaching position limits
-        if(xout[EffectorSize]>1){
+        rho = xout[EffectorSize];
+        if(rho>1){
             for(int i=0;i<EffectorSize;++i){
-                output[i]/=xout[EffectorSize];
+                output[i]/=rho;
             }
         }
         return;

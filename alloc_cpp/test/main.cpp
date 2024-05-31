@@ -132,9 +132,9 @@ int main() {
         // }
         // std::cout << "]" << std::endl;
         //=========================DPscaled_LPCA=======have problem=====================INFO  [mixer_module] dir_alloc_sim time: 16
-        float u2[4];int err2=0;float rho=0;
+        float u2[4];int err2=0;float rho2=0;
         start = std::chrono::high_resolution_clock::now();
-        Allocator.DPscaled_LPCA(yd, u2, err2, rho);  
+        Allocator.DPscaled_LPCA(yd, u2, err2, rho2);  
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
         total_elapsed2 += elapsed.count();
@@ -150,9 +150,9 @@ int main() {
         // }
         // std::cout << "]" << std::endl;
         //========================DP_LPCA=============================
-        float u3[4];int err3=0;
+        float u3[4];int err3=0;float rho3=0;
         start = std::chrono::high_resolution_clock::now();
-        Allocator.DP_LPCA(yd, u3, err3);  
+        Allocator.DP_LPCA(yd, u3, err3, rho3);  
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
         total_elapsed3 += elapsed.count();
@@ -188,7 +188,7 @@ int main() {
 
         // 写入CSV文件 change to u1 u2 u3 u4 for your test.
         for (size_t i = 0; i < array_size; ++i) {
-            outFile << u4[i] << (i < array_size - 1 ? "," : "\n");
+            outFile << u3[i] << (i < array_size - 1 ? "," : "\n");
         }
     }
     // 求平均运行时间

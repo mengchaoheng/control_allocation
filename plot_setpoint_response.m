@@ -25,7 +25,7 @@ addpath(genpath(pwd));
 d2r=pi/180;
 r2d=180/pi;
 %%
-ulgFileName = '16_37_44'; % the ulog file name 
+ulgFileName = '04_09_33'; % the ulog file name 
 tmp=[ ulgFileName '.mat'];
 % exist tmp var
 if exist(tmp,"file")
@@ -240,7 +240,7 @@ grid on;
 % axis([-inf inf -100 100]);
 title('Position');
 xlabel({'Time(s)'});
-ylabel('X(m/s)')
+ylabel('X(m)')
 legend('Setpoint','Response');
 %% and maybe more figure, all in the variable "log.data"
 subplot(312)
@@ -249,7 +249,7 @@ plot((vehicle_local_position(:,1))*1e-6, XYZ(:,2),'--','LineWidth',1,'color',[0.
 grid on;
 % axis([-inf inf -100 100]);
 xlabel({'Time(s)'});
-ylabel('Y(m/s)')
+ylabel('Y(m)')
 legend('Setpoint','Response');
 %% and maybe more figure, all in the variable "log.data"
 subplot(313)
@@ -258,7 +258,7 @@ plot((vehicle_local_position(:,1))*1e-6, XYZ(:,3),'--','LineWidth',1,'color',[0.
 grid on;
 % axis([-inf inf -100 100]);
 xlabel({'Time(s)'});
-ylabel('Z(m/s)')
+ylabel('Z(m)')
 legend('Setpoint','Response');
 %% 
 

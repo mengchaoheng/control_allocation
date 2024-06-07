@@ -21,6 +21,7 @@ extern "C" {
 using namespace matrix;
 
 
+
 int main() {
     std::ifstream file("/Users/mch/Proj/control_allocation/input.csv");
     std::vector<std::vector<double> > data;

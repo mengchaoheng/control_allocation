@@ -4,6 +4,10 @@
 #include <stdlib.h>
 #include <limits>
 using namespace matrix;
+#if !defined(FLT_MAX)
+#define FLT_MAX     __FLT_MAX__
+#endif
+
 // Add the min_user function definition here
 template<typename Type, size_t M, size_t N>
 inline void min_user(const Matrix<Type, M, N> &x, Type &x_min, size_t &x_index)

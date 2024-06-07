@@ -1,15 +1,16 @@
 ## About
-This is a repos. for test new control allocation algorithm developed from [ simulation of the book "aircraft control allocation"](https://github.com/mengchaoheng/aircraft-control-allocation) and [qcat](https://github.com/mengchaoheng/qcat).
+This repository is designed for testing a new control allocation algorithm. The algorithm is developed based on simulations from the book ["aircraft control allocation"](https://github.com/mengchaoheng/aircraft-control-allocation) and the [QCAT](https://github.com/mengchaoheng/qcat) project
 
-The new algorithm will used by a ductedfan UAV. The structure of a modern flight control system is as shown below
+
+The new algorithm will be used in ducted fan UAVs, but it is not limited to this application. It can be applied to any over-actuated aircraft design.. The structure of a modern flight control system is as shown below
 
 <img src="./system.png" width="60%" height="60%" />
 
-The function of control allocation is to return a control effector command that satisfies the constraints for a point in the moment space. Due to the presence of constraints, only limited moments are attainable.
+The function of control allocation is to generate control effector commands that satisfy constraints within a given moment space. Because of these constraints, only a limited set of moments can be achieved.
 
 <img src="./Fig2.png" width="44%" />
 
-This project will take the control allocation problem of ducted fan UAV as an example to test several currently known control allocation open source libraries. Several open source linear programming solvers have also been introduced, aiming to develop more efficient allocators for application in real aircraft. A new control allocation algorithm was also developed, which is based on modifications of existing methods. In order to be compatible with existing libraries, this project uses matlab and C/C++ programming languages. Matlab is used for testing and analysis. What is really used for aircraft is the C++ version of the function. For this purpose, We wrote test codes in two languages respectively.
+This project uses the control allocation problem of ducted fan UAVs as an example to test several well-known open-source control allocation libraries. Several open source linear programming solvers have also been introduced, aiming to develop more efficient allocators for application in real aircraft. A new control allocation algorithm was also developed, which is based on modifications of existing methods. In order to be compatible with existing libraries, this project uses matlab and C/C++ programming languages. Matlab is used for testing and analysis. What is really used for aircraft is the C++ version of the function. For this purpose, We wrote test codes in two languages respectively.
 
 
 ## Instructions
@@ -21,11 +22,14 @@ This project will take the control allocation problem of ducted fan UAV as an ex
 
 3. Run `test.m` or `test_xxx.m` file to test the allocator and plot some figure.
 
-4. ToDo: fix the bug of `LP_lib/linear-programming-using-MATLAB`.
-5. build and run target of the project `alloc_cpp`, to generate the output data `output.csv`, and then run `test.m`, to compare the effector by allocator. see README of `alloc_cpp`.
+ToDo: fix the bug of `LP_lib/linear-programming-using-MATLAB`.
+
+If you want to test the differences and similarities between the C++ version and MATLAB's code output, you can compile and run the target `main` of the `alloc_cpp` project. Then the data will be recorded into the `output.csv` file. Finally, execute `test.m` to compare (you need to modify the contents of the plot).
 
 ### For C/C++ project:
-1. `alloc_cpp`: see readme in the folder.
+This repository implements the control allocation algorithm based on various mathematical operation libraries. The points 1, 2, 3, and 4 below are not steps but rather ways of using each code implementation.
+
+1. For `alloc_cpp`: see readme in the folder.
 
 ```sh
 cd build
@@ -34,16 +38,19 @@ make && ./main ## or other target: matlab_code_gen_LPwrap_test, Eingen_based_sim
 ```
 and then you can run `test.m` to compare the output of different implement of the algorithm.
 
-2. `LP_lib/alglib_demo`: cd to build folder and run 
+2. For `LP_lib/alglib_demo`: Run
 ```Console
 $ cd build
+```
+cd to build folder and run 
+```Console
 $ g++ -I ../src/alglib-cpp/src/ -o LPWrap_test.out  ../src/LPwrap/*.cpp ../src/LPwrap/*.c ../src/alglib-cpp/src/*.cpp -w  -O3
 
 $ ./LPWrap_test.out
 ```
 For test alglib-based vs `allocator_dir_LPwrap_4` dir allocator. we can see that running time of the allocator. alglib-based is 1.1416e-05s and `allocator_dir_LPwrap_4` is 3.75e-07s. after get the output.csv data file, run `test.m` for compare with the offline version.
 
-3. `LP_lib/lp_tiny`: cd to path, and run the following command, allocator running time is 0.0002s. 
+3. For `LP_lib/lp_tiny`: cd to path, and run the following command, allocator running time is 0.0002s. 
 ```sh
 $ 
 $ mkdir build
@@ -54,7 +61,7 @@ $ ./test_input_alloc
 ```
 The following lib have some bug, maybe the lib can't solve the problem. 
 
-4. `LP_lib/SDLP`: Build and run by:
+4. For `LP_lib/SDLP`: Build and run by:
 ```Console
 mkdir build && cd build
 

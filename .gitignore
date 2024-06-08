@@ -20,3 +20,5 @@ LP_lib/lp_tiny/build/*
 LP_lib/SDLP/build/*
 !flight_log/14_29_39.ulg
 !flight_log/14_29_39.mat
+
+/results

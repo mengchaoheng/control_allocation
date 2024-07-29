@@ -84,7 +84,7 @@ It is not the right u but optimal is right.
 
 - `alloc_cpp`: The C++ implementation of control allocation based on linear programming algorithm implemented by eigen is a subfolder that can be run independently.
   - `src/LPwrap`: the `test/main.cpp` file used to test the running time of alforithm.
-  - `src/ControlAllocation`: `ControlAllocation.h` implement `simplxuprevsol`, the `DP_LPCA` and `DPscaled_LPCA` by cpp. to test some function, cd to `alloc_cpp/build`, then build and run the target by `main.cpp`. the output can be used in `test.m`.
+  - `src/ControlAllocation`: `ControlAllocation.h` implement `simplxuprevsol`, `DP_LPCA` and `DPscaled_LPCA` of the book ["aircraft control allocation"](https://github.com/mengchaoheng/aircraft-control-allocation) by cpp. to test some function, cd to `alloc_cpp/build`, then build and run the target by `main.cpp`. the output can be used in `test.m`.
   - more to see README of `alloc_cpp`.
 - `control_allocation_lib`: some open source allocation lib, be used as submodules.
   - aircraft-control-allocation-book-simulation
@@ -92,11 +92,11 @@ It is not the right u but optimal is right.
 - `function_lib`: some matlab function used in the project.
 - `handle_fly_log`: some ulg files of px4.
   - `xx_xx_xx.ulg`：flight log data.
-- `LP_allocator`: LP-based control allocator obtained by modifying the existing control allocation library.
+- `LP_allocator`: LP-based control allocator obtained by modifying the existing control allocation library. Some files come from the project of converting matlab to C language, just for comparison.
 - `LP_lib`: some open source LP solver lib.
-- `PCA`: prioritized control allocation (PCA) algorithm.
-- `QP_allocator`: QP-based control allocator obtained by modifying the existing control allocation library.
-- `reformula_LP`: The control allocation problem is reformulated into the standard form of the LP problem, and then a control allocator is designed based on the open source LP library.
+- `PCA`: prioritized control allocation (PCA) algorithm, test on matlab.
+- `QP_allocator`: QP-based control allocator obtained by modifying the existing control allocation library ([QCAT](https://github.com/mengchaoheng/qcat) ).
+- `reformula_LP`: The control allocation problem is reformulated into the standard form of the LP problem, and then a control allocator is designed based on the open source LP library, just for comparison.
 - `Generate_input_data.m`: use flight data and some unit vector to generate the input data for test allocator. 
 - `plot_fly_log_states.m`: use the ulg files of px4 to get flight data.
 - `test.m`: test the allocator.

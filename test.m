@@ -6,7 +6,7 @@ addpath(genpath(pwd))
 % B=[-0.5     0       0.5     0;
 %      0      -0.5     0       0.5;
 %      0.25    0.25    0.25    0.25];
-l1=0.148;l2=0.069;k_v=3;
+l1=0.167;l2=0.069;k_v=3;
 I_x=0.01149;
 I_y=0.01153;
 I_z=0.00487;
@@ -35,7 +35,7 @@ load 'input.mat'; % get v and the len_command_px4 (len_command_px4 is size of co
 %% setup ACA
 % global NumU
 NumU=m;
-LPmethod=3; % LPmethod should be an integer between 0 and 5. when LPmethod=2 set upper of lambda to Inf can't save this method!!! but big number is the same as that based linprog
+LPmethod=2; % LPmethod should be an integer between 0 and 5. when LPmethod=2 set upper of lambda to Inf can't save this method!!! but big number is the same as that method based linprog
 INDX=ones(1,m);  % active effectors
 IN_MAT = [B     zeros(k,1)
           umin' 0
@@ -72,7 +72,7 @@ x_dir_alloc_linprog_re_bound=zeros(m,N);
 x_use_LP_lib=zeros(m,N);
 tic;
 %% simulate flight process  
-for idx=1:N
+for idx=1:N  % or x:N for debug
     
     % IN_MAT(1:3,end) = v(:,idx);
 

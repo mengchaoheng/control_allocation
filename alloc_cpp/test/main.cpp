@@ -60,7 +60,8 @@ int main() {
         return 1;
     }
     
-    float _B[3][4] = { {-0.4440,0.0,0.4440,0.0}, {0.0,-0.4440,0.0,0.4440},{0.2070,0.2070,0.2070,0.2070}};
+    // float _B[3][4] = { {-0.4440,0.0,0.4440,0.0}, {0.0,-0.4440,0.0,0.4440},{0.2070,0.2070,0.2070,0.2070}};
+    float _B[3][4] = { {-43.6031,0.0,43.6031,0.0}, {0.0,-43.4519,0.0,43.4519},{42.5051,42.5051,42.5051,42.5051}};
     float _B_array[12];
     for (int i = 0; i < 3; i++)
     {
@@ -83,7 +84,7 @@ int main() {
     // 示例代码
     // 使用模板类时，可以指定 ControlSize 和 EffectSize 的具体值
     // 例如：
-    float l1=0.148;float l2=0.069;float k_v=3;
+    float l1=0.167;float l2=0.069;float k_v=3;
     Aircraft<3, 4> df_4(_B, -0.3491, 0.3491); // 创建一个具有 4 个操纵向量和 3 个广义力矩的飞行器对象
     DP_LP_ControlAllocator<3, 4> Allocator(df_4); // 创建一个控制分配器对象，用于具有 4 个操纵向量和 3 个广义力矩的飞行器(转化为线性规划问题，其维数和参数 <3, 4> 有关。)
     // 然后可以使用飞行器对象和控制分配器对象进行操作
@@ -104,7 +105,7 @@ int main() {
     for(int i=0;i<num;i++)
 	{
         float yd[3]={(float) data[i][0],  (float) data[i][1],   (float) data[i][2]};
-        // float yd[3]={0.00047929178,  0.0010364822,   0.00025974715}; // for test
+        // float yd[3]={1.8729,  -3.2655,   0.1279}; // for test
 
         // if(i==2041) // change limits
         // {
@@ -123,7 +124,7 @@ int main() {
         elapsed = finish - start;
         total_elapsed1 += elapsed.count();
         // std::cout << "Allocator.allocateControl execution time: " << elapsed.count() << "s\n";
-
+        // std::cout << "Allocator.err1: " << err1 << "\n";
         // std::cout << "u1: [";
         // for (size_t i = 0; i < 4; ++i) {
         //     std::cout << u1[i];
@@ -141,7 +142,7 @@ int main() {
         total_elapsed2 += elapsed.count();
         // std::cout << "DPscaled_LPCA rho: "<< rho <<std::endl; 
         // std::cout << "Allocator.DPscaled_LPCA execution time: " << elapsed.count() << "s\n";
-
+        // std::cout << "Allocator.err2: " << err2 << "\n";
         // std::cout << "u2: [";
         // for (size_t i = 0; i < 4; ++i) {
         //     std::cout << u2[i];
@@ -158,7 +159,7 @@ int main() {
         elapsed = finish - start;
         total_elapsed3 += elapsed.count();
         // std::cout << "Allocator.DP_LPCA execution time: " << elapsed.count() << "s\n";
-
+        // std::cout << "Allocator.err3: " << err3 << "\n";
         std::cout << "u3: [";
         for (size_t i = 0; i < 4; ++i) {
             std::cout << u3[i];

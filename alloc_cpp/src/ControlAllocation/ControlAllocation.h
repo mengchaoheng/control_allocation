@@ -115,7 +115,7 @@ struct LinearProgrammingProblem {
     float c[N];
     float h[N];
     bool e[N];
-    float tol=FLT_EPSILON;
+    float tol=10*FLT_EPSILON; // important value, if control surface saturation, Use a larger value
     // 默认构造函数，将所有成员变量初始化为0
     LinearProgrammingProblem() : m(M), n(N), itlim(0) {
         // 将数组成员变量初始化为0

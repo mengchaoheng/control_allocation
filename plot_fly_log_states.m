@@ -27,7 +27,7 @@ addpath(genpath(pwd));
 d2r=pi/180;
 r2d=180/pi;
 %% two offline can be use, something different. px4 v12.3.0
-ulgFileName = '16_37_44'; % the ulog file name  17_48_41, have to in the same folder
+ulgFileName = '06_23_52'; % the ulog file name  17_48_41, have to in the same folder
 tmp=[ ulgFileName '.mat'];
 % exist tmp var
 if exist(tmp,"file")
@@ -188,7 +188,7 @@ time_us=log.data.actuator_controls_0_0{:,1};
 delta_t=time_us(2:end)-time_us(1:end-1);
 delta_t_s=delta_t*1e-6;
 % 指定保存路径及文件名
-filename = 'handle_fly_log/flight.mat';
+filename = 'flight_log/flight.mat';
  
 % 调用 save 函数进行保存
 save(filename, 'command_px4','u_px4','delta_t_s');

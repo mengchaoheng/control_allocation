@@ -22,3 +22,6 @@ LP_lib/SDLP/build/*
 !flight_log/14_29_39.mat
 
 /results
+input.csv
+input.mat
+output.csv

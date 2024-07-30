@@ -1,3 +1,4 @@
+# Library of Control Allocation Algorithms
 ## About
 This repository is designed for testing a new control allocation algorithm. The algorithm is developed based on simulations from the book ["aircraft control allocation"](https://github.com/mengchaoheng/aircraft-control-allocation) and the [QCAT](https://github.com/mengchaoheng/qcat) project
 
@@ -24,7 +25,7 @@ This project uses the control allocation problem of ducted fan UAVs as an exampl
 
 ToDo: fix the bug of `LP_lib/linear-programming-using-MATLAB`.
 
-If you want to test the differences and similarities between the C++ version and MATLAB's code output, you can compile and run the target `main` of the `alloc_cpp` project. Then the data will be recorded into the `output.csv` file. Finally, execute `test.m` to compare (you need to modify the contents of the plot).
+If you want to test the differences and similarities between the C++ version and MATLAB's code output, you can compile and run the target `main` of the `alloc_cpp` project by `./main`. Then the data will be recorded into the `output.csv` file. Finally, execute `test.m` to compare (you need to modify the contents of the plot). More detail in `alloc_cpp/README.md`.
 
 ### For C/C++ project:
 This repository implements the control allocation algorithm based on various mathematical operation libraries. The points 1, 2, 3, and 4 below are not steps but rather ways of using each code implementation.

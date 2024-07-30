@@ -14,6 +14,10 @@ flight_log/*.ulg
 */slprj/
 slprj/
 
+input.csv
+input.mat
+output.csv
+
 alloc_cpp/build
 LP_lib/alglib_demo/build/*
 LP_lib/lp_tiny/build/*
@@ -22,6 +26,3 @@ LP_lib/SDLP/build/*
 !flight_log/14_29_39.mat
 
 /results
-input.csv
-input.mat
-output.csv

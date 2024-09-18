@@ -11,7 +11,7 @@ unit_vector=zeros(3,(M+1)^2);
 N=(M+1)^2;
 
 for i=1:N% (N+1)^2  for  sphere %length(M_des(1:1000,1))%%length(X)
-    unit_vector(:,i)=0.5*[X(i); Y(i); Z(i)];
+    unit_vector(:,i)=200*[X(i); Y(i); Z(i)];
 end
 v=[command_px4'  zeros(3,200) unit_vector];% zeros is just for test
 

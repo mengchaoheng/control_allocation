@@ -1,5 +1,8 @@
 function [u,a] = dir_alloc_linprog(B,v, umin, umax, lam)
-  
+ % the term direct allocation includes any allocation method that achieves the maximum capabilities and preserves direction. 
+ % This includes at least the method described as direct allocation (Section 6.6), 
+ % edge- and facet-searching (6.7), Banks’ method (Section 6.8), and the linear programming methods 
+ % presented in Section 6.9 (but not necessarily those in Appendix A).
 % DIR_ALLOC - Direct control allocation.
 %
 %  [u,a] = dir_alloc(B,v,umin,umax)

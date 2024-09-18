@@ -21,19 +21,23 @@ u_0=[0.0122;
      0.0122;
      0.3491;
      0.3491];
+u_0=[0.0;
+     0.0;
+     0.0;
+     0.0];
 % umin=ones(m,1)*(-20)*pi/180;
 % umax=ones(m,1)*20*pi/180;
 umin=ones(m,1)*-0.3491;
 umax=ones(m,1)*0.3491;
-% plim=[umin-u_0 umax-u_0];
-% q=vview(B,plim,pinv(B));
+plim=[umin-u_0 umax-u_0];
+q=vview(B,plim,pinv(B));
 % run Generate_input_data;
 load 'input.mat'; % get v and the len_command_px4 (len_command_px4 is size of command_px4, which come from flght log data)
 [~,N]=size(v);
 %% setup function of allocation lib
 % ========
 %% setup ACA
-% global NumU
+global NumU
 NumU=m;
 LPmethod=2; % LPmethod should be an integer between 0 and 5. when LPmethod=2 set upper of lambda to Inf can't save this method!!! but big number is the same as that method based linprog
 INDX=ones(1,m);  % active effectors
@@ -74,25 +78,31 @@ tic;
 %% simulate flight process  
 for idx=1:N  % or x:N for debug
     
-    % IN_MAT(1:3,end) = v(:,idx);
+    IN_MAT(1:3,end) = v(:,idx); %[ 36.8125; 0;92.9776];%
 
-    u = LPwrap(IN_MAT,v(:,idx),NumU); % function of ACA lib
-    x_LPwrap(:,idx) = min(max(u, umin), umax);
+    % u = LPwrap(IN_MAT); % function of ACA lib
+    % x_LPwrap(:,idx) = min(max(u, umin), umax);
 
-    % u = LPwrap(IN_MAT1,v(:,idx),NumU); % incremental form. 0 have to be a feasible solution.
+    % u = LPwrap(IN_MAT1); % incremental form. 
+    % The control constraint δ ≤ δ ≤ δ must contain the origin, i.e., δ = 0
+    % must be a feasible control input. 
+    % In order word, 0 have to be a feasible solution. When add vel contraint to s.t. 
+    % and if optimization variables is delta_u, then 0 is a feasible
+    % solution, else if optimization variables is u, then 0 is not a
+    % feasible solution, so the LP Not working.
     % x_LPwrap_incre(:,idx) = min(max(u, umin-u_0), umax-u_0)+u_0;
 
-    % u= CGIwrap(IN_MAT,v(:,idx),NumU);
-    % x_CGIwrapp(:,idx) = min(max(u, umin), umax);
+    u= CGIwrap(IN_MAT);
+    x_CGIwrapp(:,idx) = min(max(u, umin), umax);
 
-    % u = DAwrap(IN_MAT,v(:,idx),NumU);
-    % x_DAwrap(:,idx) = min(max(u, umin), umax);
+    u = DAwrap(IN_MAT);
+    x_DAwrap(:,idx) = min(max(u, umin), umax);
 
-    % u = VJAwrap(IN_MAT,v(:,idx),NumU);
-    % x_VJAwrap(:,idx) = min(max(u, umin), umax);
+    u = VJAwrap(IN_MAT);
+    x_VJAwrap(:,idx) = min(max(u, umin), umax);
 
-    % u=pinv(B)*v(:,idx);
-    % x_inv(:,idx) = min(max(u, umin), umax);
+    u=pinv(B)*v(:,idx);
+    x_inv(:,idx) = min(max(u, umin), umax);
     % 
     % [u,~,~] = wls_alloc(B,v(:,idx),umin,umax,Wv,Wu,ud,gam,u0,W0,imax);
     % x_wls(:,idx) = min(max(u, umin), umax);
@@ -126,9 +136,9 @@ output = readmatrix('output.csv')';% or delete this line to just compare the mat
 command_px4=v(:,1:len_command_px4);
 % just use the flight data to compare.
 
-x1=output(:,1:len_command_px4); % or x_xxx above
-% x1=x_LPwrap_incre(:,1:len_command_px4);
-x2=x_LPwrap(:,1:len_command_px4);
+% x1=output(:,1:len_command_px4); % or x_xxx above
+x1=x_DAwrap(:,1:len_command_px4);
+x2=x_inv(:,1:len_command_px4);
 
 % actual moments produced. The B matrix have to be the same.
 U1=B*x1;
@@ -182,13 +192,13 @@ plot(t,x2(4,:),'b--');hold on;
 % % plot(t,command_px4(:,3),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
 
 % outside_x1=output(:,len_command_px4+1:end);
-% outside_x1=x_LPwrap_incre(:,len_command_px4+1:end);
-% outside_x2=x_LPwrap(:,len_command_px4+1:end);
-% outside_U1=B*outside_x1;
-% outside_U2=B*outside_x2;
-% outside_err=outside_x1-outside_x2;
-% figure,
-% plot3(outside_U1(1,:),outside_U1(2,:),outside_U1(3,:),'r*');hold on;
-% % figure,
-% plot3(outside_U2(1,:),outside_U2(2,:),outside_U2(3,:),'g*');
+outside_x1=x_DAwrap(:,len_command_px4+1:end);
+outside_x2=x_inv(:,len_command_px4+1:end);
+outside_U1=B*outside_x1;
+outside_U2=B*outside_x2;
+outside_err=outside_x1-outside_x2;
+figure,
+plot3(outside_U1(1,:),outside_U1(2,:),outside_U1(3,:),'r*');hold on;
+figure,
+plot3(outside_U2(1,:),outside_U2(2,:),outside_U2(3,:),'g*');
 

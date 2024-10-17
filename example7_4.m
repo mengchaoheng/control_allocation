@@ -5,7 +5,6 @@ uMin = [  -0.9599  -0.9599  -0.5236  -0.5236  -0.5236  -0.5236  -0.5236]';
 uMax =  [ 0.4363  0.4363  0.5236  0.5236  0.5236  0.5236  0.5236  ]';
 mdes =[ -1.8832  1.4055  1.0133 ]';
 itlim=5e2;
-upper_lam=1/eps;% upper_lam>=1, set large number that < Inf will be cool....new view: restoring
 [k,m] = size(B);
 global NumU
 NumU=m;

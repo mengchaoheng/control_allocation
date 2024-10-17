@@ -36,7 +36,7 @@ q=vview(B,plim,pinv(B))
 % q=vview(B,plim,B_inv)
 
 
-% l1=0.148;l2=0.069;k_v=3;
+% l1=0.148;l2=0.069;k_v=3;01
 % B=k_v*[-l1     0       l1     0;
 %      0      -l1     0       l1;
 %      l2    l2    l2    l2];
@@ -46,3 +46,4 @@ q=vview(B,plim,pinv(B))
 % umax=ones(m,1)*20*pi/180;
 % plim=[umin umax];
 % q1=vview(B,plim,pinv(B))
+

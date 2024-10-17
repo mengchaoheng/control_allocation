@@ -5,6 +5,8 @@ addpath(genpath(pwd))
 % run 'plot_fly_log_states.m' for command_px4 and u_px4
 load 'flight.mat'; % command_px4 and u_px4
 [len_command_px4,~]=size(command_px4);
+[len_u_px4,~]=size(u_px4);
+
 M=50;
 [X,Y,Z] = sphere(M);
 unit_vector=zeros(3,(M+1)^2);
@@ -18,7 +20,7 @@ v=[command_px4'  zeros(3,200) unit_vector];% zeros is just for test
 % 指定保存路径及文件名
 filename = 'input.mat';
 % 调用 save 函数进行保存
-save(filename, 'v',"len_command_px4",'u_px4','delta_t_s');
+save(filename, 'v',"len_command_px4",'u_px4','len_u_px4','controls_delta_t_s','u_delta_t_s');
 
 filename = 'input.csv';
 writematrix(v',filename);

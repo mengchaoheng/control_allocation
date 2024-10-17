@@ -4,8 +4,8 @@ PCA/codegen/
 QP/codegen/
 */*.prj
 */*.mexmaca64
-flight_log/*.mat
-flight_log/*.ulg
+*.mat
+*.ulg
 */*.asv
 */*.a
 *.asv
@@ -22,7 +22,6 @@ alloc_cpp/build
 LP_lib/alglib_demo/build/*
 LP_lib/lp_tiny/build/*
 LP_lib/SDLP/build/*
-!flight_log/14_29_39.ulg
-!flight_log/14_29_39.mat
-
+!11_22_05.ulg
+!11_22_05.mat
 /results

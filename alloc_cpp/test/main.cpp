@@ -104,7 +104,7 @@ int main() {
     // main loop
     for(int i=0;i<num;i++)
 	{
-        float m_higher[3]={0.0,  0.0,  10.0}; // 
+        float m_higher[3]={0.0,  0.0,  10.0f}; // 
         float yd[3]={(float) data[i][0],  (float) data[i][1],   (float) data[i][2]};
         float y_all[3]={(float) data[i][0]+m_higher[0],  (float) data[i][1]+m_higher[1],   (float) data[i][2]+m_higher[2]};
         // float yd[3]={1.8729,  -3.2655,   0.1279}; // for test
@@ -191,9 +191,10 @@ int main() {
         // }
         // std::cout << "]" << std::endl;
         //========================DP_LPCA_prio=============================
-        float u5[4];int err5=0;float rho5=0;
+        float u5[4];int err5=0;float rho5=0;float u5_tmp[4];
         start = std::chrono::high_resolution_clock::now();
-        Allocator.DP_LPCA_prio(m_higher,yd, u5, err5, rho5);  
+        Allocator.DP_LPCA_prio(m_higher,yd, u5_tmp, err5, rho5);  
+        Allocator.restoring(u5_tmp,u5);
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
         total_elapsed5 += elapsed.count();
@@ -210,7 +211,7 @@ int main() {
 
         // 写入CSV文件 change to u1 u2 u3 u4 for your test.
         for (size_t i = 0; i < array_size; ++i) {
-            outFile << u3[i] << (i < array_size - 1 ? "," : "\n");
+            outFile << u5[i] << (i < array_size - 1 ? "," : "\n");
         }
     }
     // 求平均运行时间

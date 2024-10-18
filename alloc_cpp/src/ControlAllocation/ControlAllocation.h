@@ -1617,11 +1617,11 @@ public:
             for(int j=0; j<DP_LPCA_problem.n-1; ++j)
             {
                 DP_LPCA_problem.A[i][j] = this->aircraft.controlEffectMatrix[i][j];
-                temp +=input_higher[i] -this->aircraft.controlEffectMatrix[i][j]*this->aircraft.lowerLimits[j];
+                temp += -this->aircraft.controlEffectMatrix[i][j]*this->aircraft.lowerLimits[j];
             }
             DP_LPCA_problem.A[i][DP_LPCA_problem.n-1] = -input_lower[i];
             this->generalizedMoment[i] = input_lower[i]; // just record.
-            DP_LPCA_problem.b[i] = temp;
+            DP_LPCA_problem.b[i] = input_higher[i]+temp;
         }
         for(int i=0; i<DP_LPCA_problem.n-1; ++i)
         {

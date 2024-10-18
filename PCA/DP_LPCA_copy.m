@@ -1,5 +1,5 @@
 
-function [u, errout,lambda] = DP_LPCA_copy(m1,yd,B,uMin,uMax,itlim)
+function [u, errout,lambda] = DP_LPCA_copy(m_higher,yd,B,uMin,uMax,itlim)
 % Direction Preserving Control Allocation Linear Program
 %
 % function [u, errout] = DP_LPCA(yd,B,uMin,uMax,itlim);

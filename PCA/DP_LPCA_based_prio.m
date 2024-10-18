@@ -7,8 +7,8 @@ addpath(genpath(pwd))
 %      0      -0.5     0       0.5;
 %      0.25    0.25    0.25    0.25];
 %=============================6==================================
-B=[0.25 0.25 0 -0.25 -0.25 0;-0.125 0.125 0.25 0.125 -0.125 -0.25;1/6 1/6 1/6 1/6 1/6 1/6];% 机理建模得到
-
+d=60*pi/180;
+B_inv=[-1 0 1;-1 -1 1;1 -1 1;1 0 1;1 1 1;-1 1 1];B=pinv(B_inv);
 [k,m] = size(B);
 umin=ones(m,1)*(-20)*pi/180;
 umax=ones(m,1)*20*pi/180;
@@ -38,8 +38,8 @@ imax = 100;	     % no of iterations
 % tol = 1e-7;
 % then we can set lambda = 1/tol.
 %% simulate flight process   
-m1=[0.0;0.0;0.3]; % [0;0;0.2]; or [0;0;0.5]; % higher
-m2=[0.3;0.3;0.0];% [0.1;0.1;-0.4]; or [0.1;0.1;0.4]; % lower
+m1=[0.0;0.0;0.0]; % [0;0;0.2]; or [0;0;0.5]; % higher
+m2=[0.5;0.0;0.0];% [0.1;0.1;-0.4]; or [0.1;0.1;0.4]; % lower
 disp('原问题解：');
 [u, errout, lambda] = DP_LPCA_copy(m1,m2,B,umin,umax,100)
 u=restoring(B,u,umin,umax)
@@ -69,7 +69,7 @@ else % get a feasible solultion.  % 可通过单独收缩m2实现，
     end
 end
 disp('DP_LPCA_prio：');
-[u, errout, lambda] = DP_LPCA_prio(m1,m2,B,umin,umax,100)
+[u, ~, ~] = DP_LPCA_prio(m1,m2,B,umin,umax,100)
 u=restoring(B,u,umin,umax)
 %% for DP_LPCA_copy
 % m可达。lamb=1

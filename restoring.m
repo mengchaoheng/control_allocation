@@ -2,7 +2,7 @@
 function [u_rest] = restoring(B,u,uMin,uMax)
 % u have to be admissible
 % restoring
-if(abs(null(B)'*u)<eps) % a=0
+if(norm(null(B)'*u)<10*eps) % a=0
     u_rest=u;
     return;
 end

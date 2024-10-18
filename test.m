@@ -63,6 +63,7 @@ imax = 100;	     % no of iterations
 u=zeros(m,1);
 x_LPwrap=zeros(m,N);
 x_LPwrap1=zeros(m,N);
+x_PCA=zeros(m,N);
 x_LPwrap_incre=zeros(m,N);
 x_allocator_dir_LPwrap_4=zeros(m,N);
 x_CGIwrapp=zeros(m,N);
@@ -76,10 +77,11 @@ x_dir_alloc_linprog_re=zeros(m,N);
 x_dir_alloc_linprog_re_bound=zeros(m,N);
 x_use_LP_lib=zeros(m,N);
 tic;
+m_higher=[0;0;55];
 %% simulate flight process  
 for idx=1:N  % or x:N for debug
     
-    IN_MAT(1:3,end) = v(:,idx); %[ 36.8125; 0;92.9776];%
+    IN_MAT(1:3,end) = v(:,idx)+m_higher; %[ 36.8125; 0;92.9776];%
 
     % u = LPwrap(IN_MAT); % function of ACA lib
     % u=min(max(u, umin), umax);
@@ -89,7 +91,9 @@ for idx=1:N  % or x:N for debug
     u=min(max(u, umin), umax);
     x_LPwrap1(:,idx) = restoring(B,u,umin,umax);
 
-
+    [u, ~,~] = DP_LPCA_prio(m_higher,v(:,idx),B,umin,umax,100);
+    u=min(max(u, umin), umax);
+    x_PCA(:,idx) = restoring(B,u,umin,umax);
 
     % u = LPwrap(IN_MAT1); % incremental form. 
     % The control constraint δ ≤ δ ≤ δ must contain the origin, i.e., δ = 0
@@ -109,11 +113,11 @@ for idx=1:N  % or x:N for debug
     % u = VJAwrap(IN_MAT);
     % x_VJAwrap(:,idx) = min(max(u, umin), umax);
     % 
-    u=pinv(B)*v(:,idx);
-    x_inv(:,idx) = min(max(u, umin), umax);
+    % u=pinv(B)*v(:,idx);
+    % x_inv(:,idx) = min(max(u, umin), umax);
     % 
-    [u,~,~] = wls_alloc(B,v(:,idx),umin,umax,Wv,Wu,ud,gam,u0,W0,imax);
-    x_wls(:,idx) = min(max(u, umin), umax);
+    % [u,~,~] = wls_alloc(B,v(:,idx),umin,umax,Wv,Wu,ud,gam,u0,W0,imax);
+    % x_wls(:,idx) = min(max(u, umin), umax);
     % 
     % u =wls_alloc_gen(B,v(:,idx),umin,umax,eye(k),eye(m),zeros(m,1),1e6,zeros(m,1),zeros(m,1),100,4);
     % x_wls_gen(:,idx) = min(max(u, umin), umax);
@@ -145,7 +149,7 @@ command_px4=v(:,1:len_command_px4);
 % just use the flight data to compare.
 
 % x1=output(:,1:len_command_px4); % or x_xxx above
-x1=x_wls(:,1:len_command_px4);
+x1=x_PCA(:,1:len_command_px4);
 x2=x_LPwrap1(:,1:len_command_px4);
 
 % actual moments produced. The B matrix have to be the same.
@@ -165,20 +169,20 @@ error2=U2-command_px4;
 figure,
 subplot(4,1,1)
 plot(t,x1(1,:),'r-');hold on;
-plot(t,x2(1,:),'b--');hold on;
-plot(u_t,u_px4(:,1),'g-.');hold on;
+plot(t,x2(1,:),'b.');hold on;
+% plot(u_t,u_px4(:,1),'g-.');hold on;
 subplot(4,1,2)
 plot(t,x1(2,:),'r-');hold on;
-plot(t,x2(2,:),'b--');hold on;
-plot(u_t,u_px4(:,2),'g-.');hold on;
+plot(t,x2(2,:),'b.');hold on;
+% plot(u_t,u_px4(:,2),'g-.');hold on;
 subplot(4,1,3)
 plot(t,x1(3,:),'r-');hold on;
-plot(t,x2(3,:),'b--');hold on;
-plot(u_t,u_px4(:,3),'g-.');hold on;
+plot(t,x2(3,:),'b.');hold on;
+% plot(u_t,u_px4(:,3),'g-.');hold on;
 subplot(4,1,4)
 plot(t,x1(4,:),'r-');hold on;
-plot(t,x2(4,:),'b--');hold on;
-plot(u_t,u_px4(:,4),'g-.');hold on;
+plot(t,x2(4,:),'b.');hold on;
+% plot(u_t,u_px4(:,4),'g-.');hold on;
 % figure,
 % subplot(3,1,1)
 % plot(t,error1(1,:),'Color','r','LineStyle','-','Marker','+','MarkerIndices',tt);hold on;
@@ -204,7 +208,7 @@ plot(u_t,u_px4(:,4),'g-.');hold on;
 % % plot(t,command_px4(:,3),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
 
 % outside_x1=output(:,len_command_px4+1:end);
-outside_x1=x_wls(:,len_command_px4+1:end);
+outside_x1=x_PCA(:,len_command_px4+1:end);
 outside_x2=x_LPwrap1(:,len_command_px4+1:end);
 outside_U1=B*outside_x1;
 outside_U2=B*outside_x2;

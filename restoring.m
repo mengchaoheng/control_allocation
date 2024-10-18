@@ -47,9 +47,9 @@ for i=1:m
 end
 
 if K_max<K_opt
-    u_rest = u + K_max*u_null
+    u_rest = u + K_max*u_null;
 else
-    u_rest = u + K_opt*u_null % u_Pseudo
+    u_rest = u + K_opt*u_null; % u_Pseudo
 end
 
 end

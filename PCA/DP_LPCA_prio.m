@@ -1,31 +1,15 @@
 
-function [u, errout,lambda] = DP_LPCA_copy(m1,yd,B,uMin,uMax,itlim)
+function [u, errout,lambda] = DP_LPCA_prio(m_higher,m_lower,B,uMin,uMax,itlim)
+% Prioritizing Commands by DP_LPCA
 % Direction Preserving Control Allocation Linear Program
 %
-% function [u, errout] = DP_LPCA(yd,B,uMin,uMax,itlim);
-%
-%    Solves the control allocation problem while preserving the
-%  objective direction for unattainable commands. The solution
-%  is found by solving the problem,
-%    min -lambda,
-%    s.t. B*u = lambda*yd, uMin<=u<=uMax, 0<= lambda <=1
-%
-%  For yd outside the AMS, the solution returned is that the
-%  maximum in the direction of yd.
-%
-%  For yd strictly inside the AMS, the solution achieves
-%  Bu=yd and m-n controls will be at their limits; but there
-%  is no explicit preference to which solution will be 
-%  returned. This limits the usefulness of this routine as
-%  a practical allocator unless preferences for attainable solutions
-%  are handled externally.
-%
-%  (For derivation of a similar formulation see A.1.2 and A.2.3 in the
-%  text)
+% function [u, errout,lambda] = DP_LPCA_prio(m_higher,m_lower,B,uMin,uMax,itlim)
+% A.5 Building a Control Allocator for Feasible and Infeasible Solutions
 %
 %
 %  Inputs:
-%          yd [n]    = Desired objective
+%          m_higher [n]    = higher objective
+%          m_lower [n]    = lower objective
 %          B [n,m]   = Control Effectiveness matrix
 %          uMin[m,1] = Lower bound for controls
 %          uMax[m,1] = Upper bound for controls
@@ -46,18 +30,6 @@ function [u, errout,lambda] = DP_LPCA_copy(m1,yd,B,uMin,uMax,itlim)
 % Calls:
 %         simplxuprevsol = Bounded Revised Simplex solver (simplxuprevsol.m)
 %
-% Notes:
-%   If errout ~0 there was a problem in the solution. %
-%
-%    Error code < 0 implies an error in the initialization and there is no guarantee on
-%  the quality of the output solution other than the control limits.
-%    Error code > 0 for errors in final solution--B*u is in the correct direction and has
-%  magnitude < yd, but B*u may not equal yd (for yd attainable)
-%   or be maximized (for yd unattainable)
-%
-% Modification History
-%   2002      Roger Beck  Original (DPcaLP8.m)
-%   8/2014    Roger Beck  Update for use in text
 
 
 %Initialize error code to zero
@@ -66,17 +38,17 @@ lambda=0;
 %Figure out how big the problem is (use standard CA definitions for m & n)
 [n,m] = size(B);
 
-%Check to see if yd == 0
+%Check to see if m_lower == 0
 %  May want to adjust the tolerance to improve numerics of later steps
-if (all(abs(yd) < eps))    %yd = 0 ==> u=0
+if (all(abs(m_lower) < eps))    %m_lower = 0 ==> u=0
     errout = -1;
     u = zeros(m,1);
     return;
 end
 
 %Construct an LP using scaling parameter to enforce direction preserving
-A = [B -yd];
-b = m1-B*uMin;
+A = [B -m_lower];
+b = m_higher-B*uMin;
 c = [zeros(m,1);-1];
 h = [uMax-uMin; 1];
 
@@ -109,12 +81,16 @@ end
 		disp('Solver error');
     end
 
-if errout ~=0  % Construct an incorrect solution to accompany error flags
-    xout = zeros(m+1,1);
-    indv = inB1<=(m+1);
-    xout(inB1(indv)) = y1(indv);
-    xout(~e1(1:m+1)) = -xout(~e1(1:m+1))+h(~e1(1:m+1));
-    
+if errout ~=0  
+    if(errout == -2) % for Prioritizing Commands
+        [u, errout,lambda] = DP_LPCA_prio(zeros(n,1),m_higher,B,uMin,uMax,itlim); % or DP_LPCA_prio(zeros(n,1),m_higher+m_lower,B,uMin,uMax,itlim)
+        return;
+    else % Construct an incorrect solution to accompany error flags
+        xout = zeros(m+1,1);
+        indv = inB1<=(m+1);
+        xout(inB1(indv)) = y1(indv);
+        xout(~e1(1:m+1)) = -xout(~e1(1:m+1))+h(~e1(1:m+1));
+    end
 else  % No Error continue to solve problem
     
     % or set inB1=[1 2 3] by observe

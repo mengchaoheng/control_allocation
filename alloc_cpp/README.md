@@ -42,11 +42,17 @@ DP_LPCA execution time: 3.5875e-05s
 ```
 
 2. The Matrix lib of px4 based:
-```
-Allocator.allocateControl Average execution time: 7.1138e-07s
-Allocator.DPscaled_LPCA Average execution time: 5.03832e-07s
-Allocator.DP_LPCA Average execution time: 1.50543e-06s
-allocator_dir_LPwrap_4 Average execution time: 1.41764e-06s
+```sh
+# DP_LPCA and DP_LPCA_prio run restoring
+Allocator.allocateControl Average execution time: 4.2947e-07s
+Allocator.DPscaled_LPCA Average execution time: 6.29866e-07s
+Allocator.DP_LPCA Average execution time: 1.29437e-06s
+allocator_dir_LPwrap_4 Average execution time: 1.29437e-06s
+Allocator.DP_LPCA_prio Average execution time: 1.27647e-06s
+
+# DP_LPCA and DP_LPCA_prio run restoring remove restoring
+Allocator.DP_LPCA Average execution time: 1.12595e-06s
+Allocator.DP_LPCA_prio Average execution time: 1.11555e-06s
 ```
 
 ### Running on pixhawk

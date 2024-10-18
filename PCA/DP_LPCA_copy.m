@@ -1,5 +1,5 @@
 
-function [u, errout,lambda] = DP_LPCA_copy(yd,B,uMin,uMax,itlim)
+function [u, errout,lambda] = DP_LPCA_copy(yd,m1,B,uMin,uMax,itlim, lam)
     % Direction Preserving Control Allocation Linear Program
     %
     % function [u, errout] = DP_LPCA(yd,B,uMin,uMax,itlim);
@@ -76,9 +76,9 @@ function [u, errout,lambda] = DP_LPCA_copy(yd,B,uMin,uMax,itlim)
     
     %Construct an LP using scaling parameter to enforce direction preserving
     A = [B -yd];
-    b = -B*uMin;
+    b = m1-B*uMin;
     c = [zeros(m,1);-1];
-    h = [uMax-uMin; 1];
+    h = [uMax-uMin; lam];
     
     
     
@@ -143,4 +143,9 @@ function [u, errout,lambda] = DP_LPCA_copy(yd,B,uMin,uMax,itlim)
     %Transform back to control variables
     u = xout(1:m)+uMin;
     lambda= xout(m+1);
+
+if(xout(m+1)>1) %Use upper_lam to prevent control surfaces from approaching position limits
+    u =u /xout(m+1);
+end
+
     end

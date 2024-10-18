@@ -2,14 +2,12 @@ clc;clear all;
 close all;
 addpath(genpath(pwd))
 %% setup aircraft and load input data
-B=[-0.5     0       0.5     0;
-     0      -0.5     0       0.5;
-     0.25    0.25    0.25    0.25];
+B=[1 0 -0.5;  0 1 -0.5];
 [k,m] = size(B);
 umin=ones(m,1)*(-20)*pi/180;
 umax=ones(m,1)*20*pi/180;
 plim=[umin umax];
-% q=vview(B,plim,pinv(B))
+q=vview(B,plim,pinv(B));
 %% setup function of allocation lib
 % ========
 %% setup ACA
@@ -33,12 +31,12 @@ imax = 100;	     % no of iterations
 % tol = 1e-7;
 % then we can set lambda = 1/tol.
 %% simulate flight process  
-m1=[0;0;0.6]; % [0;0;0.2]; or [0;0;0.5];
-m2=[0.1;0.1;-0.4];% [0.1;0.1;-0.4]; or [0.1;0.1;0.4];
+m1=[0;0]; % [0;0;0.2]; or [0;0;0.5];
+m2=[0.1;0.1];% [0.1;0.1;-0.4]; or [0.1;0.1;0.4];
 disp('原问题解：');
 [u, errout, lambda] = DP_LPCA_copy(m2,m1,B,umin,umax,100,1)
-u=restoring(B,u,umin,umax);
-% B*u_rest-B*u
+u_rest=restoring(B,u,umin,umax)
+B*u_rest-B*u
 if(errout~=0)
     % 构造新问题
     disp('无解，即m1+m2不可达且m1不可达');% 不可通过单独收缩m2实现

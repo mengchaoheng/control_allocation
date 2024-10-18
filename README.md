@@ -15,7 +15,15 @@ This project uses the control allocation problem of ducted fan UAVs as an exampl
 
 
 ## Instructions
-
+clone the coden by `--recursive`:
+```
+git clone https://github.com/mengchaoheng/control_allocation.git --recursive
+```
+If , run:
+```
+cd [control_allocation] path
+git submodule update --init --recursive
+```
 ### For matlab usage:
 1. Run `plot_fly_log_states.m` to get the `handle_fly_log/flight.mat` file.
 

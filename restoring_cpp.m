@@ -1,17 +1,8 @@
 
-function [u_rest] = restoring(B,u,uMin,uMax)
+function [u_rest] = restoring_cpp(B,u,uMin,uMax)
 % u have to be admissible
 % restoring
-% by all(abs(null(B)'*u)) < eps or norm(null(B)'*u)<100*eps or rank([B_aug v_aug]) ~= rank(B_aug)
-% for cpp is difficult to calc null(B) but we can calc 
-% rank([B_aug v_aug]) ~= rank(B_aug)
-if(norm(null(B)'*u)<100*eps) % a=0
-    % null(B)
-    % null(B)'
-    % null(null(B)')
-    % v_0=B*null(null(B)');
-    % v_0
-    % null(B)'*u
+if(all(abs(u) < eps)) % a=0 
     u_rest=u;
     return;
 end
@@ -29,6 +20,22 @@ v_aug= [zeros(k,1); a];
 u_null=pinv(B_aug)*v_aug;
 
 % R=rank(B_aug) = k
+% by all(abs(null(B)'*u)) < eps or norm(null(B)'*u)<100*eps or rank([B_aug v_aug]) ~= rank(B_aug)
+% for cpp is difficult to calc null(B) but we can calc 
+% norm(B*u_null)>0.00001
+if(norm(B*u_null)>0.00001) % a=0 
+    % null(B)
+    % null(B)'
+    % null(null(B)')
+    % v_0=B*null(null(B)');
+    % B*u_null
+    % v_0
+    % null(B)'*u
+    u_rest=u;
+    return;
+end
+
+
 % B*u_null
 % B_aug*u_null
 K_opt=-a/(u_null'*u_null); % 

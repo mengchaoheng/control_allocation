@@ -10,18 +10,15 @@ I_y=0.01153;
 I_z=0.00487;
 I=[I_x 0 0;0 I_y 0;0 0 I_z];
 %=============================4==================================
-% B=[-0.5     0       0.5     0;
-%      0      -0.5     0       0.5;
-%      0.25    0.25    0.25    0.25];
-% B=I\[-l1     0       l1     0;
-%      0      -l1     0       l1;
-%      l2    l2    l2    l2]*k_v;
+B=I\[-l1     0       l1     0;
+     0      -l1     0       l1;
+     l2    l2    l2    l2]*k_v;
 %    1X
 % 4     2Y
 %    3
 %=============================6==================================
-d=60*pi/180;
-B=I\[-l1 -l1*cos(d) l1*cos(d) l1 l1*cos(d) -l1*cos(d);0 -l1*sin(d) -l1*sin(d) 0 l1*sin(d) l1*sin(d);l2 l2 l2 l2 l2 l2]*k_v;
+% d=60*pi/180;
+% B=I\[-l1 -l1*cos(d) l1*cos(d) l1 l1*cos(d) -l1*cos(d);0 -l1*sin(d) -l1*sin(d) 0 l1*sin(d) l1*sin(d);l2 l2 l2 l2 l2 l2]*k_v;
 %      1X
 %  6       2
 % -------------->Y
@@ -74,6 +71,7 @@ imax = 100;	     % no of iterations
 %%
 u=zeros(m,1);
 x_LPwrap=zeros(m,N);
+x_LPwrap1=zeros(m,N);
 x_PCA=zeros(m,N);
 x_LPwrap_incre=zeros(m,N);
 x_allocator_dir_LPwrap_4=zeros(m,N);
@@ -88,7 +86,7 @@ x_dir_alloc_linprog_re=zeros(m,N);
 x_dir_alloc_linprog_re_bound=zeros(m,N);
 x_use_LP_lib=zeros(m,N);
 tic;
-m_higher=[0;0;0];
+m_higher=[0;0;10];
 %% simulate flight process  
 for idx=1:N  % or x:N for debug
     
@@ -96,11 +94,13 @@ for idx=1:N  % or x:N for debug
 
     u = LPwrap(IN_MAT); % function of ACA lib
     u=min(max(u, umin), umax);
-    x_LPwrap(:,idx) = restoring(B,u,umin,umax);
+    x_LPwrap(:,idx) =restoring_cpp(B,u,umin,umax);
+    x_LPwrap1(:,idx) =restoring(B,u,umin,umax);
+
 
     % [u, ~,~] = DP_LPCA_prio(m_higher,v(:,idx),B,umin,umax,100);
     % u=min(max(u, umin), umax);
-    % x_PCA(:,idx) = restoring(B,u,umin,umax);
+    % x_PCA(:,idx) =u;% restoring(B,u,umin,umax);
 
     % u = LPwrap(IN_MAT1); % incremental form. 
     % The control constraint δ ≤ δ ≤ δ must contain the origin, i.e., δ = 0
@@ -164,8 +164,8 @@ alloc_cpp_output = readmatrix('output.csv')';% or delete this line to just compa
 command_px4=v(:,1:len_command_px4);
 % just use the flight data to compare.
 
-% x1=alloc_cpp_output(:,1:len_command_px4); % or x_xxx above
-x1=x_PCA(:,1:len_command_px4);
+x1=alloc_cpp_output(:,1:len_command_px4); % or x_xxx above
+% x1=x_LPwrap1(:,1:len_command_px4);
 x2=x_LPwrap(:,1:len_command_px4);
 
 % actual moments produced. The B matrix have to be the same.
@@ -184,19 +184,19 @@ error1=U1-command_px4;
 error2=U2-command_px4;
 figure,
 subplot(4,1,1)
-plot(t,x1(1,:),'r-');hold on;
+plot(t,x1(1,:),'r.');hold on;
 plot(t,x2(1,:),'b--');hold on;
 % plot(u_t,u_px4(:,1),'g-.');hold on;
 subplot(4,1,2)
-plot(t,x1(2,:),'r-');hold on;
+plot(t,x1(2,:),'r.');hold on;
 plot(t,x2(2,:),'b--');hold on;
 % plot(u_t,u_px4(:,2),'g-.');hold on;
 subplot(4,1,3)
-plot(t,x1(3,:),'r-');hold on;
+plot(t,x1(3,:),'r.');hold on;
 plot(t,x2(3,:),'b--');hold on;
 % plot(u_t,u_px4(:,3),'g-.');hold on;
 subplot(4,1,4)
-plot(t,x1(4,:),'r-');hold on;
+plot(t,x1(4,:),'r.');hold on;
 plot(t,x2(4,:),'b--');hold on;
 % plot(u_t,u_px4(:,4),'g-.');hold on;
 % figure,
@@ -223,14 +223,15 @@ plot(t,x2(4,:),'b--');hold on;
 % % plot(t,U2(3,:),'Color','g','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
 % % plot(t,command_px4(:,3),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
 
-% outside_x1=alloc_cpp_output(:,len_command_px4+1:end);
-outside_x1=x_PCA(:,len_command_px4+1:end);
-outside_x2=x_LPwrap(:,len_command_px4+1:end);
-outside_U1=B*outside_x1;
-outside_U2=B*outside_x2;
-outside_err=outside_x1-outside_x2;
-figure,
-plot3(outside_U1(1,:),outside_U1(2,:),outside_U1(3,:),'r*');hold on;
-figure,
-plot3(outside_U2(1,:),outside_U2(2,:),outside_U2(3,:),'g*');
+
+% outside_x1=alloc_cpp_output(:,len_command_px4+1:end); 
+% % outside_x1=x_PCA(:,len_command_px4+1:end);
+% outside_x2=x_LPwrap(:,len_command_px4+1:end);
+% outside_U1=B*outside_x1;
+% outside_U2=B*outside_x2;
+% outside_err=outside_x1-outside_x2;
+% figure,
+% plot3(outside_U1(1,:),outside_U1(2,:),outside_U1(3,:),'r*');hold on;
+% figure,
+% plot3(outside_U2(1,:),outside_U2(2,:),outside_U2(3,:),'g*');
 

@@ -100,11 +100,13 @@ int main() {
     double total_elapsed2 = 0.0;
     double total_elapsed3 = 0.0;
     double total_elapsed4 = 0.0;
-
+    double total_elapsed5 = 0.0;
     // main loop
     for(int i=0;i<num;i++)
 	{
+        float m_higher[3]={0.0,  0.0,  10.0}; // 
         float yd[3]={(float) data[i][0],  (float) data[i][1],   (float) data[i][2]};
+        float y_all[3]={(float) data[i][0]+m_higher[0],  (float) data[i][1]+m_higher[1],   (float) data[i][2]+m_higher[2]};
         // float yd[3]={1.8729,  -3.2655,   0.1279}; // for test
 
         // if(i==2041) // change limits
@@ -119,7 +121,7 @@ int main() {
         //==========================allocateControl===========================
         float u1[4]; int err1=0;
         start = std::chrono::high_resolution_clock::now();
-        Allocator.allocateControl(yd, u1, err1); 
+        Allocator.allocateControl(y_all, u1, err1); 
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
         total_elapsed1 += elapsed.count();
@@ -136,7 +138,7 @@ int main() {
         //=========================DPscaled_LPCA=======have problem=====================INFO  [mixer_module] dir_alloc_sim time: 16
         float u2[4];int err2=0;float rho2=0;
         start = std::chrono::high_resolution_clock::now();
-        Allocator.DPscaled_LPCA(yd, u2, err2, rho2);  
+        Allocator.DPscaled_LPCA(y_all, u2, err2, rho2);  
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
         total_elapsed2 += elapsed.count();
@@ -152,28 +154,29 @@ int main() {
         // }
         // std::cout << "]" << std::endl;
         //========================DP_LPCA=============================
-        float u3[4];int err3=0;float rho3=0;
+        float u3[4];int err3=0;float rho3=0;float u3_tmp[4];
         start = std::chrono::high_resolution_clock::now();
-        Allocator.DP_LPCA(yd, u3, err3, rho3);  
+        Allocator.DP_LPCA(y_all, u3_tmp, err3, rho3);  
+        Allocator.restoring(u3_tmp,u3);
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
         total_elapsed3 += elapsed.count();
         // std::cout << "Allocator.DP_LPCA execution time: " << elapsed.count() << "s\n";
         // std::cout << "Allocator.err3: " << err3 << "\n";
-        std::cout << "u3: [";
-        for (size_t i = 0; i < 4; ++i) {
-            std::cout << u3[i];
-            if (i < 3) {
-                std::cout << ", ";
-            }
-        }
-        std::cout << "]" << std::endl;
+        // std::cout << "u3: [";
+        // for (size_t i = 0; i < 4; ++i) {
+        //     std::cout << u3[i];
+        //     if (i < 3) {
+        //         std::cout << ", ";
+        //     }
+        // }
+        // std::cout << "]" << std::endl;
         //========================allocator_dir_LPwrap_4 (generate by matlab) =============================
         float u4[4]={ 0.0,  0.0,   0.0,   0.0};
         float z_allocator_dir_LPwrap_4= 0.0;
         unsigned int iters_allocator_dir_LPwrap_4= 0;
         start = std::chrono::high_resolution_clock::now();
-        allocator_dir_LPwrap_4(_B_array, yd, _uMin, _uMax, u4, &z_allocator_dir_LPwrap_4, &iters_allocator_dir_LPwrap_4); // allocator_dir_LPwrap_4 execution time: 7.08e-07s
+        allocator_dir_LPwrap_4(_B_array, y_all, _uMin, _uMax, u4, &z_allocator_dir_LPwrap_4, &iters_allocator_dir_LPwrap_4); // allocator_dir_LPwrap_4 execution time: 7.08e-07s
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
         total_elapsed4 += elapsed.count();
@@ -182,6 +185,23 @@ int main() {
         // std::cout << "u4: [";
         // for (size_t i = 0; i < 4; ++i) {
         //     std::cout << u4[i];
+        //     if (i < 3) {
+        //         std::cout << ", ";
+        //     }
+        // }
+        // std::cout << "]" << std::endl;
+        //========================DP_LPCA_prio=============================
+        float u5[4];int err5=0;float rho5=0;
+        start = std::chrono::high_resolution_clock::now();
+        Allocator.DP_LPCA_prio(m_higher,yd, u5, err5, rho5);  
+        finish = std::chrono::high_resolution_clock::now();
+        elapsed = finish - start;
+        total_elapsed5 += elapsed.count();
+        // std::cout << "Allocator.DP_LPCA execution time: " << elapsed.count() << "s\n";
+        // std::cout << "Allocator.err5: " << err5 << "\n";
+        // std::cout << "u5: [";
+        // for (size_t i = 0; i < 4; ++i) {
+        //     std::cout << u5[i];
         //     if (i < 3) {
         //         std::cout << ", ";
         //     }
@@ -202,11 +222,16 @@ int main() {
     std::cout << "Allocator.DP_LPCA Average execution time: " << average_elapsed3 << "s" << std::endl;
     double average_elapsed4 = total_elapsed3 / num;
     std::cout << "allocator_dir_LPwrap_4 Average execution time: " << average_elapsed4 << "s" << std::endl;
+    double average_elapsed5 = total_elapsed5 / num;
+    std::cout << "Allocator.DP_LPCA_prio Average execution time: " << average_elapsed5 << "s" << std::endl;
     // running on M1 pro MacOS: 
-    // Allocator.allocateControl Average execution time: 7.1138e-07s
-    // Allocator.DPscaled_LPCA Average execution time: 5.03832e-07s
-    // Allocator.DP_LPCA Average execution time: 1.50543e-06s
-    // allocator_dir_LPwrap_4 Average execution time: 1.41764e-06s
+    // for float m_higher[3]={0.0,  0.0,  50.0}; //   have solution, m_higher attainable or m_higher+yd attainable
+    // Allocator.allocateControl Average execution time: 5.01194e-07s
+    // Allocator.DPscaled_LPCA Average execution time: 5.95756e-07s
+    // Allocator.DP_LPCA Average execution time: 1.23543e-06s
+    // allocator_dir_LPwrap_4 Average execution time: 1.23543e-06s
+    // Allocator.DP_LPCA_prio Average execution time: 1.66456e-06s
+    // float m_higher[3]={0.0,  0.0,  150.0}; // No Initial Feasible Solution found m_higher+yd unattainable and m_higher unattainable
     // 关闭文件
     outFile.close();
     // 释放内存

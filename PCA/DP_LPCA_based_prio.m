@@ -3,17 +3,17 @@ close all;
 addpath(genpath(pwd))
 %% setup aircraft and load input data
 %=============================4==================================
-% B=[-0.5     0       0.5     0;
-%      0      -0.5     0       0.5;
-%      0.25    0.25    0.25    0.25];
+B=[-0.5     0       0.5     0;
+     0      -0.5     0       0.5;
+     0.25    0.25    0.25    0.25];
 %=============================6==================================
-d=60*pi/180;
-B_inv=[-1 0 1;-1 -1 1;1 -1 1;1 0 1;1 1 1;-1 1 1];B=pinv(B_inv);
+% d=60*pi/180;
+% B_inv=[-1 0 1;-1 -1 1;1 -1 1;1 0 1;1 1 1;-1 1 1];B=pinv(B_inv);
 [k,m] = size(B);
 umin=ones(m,1)*(-20)*pi/180;
 umax=ones(m,1)*20*pi/180;
 plim=[umin umax];
-% q=vview(B,plim,pinv(B))
+q=vview(B,plim,pinv(B))
 %% setup function of allocation lib
 % ========
 %% setup ACA
@@ -39,17 +39,17 @@ imax = 100;	     % no of iterations
 % then we can set lambda = 1/tol.
 %% simulate flight process   
 m1=[0.0;0.0;0.0]; % [0;0;0.2]; or [0;0;0.5]; % higher
-m2=[0.5;0.0;0.0];% [0.1;0.1;-0.4]; or [0.1;0.1;0.4]; % lower
+m2=[0.0;0.0;0.0];% [0.1;0.1;-0.4]; or [0.1;0.1;0.4]; % lower
 disp('原问题解：');
 [u, errout, lambda] = DP_LPCA_copy(m1,m2,B,umin,umax,100)
-u=restoring(B,u,umin,umax)
+u=restoring_cpp(B,u,umin,umax)
 B*u
 % B*u_rest-B*u
 if(errout~=0)
     % 构造新问题
     disp('无解，即m1+m2不可达且m1不可达');% 不可通过单独收缩m2实现
     [u1, errout1, lambda1] = DP_LPCA_copy([0;0;0],m1,B,umin,umax,100)
-    u1=restoring(B,u1,umin,umax)
+    u1=restoring_cpp(B,u1,umin,umax)
     m_real1=B*u1
     m_real1/lambda1
 else % get a feasible solultion.  % 可通过单独收缩m2实现，
@@ -70,7 +70,7 @@ else % get a feasible solultion.  % 可通过单独收缩m2实现，
 end
 disp('DP_LPCA_prio：');
 [u, ~, ~] = DP_LPCA_prio(m1,m2,B,umin,umax,100)
-u=restoring(B,u,umin,umax)
+u=restoring_cpp(B,u,umin,umax)
 %% for DP_LPCA_copy
 % m可达。lamb=1
 % m不可达，0<=lamb<1s, lamb=0对应m=∞

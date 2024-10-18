@@ -2,9 +2,13 @@ clc;clear all;
 close all;
 addpath(genpath(pwd))
 %% setup aircraft and load input data
-B=[-0.5     0       0.5     0;
-     0      -0.5     0       0.5;
-     0.25    0.25    0.25    0.25];
+%=============================4==================================
+% B=[-0.5     0       0.5     0;
+%      0      -0.5     0       0.5;
+%      0.25    0.25    0.25    0.25];
+%=============================6==================================
+B=[0.25 0.25 0 -0.25 -0.25 0;-0.125 0.125 0.25 0.125 -0.125 -0.25;1/6 1/6 1/6 1/6 1/6 1/6];% 机理建模得到
+
 [k,m] = size(B);
 umin=ones(m,1)*(-20)*pi/180;
 umax=ones(m,1)*20*pi/180;
@@ -14,6 +18,7 @@ plim=[umin umax];
 % ========
 %% setup ACA
 global NumU
+
 NumU=m;
 LPmethod=2; % LPmethod should be an integer between 0 and 5. when LPmethod=2 set upper of lambda to Inf can't save this method!!! but big number is the same as that based linprog
 INDX=ones(1,m);  % active effectors

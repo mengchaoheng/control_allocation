@@ -76,7 +76,7 @@ end
 
 %Construct an LP using scaling parameter to enforce direction preserving
 A = [B -yd];
-b = m1-B*uMin;
+b = m_higher-B*uMin;
 c = [zeros(m,1);-1];
 h = [uMax-uMin; 1];
 

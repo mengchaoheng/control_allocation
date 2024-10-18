@@ -30,7 +30,7 @@ u_0=[0.0;
 umin=ones(m,1)*-0.3491;
 umax=ones(m,1)*0.3491;
 plim=[umin-u_0 umax-u_0];
-q=vview(B,plim,pinv(B));
+% q=vview(B,plim,pinv(B));
 % run Generate_input_data;
 load 'input.mat'; % get v and the len_command_px4 (len_command_px4 is size of command_px4, which come from flght log data)
 [~,N]=size(v);

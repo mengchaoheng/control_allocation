@@ -33,16 +33,17 @@ imax = 100;	     % no of iterations
 % tol = 1e-7;
 % then we can set lambda = 1/tol.
 %% simulate flight process  
-m1=[0;0;0.6]; % [0;0;0.2]; or [0;0;0.5];
-m2=[0.1;0.1;-0.4];% [0.1;0.1;-0.4]; or [0.1;0.1;0.4];
+m1=[0.5;0.0;0.5]; % [0;0;0.2]; or [0;0;0.5];
+m2=[0.0;0.0;0.3];% [0.1;0.1;-0.4]; or [0.1;0.1;0.4];
 disp('原问题解：');
-[u, errout, lambda] = DP_LPCA_copy(m2,m1,B,umin,umax,100,1)
+[u, errout, lambda] = DP_LPCA_copy(m2,m1,B,umin,umax,100)
 u=restoring(B,u,umin,umax);
+B*u
 % B*u_rest-B*u
 if(errout~=0)
     % 构造新问题
     disp('无解，即m1+m2不可达且m1不可达');% 不可通过单独收缩m2实现
-    [u1, errout1, lambda1] = DP_LPCA_copy(m1,[0;0;0],B,umin,umax,100,1)
+    [u1, errout1, lambda1] = DP_LPCA_copy(m1,[0;0;0],B,umin,umax,100)
     u1=restoring(B,u1,umin,umax)
     m_real1=B*u1
     m_real1/lambda1
@@ -64,10 +65,6 @@ else % get a feasible solultion.  % 可通过单独收缩m2实现，
 end
 
 
- %% test for the diffrent lambda behavior on unatainable moment
-% [u2, errout2, lambda2] = DP_LPCA_copy([0.5;0;0],[0;0;0],B,umin,umax,100,1)
-% [u3, errout3, lambda3] = DP_LPCA_copy([0.5;0;0],[0;0;0],B,umin,umax,100,2000)
-% is the same!!!
 %% for DP_LPCA_copy
 % m可达。lamb=1
 % m不可达，0<=lamb<1s, lamb=0对应m=∞
@@ -75,7 +72,7 @@ end
 %% for Prioritizing Commands in A.5.1 Dual Branch based DP_LPCA_copy and 0<=lamb<=1
 % m1+m2可达。lamb=1
 % m1可达,m2不可达，0<=lamb<1, lamb=0对应m2=∞
-% 无解，则迭代：删除m2,构造新问题。min-lambda, s.t. Bu=lambda*m1 and 0<=lamb<=1,
+% 无解，没有保方向的特性。则迭代：删除m2,构造新问题。min-lambda, s.t. Bu=lambda*m1 and 0<=lamb<=1,
 % u_l<=u<=u_u.只要m1不可达一定无解
 % 多个优先级则是上面规则的套娃。
 

@@ -1,8 +1,8 @@
 
 function [u_rest] = restoring(B,u,uMin,uMax)
-
+% u have to be admissible
 % restoring
-if(abs(null(B)'*u)<eps)
+if(abs(null(B)'*u)<eps) % a=0
     u_rest=u;
     return;
 end
@@ -14,7 +14,7 @@ B_aug=[B;u'];
 uMin_new=uMin-u;
 uMax_new=uMax-u;
 
-a=-2;
+a=-2;%a<0 => K>0  or  a>0 => K<0. so assume that K>0
 v_aug= [zeros(k,1); a];
 
 u_null=pinv(B_aug)*v_aug;
@@ -22,7 +22,7 @@ u_null=pinv(B_aug)*v_aug;
 % R=rank(B_aug) = k
 % B*u_null
 % B_aug*u_null
-K_opt=-a/(u_null'*u_null);
+K_opt=-a/(u_null'*u_null); % 
 
 % u_Pseudo = u+K_opt*u_null % = pinv(B)*mdes
 

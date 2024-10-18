@@ -92,15 +92,15 @@ m_higher=[0;0;0];
 %% simulate flight process  
 for idx=1:N  % or x:N for debug
     
-    IN_MAT(1:3,end) = v(:,idx)/40+m_higher; %[ 36.8125; 0;92.9776];%
+    IN_MAT(1:3,end) = v(:,idx)+m_higher; %[ 36.8125; 0;92.9776];%
 
     u = LPwrap(IN_MAT); % function of ACA lib
     u=min(max(u, umin), umax);
     x_LPwrap(:,idx) = restoring(B,u,umin,umax);
 
-    [u, ~,~] = DP_LPCA_prio(m_higher,v(:,idx)/40,B,umin,umax,100);
-    u=min(max(u, umin), umax);
-    x_PCA(:,idx) = restoring(B,u,umin,umax);
+    % [u, ~,~] = DP_LPCA_prio(m_higher,v(:,idx),B,umin,umax,100);
+    % u=min(max(u, umin), umax);
+    % x_PCA(:,idx) = restoring(B,u,umin,umax);
 
     % u = LPwrap(IN_MAT1); % incremental form. 
     % The control constraint δ ≤ δ ≤ δ must contain the origin, i.e., δ = 0
@@ -185,19 +185,19 @@ error2=U2-command_px4;
 figure,
 subplot(4,1,1)
 plot(t,x1(1,:),'r-');hold on;
-plot(t,x2(1,:),'b.');hold on;
+plot(t,x2(1,:),'b--');hold on;
 % plot(u_t,u_px4(:,1),'g-.');hold on;
 subplot(4,1,2)
 plot(t,x1(2,:),'r-');hold on;
-plot(t,x2(2,:),'b.');hold on;
+plot(t,x2(2,:),'b--');hold on;
 % plot(u_t,u_px4(:,2),'g-.');hold on;
 subplot(4,1,3)
 plot(t,x1(3,:),'r-');hold on;
-plot(t,x2(3,:),'b.');hold on;
+plot(t,x2(3,:),'b--');hold on;
 % plot(u_t,u_px4(:,3),'g-.');hold on;
 subplot(4,1,4)
 plot(t,x1(4,:),'r-');hold on;
-plot(t,x2(4,:),'b.');hold on;
+plot(t,x2(4,:),'b--');hold on;
 % plot(u_t,u_px4(:,4),'g-.');hold on;
 % figure,
 % subplot(3,1,1)

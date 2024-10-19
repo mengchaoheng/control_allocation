@@ -1,7 +1,7 @@
 
 function [u, errout,lambda] = DP_LPCA_copy(m_higher,yd,B,uMin,uMax,itlim)
 % Direction Preserving Control Allocation Linear Program
-%
+% only change b = m_higher-B*uMin;
 % function [u, errout] = DP_LPCA(yd,B,uMin,uMax,itlim);
 %
 %    Solves the control allocation problem while preserving the

@@ -38,7 +38,7 @@ load 'input.mat'; % get v and the len_command_px4 (len_command_px4 is size of co
 %% setup ACA
 global NumU
 NumU=m;
-LPmethod=2; % LPmethod should be an integer between 0 and 5. when LPmethod=2 set upper of lambda to Inf can't save this method!!! but big number is the same as that method based linprog
+LPmethod=3; % LPmethod should be an integer between 0 and 5. when LPmethod=2 set upper of lambda to Inf can't save this method!!! but big number is the same as that method based linprog
 INDX=ones(1,m);  % active effectors
 IN_MAT = [B     zeros(k,1)
           umin' 0
@@ -92,15 +92,15 @@ for idx=1:N  % or x:N for debug
     
     IN_MAT(1:3,end) = v(:,idx)+m_higher; %[ 36.8125; 0;92.9776];%
 
-    % u = LPwrap(IN_MAT); % function of ACA lib
-    % u=min(max(u, umin), umax);
-    % % x_LPwrap(:,idx) =restoring_cpp(B,u,umin,umax);
-    % x_LPwrap(:,idx) =restoring(B,u,umin,umax);
-
-
-    [u, ~,~] = DP_LPCA_prio(m_higher,v(:,idx),B,umin,umax,100);
+    u = LPwrap(IN_MAT); % function of ACA lib
     u=min(max(u, umin), umax);
-    x_PCA(:,idx) =restoring_cpp(B,u,umin,umax);
+    x_LPwrap(:,idx) =u;
+    x_LPwrap1(:,idx) =restoring(B,u,umin,umax);
+
+
+    % [u, ~,~] = DP_LPCA_prio(m_higher,v(:,idx),B,umin,umax,100);
+    % u=min(max(u, umin), umax);
+    % x_PCA(:,idx) =restoring_cpp(B,u,umin,umax);
 
     % u = LPwrap(IN_MAT1); % incremental form. 
     % The control constraint δ ≤ δ ≤ δ must contain the origin, i.e., δ = 0
@@ -164,9 +164,9 @@ alloc_cpp_output = readmatrix('output.csv')';% or delete this line to just compa
 command_px4=v(:,1:len_command_px4);
 % just use the flight data to compare.
 
-x1=alloc_cpp_output(:,1:len_command_px4); % or x_xxx above
-% x1=x_LPwrap1(:,1:len_command_px4);
-x2=x_PCA(:,1:len_command_px4);
+% x1=alloc_cpp_output(:,1:len_command_px4); % or x_xxx above
+x1=x_LPwrap(:,1:len_command_px4);
+x2=x_LPwrap1(:,1:len_command_px4);
 
 % actual moments produced. The B matrix have to be the same.
 U1=B*x1;
@@ -184,19 +184,19 @@ error1=U1-command_px4;
 error2=U2-command_px4;
 figure,
 subplot(4,1,1)
-plot(t,x1(1,:),'r.');hold on;
+plot(t,x1(1,:),'r-');hold on;
 plot(t,x2(1,:),'b--');hold on;
 % plot(u_t,u_px4(:,1),'g-.');hold on;
 subplot(4,1,2)
-plot(t,x1(2,:),'r.');hold on;
+plot(t,x1(2,:),'r-');hold on;
 plot(t,x2(2,:),'b--');hold on;
 % plot(u_t,u_px4(:,2),'g-.');hold on;
 subplot(4,1,3)
-plot(t,x1(3,:),'r.');hold on;
+plot(t,x1(3,:),'r-');hold on;
 plot(t,x2(3,:),'b--');hold on;
 % plot(u_t,u_px4(:,3),'g-.');hold on;
 subplot(4,1,4)
-plot(t,x1(4,:),'r.');hold on;
+plot(t,x1(4,:),'r-');hold on;
 plot(t,x2(4,:),'b--');hold on;
 % plot(u_t,u_px4(:,4),'g-.');hold on;
 % figure,

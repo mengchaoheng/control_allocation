@@ -136,9 +136,10 @@ int main() {
         // }
         // std::cout << "]" << std::endl;
         //=========================DPscaled_LPCA=======have problem=====================INFO  [mixer_module] dir_alloc_sim time: 16
-        float u2[4];int err2=0;float rho2=0;
+        float u2[4];int err2=0;float rho2=0;float u2_tmp[4];
         start = std::chrono::high_resolution_clock::now();
-        Allocator.DPscaled_LPCA(y_all, u2, err2, rho2);  
+        Allocator.DPscaled_LPCA(y_all, u2_tmp, err2, rho2);  
+        Allocator.restoring(u2_tmp,u2);
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
         total_elapsed2 += elapsed.count();

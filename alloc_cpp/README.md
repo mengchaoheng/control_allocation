@@ -159,3 +159,5 @@ INFO  [mixer_module] DP_LPCA_prio: u1: 0.349100, u2: 0.349100, u3: 0.349100, u4:
 
 INFO  [mixer_module] DP_LPCA_prio time: 354
 ```
+
+ToDo: delete inital of A b h

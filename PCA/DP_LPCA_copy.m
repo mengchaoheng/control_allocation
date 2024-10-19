@@ -68,12 +68,11 @@ lambda=0;
 
 %Check to see if yd == 0
 %  May want to adjust the tolerance to improve numerics of later steps
-if (all(abs(yd) < eps))    %yd = 0 ==> u=0
+if (all(abs(yd) < eps))    % higher + yd = 0 ==> u=0
     errout = -1;
     u = zeros(m,1);
     return;
 end
-
 %Construct an LP using scaling parameter to enforce direction preserving
 A = [B -yd];
 b = m_higher-B*uMin;
@@ -102,7 +101,7 @@ if itlim<=0
 end
 if any(inB1>(m+1))
     errout = -2;
-    disp('No Initial Feasible Solution found');
+    disp('No Initial Feasible Solution found');% m_higher unattainable
 end
 	if errsimp
 	    errout = -1;
@@ -134,7 +133,7 @@ else  % No Error continue to solve problem
     end
 	if errsimp
 	    errout = 1;
-		disp('Solver error');
+		disp('Solver error'); % m_higher attainable and yd=0
     end
     
 end

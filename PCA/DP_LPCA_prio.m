@@ -40,7 +40,7 @@ lambda=0;
 
 %Check to see if m_lower == 0
 %  May want to adjust the tolerance to improve numerics of later steps
-if (all(abs(m_lower) < eps))    %m_lower = 0 ==> u=0
+if (all(abs(m_lower+m_higher) < eps))    %m_lower = 0 ==> u=0
     errout = -1;
     u = zeros(m,1);
     return;

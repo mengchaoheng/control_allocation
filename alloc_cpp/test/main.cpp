@@ -104,7 +104,7 @@ int main() {
     // main loop
     for(int i=0;i<num;i++)
 	{
-        float m_higher[3]={0.0,  0.0,  60.0f}; // 
+        float m_higher[3]={0.0,  0.0,  80.0f}; // 
         float yd[3]={(float) data[i][0],  (float) data[i][1],   (float) data[i][2]};
         float y_all[3]={(float) data[i][0]+m_higher[0],  (float) data[i][1]+m_higher[1],   (float) data[i][2]+m_higher[2]};
         // float yd[3]={1.8729,  -3.2655,   0.1279}; // for test
@@ -192,15 +192,23 @@ int main() {
         // }
         // std::cout << "]" << std::endl;
         //========================DP_LPCA_prio=============================
-        float u5[4];int err5=0;float rho5=0;float u5_tmp[4];
+        float u5[4];int err5=0;float rho5=0;float u5_tmp[4]; 
+	    // float m_lower[3]={30.0f,  0.0f,   -0.0f};
+        float u6[4];int err6=0;float rho6=0;float u6_tmp[4]; float m_tmp[3]={0.0,  0.0,  0.0f};
         start = std::chrono::high_resolution_clock::now();
-        Allocator.DP_LPCA_prio(m_higher,yd, u5_tmp, err5, rho5);  
-        Allocator.restoring(u5_tmp,u5);
+        Allocator.DP_LPCA_copy(m_higher,yd, u5_tmp, err5, rho5); 
+        if (err5<0){
+            Allocator.DP_LPCA_copy(m_tmp,m_higher, u6_tmp, err6, rho6); 
+            Allocator.restoring(u6_tmp,u5);
+        }else{
+            Allocator.restoring(u5_tmp,u5);
+        }
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
         total_elapsed5 += elapsed.count();
         // std::cout << "Allocator.DP_LPCA execution time: " << elapsed.count() << "s\n";
         // std::cout << "Allocator.err5: " << err5 << "\n";
+        // std::cout << "Allocator.err6: " << err6 << "\n";
         // std::cout << "u5: [";
         // for (size_t i = 0; i < 4; ++i) {
         //     std::cout << u5[i];
@@ -222,7 +230,7 @@ int main() {
     std::cout << "Allocator.DPscaled_LPCA Average execution time: " << average_elapsed2 << "s" << std::endl;
     double average_elapsed3 = total_elapsed3 / num;
     std::cout << "Allocator.DP_LPCA Average execution time: " << average_elapsed3 << "s" << std::endl;
-    double average_elapsed4 = total_elapsed3 / num;
+    double average_elapsed4 = total_elapsed4 / num;
     std::cout << "allocator_dir_LPwrap_4 Average execution time: " << average_elapsed4 << "s" << std::endl;
     double average_elapsed5 = total_elapsed5 / num;
     std::cout << "Allocator.DP_LPCA_prio Average execution time: " << average_elapsed5 << "s" << std::endl;

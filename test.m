@@ -29,7 +29,7 @@ B=I\[-l1     0       l1     0;
 umin=ones(m,1)*(-20)*pi/180;
 umax=ones(m,1)*20*pi/180;
 plim=[umin umax];
-q=vview(B,plim,pinv(B))
+% q=vview(B,plim,pinv(B))
 % run Generate_input_data;
 load 'input.mat'; % get v and the len_command_px4 (len_command_px4 is size of command_px4, which come from flght log data)
 [~,N]=size(v);
@@ -98,7 +98,7 @@ for idx=1:N  % or x:N for debug
     % x_LPwrap1(:,idx) =restoring(B,u,umin,umax);
 
 
-    [u, ~,~] = DP_LPCA_prio(m_higher,v(:,idx),B,umin,umax,100);
+    [u, ~,~] = DP_LPCA_prio1(m_higher,v(:,idx),B,umin,umax,100);
     u=min(max(u, umin), umax);
     x_PCA(:,idx) =restoring_cpp(B,u,umin,umax);
 
@@ -164,8 +164,8 @@ alloc_cpp_output = readmatrix('output.csv')';% or delete this line to just compa
 command_px4=v(:,1:len_command_px4);
 % just use the flight data to compare.
 
-% x1=alloc_cpp_output(:,1:len_command_px4); % or x_xxx above
-x1=x_LPwrap(:,1:len_command_px4);
+x1=alloc_cpp_output(:,1:len_command_px4); % or x_xxx above
+% x1=x_LPwrap(:,1:len_command_px4);
 x2=x_PCA(:,1:len_command_px4);
 
 % actual moments produced. The B matrix have to be the same.

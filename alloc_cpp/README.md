@@ -50,10 +50,13 @@ Allocator.DP_LPCA Average execution time: 1.25631e-06s
 allocator_dir_LPwrap_4 Average execution time: 1.25631e-06s
 Allocator.DP_LPCA_prio Average execution time: 1.25487e-06s
 
-# DP_LPCA and DP_LPCA_prio run restoring remove restoring
+# DP_LPCA and DP_LPCA_prio DPscaled_LPCA  remove restoring
 Allocator.DPscaled_LPCA Average execution time: 6.29866e-07s
 Allocator.DP_LPCA Average execution time: 1.12595e-06s
 Allocator.DP_LPCA_prio Average execution time: 1.11555e-06s
+
+# add a higher unattainable for prio under restoring
+Allocator.DP_LPCA_prio Average execution time: 1.68265e-06s
 ```
 
 ### Running on pixhawk

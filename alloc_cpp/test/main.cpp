@@ -104,7 +104,7 @@ int main() {
     // main loop
     for(int i=0;i<num;i++)
 	{
-        float m_higher[3]={0.0,  0.0,  10.0f}; // 
+        float m_higher[3]={0.0,  0.0,  60.0f}; // 
         float yd[3]={(float) data[i][0],  (float) data[i][1],   (float) data[i][2]};
         float y_all[3]={(float) data[i][0]+m_higher[0],  (float) data[i][1]+m_higher[1],   (float) data[i][2]+m_higher[2]};
         // float yd[3]={1.8729,  -3.2655,   0.1279}; // for test

@@ -1621,24 +1621,25 @@ public:
             float temp=0;
             for(int j=0; j<DP_LPCA_problem.n-1; ++j)
             {
-                DP_LPCA_problem.A[i][j] = this->aircraft.controlEffectMatrix[i][j];
+                // DP_LPCA_problem.A[i][j] = this->aircraft.controlEffectMatrix[i][j];
                 temp += -this->aircraft.controlEffectMatrix[i][j]*this->aircraft.lowerLimits[j];
             }
             DP_LPCA_problem.A[i][DP_LPCA_problem.n-1] = -input_lower[i];
             this->generalizedMoment[i] = input_lower[i]; // just record.
             DP_LPCA_problem.b[i] = input_higher[i]+temp;
         }
-        for(int i=0; i<DP_LPCA_problem.n-1; ++i)
-        {
-            DP_LPCA_problem.h[i] = this->aircraft.upperLimits[i]-this->aircraft.lowerLimits[i];
-        }
+        // for(int i=0; i<DP_LPCA_problem.n-1; ++i)
+        // {
+        //     DP_LPCA_problem.h[i] = this->aircraft.upperLimits[i]-this->aircraft.lowerLimits[i];
+        // }
         // update sb(since b is update) Ai bi hi every time
         for(int i=0; i<DP_LPCA_problem.m; ++i)
         {
-            for(int j=0; j<DP_LPCA_problem.n; ++j)
-            {
-                Pre_DP_LPCA_problem.A[i][j] = DP_LPCA_problem.A[i][j];
-            }
+            // for(int j=0; j<DP_LPCA_problem.n; ++j)
+            // {
+            //     Pre_DP_LPCA_problem.A[i][j] = DP_LPCA_problem.A[i][j];
+            // }
+            Pre_DP_LPCA_problem.A[i][DP_LPCA_problem.n-1] = DP_LPCA_problem.A[i][DP_LPCA_problem.n-1];
             Pre_DP_LPCA_problem.b[i] = DP_LPCA_problem.b[i]; // the same as DP_LPCA_problem
 
         }
@@ -1646,10 +1647,10 @@ public:
         {
             Pre_DP_LPCA_problem.A[i][i + DP_LPCA_problem.n] = (DP_LPCA_problem.b[i] > 0) ? 1 : -1; // sb = 2*(b > 0)-1; Ai = [A diag(sb)]; 
         }
-        for(int i=0; i<DP_LPCA_problem.n; ++i)
-        {
-            Pre_DP_LPCA_problem.h[i] = DP_LPCA_problem.h[i];
-        }
+        // for(int i=0; i<DP_LPCA_problem.n; ++i)
+        // {
+        //     Pre_DP_LPCA_problem.h[i] = DP_LPCA_problem.h[i];
+        // }
         for(int i=0; i<DP_LPCA_problem.m; ++i)
         {
             Pre_DP_LPCA_problem.h[i+DP_LPCA_problem.n] = 2*fabs(DP_LPCA_problem.b[i]);

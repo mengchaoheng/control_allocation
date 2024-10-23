@@ -39,7 +39,7 @@ imax = 100;	     % no of iterations
 % then we can set lambda = 1/tol.
 %% simulate flight process   
 m1=[0.8;0.0;0.0]; % [0;0;0.2]; or [0;0;0.5]; % higher
-m2=[-0.6;0.0;0.0];% [0.1;0.1;-0.4]; or [0.1;0.1;0.4]; % lower
+m2=[-0.0;0.0;0.0];% [0.1;0.1;-0.4]; or [0.1;0.1;0.4]; % lower
 disp('原问题解：');
 % tic;
 [u, errout, lambda] = DP_LPCA_copy(m1,m2,B,umin,umax,100)

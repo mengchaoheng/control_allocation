@@ -39,7 +39,7 @@ imax = 100;	     % no of iterations
 % then we can set lambda = 1/tol.
 %% simulate flight process   
 m1=[0.8;0.0;0.0]; % [0;0;0.2]; or [0;0;0.5]; % higher
-m2=[-0.0;0.0;0.0];% [0.1;0.1;-0.4]; or [0.1;0.1;0.4]; % lower
+m2=[-0.5;0.1;0.0];% [0.1;0.1;-0.4]; or [0.1;0.1;0.4]; % lower
 disp('原问题解：');
 % tic;
 [u, errout, lambda] = DP_LPCA_copy(m1,m2,B,umin,umax,100)
@@ -51,7 +51,7 @@ if(errout<0)
     % 构造新问题
     disp('errout==-2无解，即m1+m2不可达且m1不可达');% 不可通过单独收缩m2实现
     disp('or errout==-1 m2=0');% 
-    [u1, errout1, lambda1] = DP_LPCA_copy([0;0;0],m1,B,umin,umax,100)
+    [u1, errout1, lambda1] = DP_LPCA_copy([0;0;0],m1,B,umin,umax,100) % or for m1+m2
     u1=restoring_cpp(B,u1,umin,umax)
     m_real1=B*u1
     m_real1/lambda1

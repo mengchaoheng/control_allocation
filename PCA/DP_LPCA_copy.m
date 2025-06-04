@@ -68,7 +68,7 @@ lambda=0;
 
 %Check to see if yd == 0
 %  May want to adjust the tolerance to improve numerics of later steps
-if (all(abs(yd) < eps))    % higher + yd = 0 ==> u=0
+if (all(abs(yd) < eps))    %  yd = 0 ==> u=0
     errout = -1;
     u = zeros(m,1);
     return;

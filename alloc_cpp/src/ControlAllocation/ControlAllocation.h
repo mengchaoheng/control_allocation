@@ -1639,7 +1639,6 @@ public:
             {
                 Pre_DP_LPCA_problem.A[i][j] = DP_LPCA_problem.A[i][j];
             }
-            // Pre_DP_LPCA_problem.A[i][DP_LPCA_problem.n-1] = DP_LPCA_problem.A[i][DP_LPCA_problem.n-1];
             Pre_DP_LPCA_problem.b[i] = DP_LPCA_problem.b[i]; // the same as DP_LPCA_problem
 
         }

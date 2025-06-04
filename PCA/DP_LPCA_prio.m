@@ -5,8 +5,8 @@ function [u, errout,lambda] = DP_LPCA_prio(m_higher,m_lower,B,uMin,uMax,itlim)
 if(errout<0)
     % 构造新问题
     % disp('errout==-2无解，即m1+m2不可达且m1不可达');% 不可通过单独收缩m2实现
-    % disp('or errout==-1 m2=0');% 
-    [u, errout, lambda] = DP_LPCA_copy(zeros(k,1),m_higher,B,uMin,uMax,itlim);
+    % disp('or errout==-1 m2=0');% 因为DP_LPCA_copy检查的是y_d（m_lower）是否为零。
+    [u, errout, lambda] = DP_LPCA_copy(zeros(k,1),m_higher,B,uMin,uMax,itlim); %第二个参数取m_higher或者m_higher+m_lower
 % else
     % disp('有解，m1可达或者m1+m2可达');
     % disp('原问题解产生的力矩总是满足要求');

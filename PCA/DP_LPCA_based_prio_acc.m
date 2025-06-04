@@ -38,8 +38,8 @@ imax = 100;	     % no of iterations
 % tol = 1e-7;
 % then we can set lambda = 1/tol.
 %% simulate flight process   
-m1=[0.6;0.6;0.1]; % [0;0;0.2]; or [0;0;0.5]; % higher
-m2=[0.0;0.0;0.2];% [0.1;0.1;-0.4]; or [0.1;0.1;0.4]; % lower
+m1=[0.1;0.1;0.0]; % [0;0;0.2]; or [0;0;0.5]; % higher
+m2=[0.0;0.0;0.0];% [0.1;0.1;-0.4]; or [0.1;0.1;0.4]; % lower
 disp('原问题解：');
 % tic;
 [u, errout, lambda] = DP_LPCA_copy1(m1,m2,B,umin,umax,100)
@@ -50,3 +50,7 @@ add=m1+m2
 % not work
 
 
+% when m1_higher is not attainable, No Initial Feasible Solution found,
+% resukt is error.
+
+% Or when m2=0, Solution is unbounded, Solver error.

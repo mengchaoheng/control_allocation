@@ -38,29 +38,27 @@ imax = 100;	     % no of iterations
 % tol = 1e-7;
 % then we can set lambda = 1/tol.
 %% simulate flight process   
-m1=[0.8;0.0;0.0]; % [0;0;0.2]; or [0;0;0.5]; % higher
-m2=[-0.5;0.1;0.0];% [0.1;0.1;-0.4]; or [0.1;0.1;0.4]; % lower
+m1=[0.2;0.0;0.0]; % [0;0;0.2]; or [0;0;0.5]; % higher
+m2=[-0;0.4;0.2];% [0.1;0.1;-0.4]; or [0.1;0.1;0.4]; % lower
 disp('原问题解：');
 % tic;
 [u, errout, lambda] = DP_LPCA_copy(m1,m2,B,umin,umax,100)
 % toc;
-u=restoring_cpp(B,u,umin,umax)
-B*u
-% B*u_rest-B*u
 if(errout<0)
     % 构造新问题
-    disp('errout==-2无解，即m1+m2不可达且m1不可达');% 不可通过单独收缩m2实现
-    disp('or errout==-1 m2=0');% 
-    [u1, errout1, lambda1] = DP_LPCA_copy([0;0;0],m1,B,umin,umax,100) % or for m1+m2
+    disp('errout==-2无解，即m1+m2不可达且m1不可达');% 不可通过单独收缩m2实现.此时运行1.5个DP_LPCA_copy，因为第一个只运行了一半，到No Initial Feasible Solution found 即 m_higher unattainable
+    disp('or errout==-1 m2=0');% m2=0是直接退出第一个DP_LPCA_copy，此时运行一个DP_LPCA_copy
+    [u1, errout1, lambda1] = DP_LPCA_copy([0;0;0],m1+m2,B,umin,umax,100) % second pram is m1 or  m1+m2
     u1=restoring_cpp(B,u1,umin,umax)
     m_real1=B*u1
-    m_real1/lambda1
+    (m1+m2)*lambda1
 else
-    disp('有解，m1可达或者m1+m2可达');
-    % disp('原问题解产生的力矩总是满足要求');
-    % m_real=B*u
-    % disp('解统一表达式是m1+lambda*m2');
-    % m1+lambda*m2
+    disp('有解，m1可达或者m1+m2可达'); %运行一个DP_LPCA_copy的时间
+    u=restoring_cpp(B,u,umin,umax) % 
+    disp('原问题解产生的力矩总是满足要求');
+    m_real=B*u
+    disp('解统一表达式是m1+lambda*m2');
+    m1+lambda*m2
     % if(lambda<1)
     %     disp('m1可达（无论m1+m2取何值总能有解），但lamb<1表示m1+m2不可达');
     %     disp('解是m1+lambda*m2:');

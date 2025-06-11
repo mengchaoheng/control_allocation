@@ -8,8 +8,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # 设置编译器选项（包括-O3优化）
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 
+# 原生 ARM64 编译​（移除 -march=native 等标志）
 # 添加编译器标志以启用SIMD指令集
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+# ✅ 安全：仅 Apple 平台生效
+if(APPLE)
+    set(CMAKE_OSX_ARCHITECTURES "arm64")
+endif()
 
 # 添加头文件搜索路径
 include_directories(${CMAKE_SOURCE_DIR}/alglib)

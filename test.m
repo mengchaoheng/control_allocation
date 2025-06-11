@@ -3,6 +3,13 @@ close all;
 addpath(genpath(pwd))
 
 %% setup aircraft and load input data
+% 行满秩时pinv(B)=The Moore–Penrose Pseudo-inverse
+	% // If B is full raw rank, The Moore–Penrose Pseudo-inverse B^+= B^T (B B^T)^{-1},since
+	% // B=K*P, K=I\diag([l1 l1 l2])k, P=[-1     0     1     0; 0    -1     0     1; 1     1     1     1];   K=diag([ k*l1/I_x  k*l1/I_y  k*l2/I_z  ])
+    %     // B^{\dagger} = P^\top K K^{-1} (P P^\top)^{-1} K^{-1} = P^\top (P P^\top)^{-1} K^{-1}=P^{\dagger} K^{-1}
+	% // P^{\dagger}=[-0.5000   -0.0000    0.2500;0   -0.5000    0.2500;0.5000   -0.0000    0.2500;0    0.5000    0.2500]
+	% // B^{\dagger}=P^{\dagger} K^{-1}=[-0.5000   -0.0000    0.2500;0   -0.5000    0.2500;0.5000   -0.0000    0.2500;0    0.5000    0.2500]*diag([ I_x/(k*l1)  I_y/(k*l1)  I_z/(k*l2)  ])
+
 
 l1=0.167;l2=0.069;k_v=3;
 I_x=0.01149;
@@ -13,6 +20,11 @@ I=[I_x 0 0;0 I_y 0;0 0 I_z];
 B=I\[-l1     0       l1     0;
      0      -l1     0       l1;
      l2    l2    l2    l2]*k_v;
+% B=I\diag([l1 l1 l2])[-1     0     1     0;
+%                       0    -1     0     1;
+%                       1     1     1     1]*k;
+% 
+ % B^+= B^T (B B^T)^{-1}
 %    1X
 % 4     2Y
 %    3

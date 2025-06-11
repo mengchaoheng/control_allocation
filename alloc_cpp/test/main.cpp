@@ -219,11 +219,12 @@ int main() {
         start = std::chrono::high_resolution_clock::now();
         Allocator.DP_LPCA_copy(m_higher,yd, u5_tmp, err5, rho5); 
         if (err5<0){
-            std::cout << "Allocator.err5: " << err5 << "\n";
+            // std::cout << "Allocator.err5: " << err5 << "\n";
             Allocator.DP_LPCA_copy(m_tmp,m_higher, u6_tmp, err6, rho6); 
             Allocator.restoring(u6_tmp,u5);
         }else{
             Allocator.restoring(u5_tmp,u5);
+            // std::cout << "Allocator.err5: " << err5 << "\n";
         }
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;

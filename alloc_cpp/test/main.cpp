@@ -109,14 +109,35 @@ int main() {
         float y_all[3]={(float) data[i][0]+m_higher[0],  (float) data[i][1]+m_higher[1],   (float) data[i][2]+m_higher[2]};
         // float yd[3]={1.8729,  -3.2655,   0.1279}; // for test
 
-        // if(i==2041) // change limits
-        // {
-        //     for (int i = 0; i < 4; ++i) {
-        //         Allocator.aircraft.upperLimits[i] = _uMax[i] - 0.000000;
-        //         Allocator.aircraft.lowerLimits[i] = _uMin[i] + 0.000000;
-        //     }
-        //         // std::cout << "]" << std::endl;
-        // }
+        // change allocator parameters
+        if(i==1000) 
+        {
+            for (int i = 0; i < 4; ++i) {
+                Allocator.aircraft.upperLimits[i] = _uMax[i] + 0.2;
+                Allocator.aircraft.lowerLimits[i] = _uMin[i] - 0.2;
+                 // update the limits
+            }
+            // update B
+            for (int i = 0; i < 3; ++i) {
+                for (int j = 0; j < 4; ++j) {
+                    Allocator.aircraft.controlEffectMatrix[i][j]= _B[i][j]*0.5;
+                }
+            }
+            Allocator.isupdate = true; // have to set isupdate to true, otherwise the Allocator will not update the B and limits.
+        }else if(i==7000){  // need to reset the Allocator parameters
+            for (int i = 0; i < 4; ++i) {
+                Allocator.aircraft.upperLimits[i] = _uMax[i];
+                Allocator.aircraft.lowerLimits[i] = _uMin[i];
+                 // update the limits
+            }
+            // update B
+            for (int i = 0; i < 3; ++i) {
+                for (int j = 0; j < 4; ++j) {
+                    Allocator.aircraft.controlEffectMatrix[i][j]= _B[i][j];
+                }
+            }
+            Allocator.isupdate = true; // have to set isupdate to true, otherwise the Allocator will not update the B and limits.
+        }
 
         //==========================allocateControl===========================
         float u1[4]; int err1=0;

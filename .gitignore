@@ -1,7 +1,7 @@
 *.DS_Store
-LP/codegen/
-PCA/codegen/
-QP/codegen/
+LP/codegen/*
+PCA/codegen/*
+QP/codegen/*
 */*.prj
 */*.mexmaca64
 *.mat

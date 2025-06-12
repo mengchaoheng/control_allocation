@@ -105,9 +105,9 @@ for idx=1:N  % or x:N for debug
     
     IN_MAT(1:3,end) = v(:,idx)+m_higher; %[ 36.8125; 0;92.9776];%
 
-    u = LPwrap(IN_MAT); % function of ACA lib
-    u=min(max(u, umin), umax);
-    x_LPwrap(:,idx) =restoring(B,u,umin,umax);
+    % u = LPwrap(IN_MAT); % function of ACA lib
+    % u=min(max(u, umin), umax);
+    % x_LPwrap(:,idx) =restoring(B,u,umin,umax);
 
 
     % [u, ~,~] = DP_LPCA_prio(m_higher,v(:,idx),B,umin,umax,100);
@@ -135,17 +135,17 @@ for idx=1:N  % or x:N for debug
     % u=min(max(u, umin), umax);
     % x_VJAwrap(:,idx) = restoring(B,u,umin,umax);
     % 
-    % u=pinv(B)*v(:,idx);
-    % u=min(max(u, umin), umax);
-    % x_inv(:,idx) = restoring(B,u,umin,umax);
+    u=pinv(B)*v(:,idx);
+    u=min(max(u, umin), umax);
+    x_inv(:,idx) = restoring(B,u,umin,umax);
     % 
     % [u,~,~] = wls_alloc(B,v(:,idx),umin,umax,Wv,Wu,ud,gam,u0,W0,imax);
     % u=min(max(u, umin), umax);
     % x_wls(:,idx) = restoring(B,u,umin,umax);
     % 
-    % u =wls_alloc_gen(B,v(:,idx),umin,umax,eye(k),eye(m),zeros(m,1),1e6,zeros(m,1),zeros(m,1),100,4);
-    % u=min(max(u, umin), umax);
-    % x_wls_gen(:,idx) = restoring(B,u,umin,umax);
+    u =wls_alloc_gen(B,v(:,idx),umin,umax,eye(k),eye(m),zeros(m,1),1e6,zeros(m,1),zeros(m,1),100,4);
+    u=min(max(u, umin), umax);
+    x_wls_gen(:,idx) = restoring(B,u,umin,umax);
     % 
     % [u,~] = dir_alloc_linprog(B,v(:,idx), umin, umax, 1e4); % LPmethod=2 and lam=1 of dir_alloc_linprog is lager but similar
     % u=min(max(u, umin), umax);
@@ -176,9 +176,10 @@ alloc_cpp_output = readmatrix('output.csv')';% or delete this line to just compa
 command_px4=v(:,1:len_command_px4);
 % just use the flight data to compare.
 
-x1=alloc_cpp_output(:,1:len_command_px4); % or x_xxx above
+x1=x_inv(:,1:len_command_px4); % or x_xxx above
 % x1=x_LPwrap(:,1:len_command_px4);
-x2=x_LPwrap(:,1:len_command_px4);
+x2=alloc_cpp_output(:,1:len_command_px4);
+% x2=x_LPwrap(:,1:len_command_px4);
 
 % actual moments produced. The B matrix have to be the same.
 U1=B*x1;

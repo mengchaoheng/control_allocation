@@ -10,6 +10,7 @@
 #include <chrono>
 
 #include "allocator_dir_LPwrap_4.h"
+#include "wls_alloc_gen.h"
 #include "rt_nonfinite.h"
 extern "C" {
     void allocator_dir_LPwrap_4(const float B[12], const float v[3],
@@ -78,7 +79,21 @@ int main() {
         _uMax[i] =  0.3491;
     }
     float yd[3]={-0.430392439767736,-0.236610246030909,-0.0936906572928623};
-    
+    float I_array4[16];
+    for (int i = 0; i < 4; ++i)
+    {
+        for (int j = 0; j < 4; ++j)
+        {
+            I_array4[i + 4*j] = (i == j) ? 1.0f : 0.0f;
+        }
+    }
+    float I_array3[9];
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            I_array3[i + 3*j] = (i == j) ? 1.0f : 0.0f;
+        }
+    }
+
 
     //飞机数据
     // 示例代码
@@ -101,6 +116,7 @@ int main() {
     double total_elapsed3 = 0.0;
     double total_elapsed4 = 0.0;
     double total_elapsed5 = 0.0;
+    double total_elapsed6 = 0.0;
     // main loop
     for(int i=0;i<num;i++)
 	{
@@ -240,10 +256,18 @@ int main() {
         //     }
         // }
         // std::cout << "]" << std::endl;
-
+        //=========================WLS_alloc_gen===========================
+        float u7[4];float gam = 1e6f; float W0[4]={0.0f, 0.0f, 0.0f, 0.0f};  float u_d[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+        start = std::chrono::high_resolution_clock::now();
+        wls_alloc_gen(_B_array, y_all, _uMin, _uMax, I_array3, I_array4,
+                   u_d, gam, u7, W0,
+                   100, 4); 
+        finish = std::chrono::high_resolution_clock::now();
+        elapsed = finish - start;
+        total_elapsed6 += elapsed.count();
         // 写入CSV文件 change to u1 u2 u3 u4 for your test.
         for (size_t i = 0; i < array_size; ++i) {
-            outFile << u5[i] << (i < array_size - 1 ? "," : "\n");
+            outFile << u7[i] << (i < array_size - 1 ? "," : "\n");
         }
     }
     // 求平均运行时间
@@ -257,6 +281,8 @@ int main() {
     std::cout << "allocator_dir_LPwrap_4 Average execution time: " << average_elapsed4 << "s" << std::endl;
     double average_elapsed5 = total_elapsed5 / num;
     std::cout << "Allocator.DP_LPCA_prio Average execution time: " << average_elapsed5 << "s" << std::endl;
+    double average_elapsed6 = total_elapsed6 / num;
+    std::cout << "wls_alloc_gen Average execution time: " << average_elapsed6 << "s" << std::endl;
     // running on M1 pro MacOS: 
     // for float m_higher[3]={0.0,  0.0,  50.0}; //   have solution, m_higher attainable or m_higher+yd attainable
     // Allocator.allocateControl Average execution time: 5.01194e-07s

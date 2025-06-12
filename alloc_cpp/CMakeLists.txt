@@ -20,7 +20,7 @@ endif()
 include_directories(${CMAKE_SOURCE_DIR}/alglib)
 include_directories(${CMAKE_SOURCE_DIR}/src/ControlAllocation) # 如果您有其他的头文件目录
 include_directories(${CMAKE_SOURCE_DIR}/src/LPwrap) # 如果您有其他的头文件目录
-
+include_directories(${CMAKE_SOURCE_DIR}/src/QP) # 如果您有其他的头文件目录
 # 查找Eigen库并包含它
 find_package(Eigen3 REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIR})
@@ -38,7 +38,7 @@ include_directories(${CMAKE_SOURCE_DIR}/matrix)
 
 
 # 添加可执行文件
-add_executable(main test/main.cpp src/LPwrap/allocator_dir_LPwrap_4.c src/LPwrap/rt_nonfinite.c)
+add_executable(main test/main.cpp src/LPwrap/allocator_dir_LPwrap_4.c src/LPwrap/rt_nonfinite.c src/QP/wls_alloc_gen.cpp)
 add_executable(alglib_based_minlp_basic test/alglib_based_minlp_basic.cpp)
 add_executable(matlab_code_gen_LPwrap_test test/matlab_code_gen_LPwrap_test.cpp src/LPwrap/allocator_dir_LPwrap_4.c src/LPwrap/rt_nonfinite.c)
 add_executable(Eingen_based_simplex test/Eingen_based_simplex.cpp src/LPwrap/allocator_dir_LPwrap_4.c src/LPwrap/rt_nonfinite.c)

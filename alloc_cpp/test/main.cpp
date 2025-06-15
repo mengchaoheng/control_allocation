@@ -231,13 +231,13 @@ int main() {
         //========================DP_LPCA_prio=============================
         float u5[4];int err5=0;float rho5=0;float u5_tmp[4]; 
 	    // float m_lower[3]={30.0f,  0.0f,   -0.0f};
-        float u6[4];int err6=0;float rho6=0;float u6_tmp[4]; float m_tmp[3]={0.0,  0.0,  0.0f};
+        int err51=0;float rho51=0;float u5_tmp1[4]; float m_tmp[3]={0.0,  0.0,  0.0f};
         start = std::chrono::high_resolution_clock::now();
         Allocator.DP_LPCA_copy(m_higher,yd, u5_tmp, err5, rho5); 
         if (err5<0){
             // std::cout << "Allocator.err5: " << err5 << "\n";
-            Allocator.DP_LPCA_copy(m_tmp,m_higher, u6_tmp, err6, rho6); 
-            Allocator.restoring(u6_tmp,u5);
+            Allocator.DP_LPCA_copy(m_tmp,m_higher, u5_tmp1, err51, rho51); 
+            Allocator.restoring(u5_tmp1,u5);
         }else{
             Allocator.restoring(u5_tmp,u5);
             // std::cout << "Allocator.err5: " << err5 << "\n";
@@ -247,7 +247,7 @@ int main() {
         total_elapsed5 += elapsed.count();
         // std::cout << "Allocator.DP_LPCA execution time: " << elapsed.count() << "s\n";
         // std::cout << "Allocator.err5: " << err5 << "\n";
-        // std::cout << "Allocator.err6: " << err6 << "\n";
+        // std::cout << "Allocator.err51: " << err51 << "\n";
         // std::cout << "u5: [";
         // for (size_t i = 0; i < 4; ++i) {
         //     std::cout << u5[i];
@@ -257,17 +257,17 @@ int main() {
         // }
         // std::cout << "]" << std::endl;
         //=========================WLS_alloc_gen===========================
-        float u7[4];float gam = 1e6f; float W0[4]={0.0f, 0.0f, 0.0f, 0.0f};  float u_d[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+        float u6[4];float gam = 1e6f; float W0[4]={0.0f, 0.0f, 0.0f, 0.0f};  float u_d[4] = {0.0f, 0.0f, 0.0f, 0.0f};
         start = std::chrono::high_resolution_clock::now();
         wls_alloc_gen(_B_array, y_all, _uMin, _uMax, I_array3, I_array4,
-                   u_d, gam, u7, W0,
+                   u_d, gam, u6, W0,
                    100, 4); 
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
         total_elapsed6 += elapsed.count();
         // 写入CSV文件 change to u1 u2 u3 u4 for your test.
         for (size_t i = 0; i < array_size; ++i) {
-            outFile << u7[i] << (i < array_size - 1 ? "," : "\n");
+            outFile << u5[i] << (i < array_size - 1 ? "," : "\n");
         }
     }
     // 求平均运行时间

@@ -58,6 +58,15 @@ Allocator.DP_LPCA_prio Average execution time: 1.11555e-06s
 # add a higher unattainable for prio under restoring
 Allocator.DP_LPCA_prio Average execution time: 2.01469e-06s
 ```
+Update: add an update fuction, test result:
+```sh
+Allocator.allocateControl Average execution time: 4.22216e-07s
+Allocator.DPscaled_LPCA Average execution time: 6.1186e-07s
+Allocator.DP_LPCA Average execution time: 1.22761e-06s
+allocator_dir_LPwrap_4 Average execution time: 8.1512e-07s
+Allocator.DP_LPCA_prio Average execution time: 1.23046e-06s
+wls_alloc_gen Average execution time: 5.63349e-07s
+```
 
 ### Running on pixhawk
 

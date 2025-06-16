@@ -209,17 +209,27 @@ int main() {
         //     }
         // }
         // std::cout << "]" << std::endl;
-        //========================allocator_dir_LPwrap_4 (generate by matlab) =============================
-        float u4[4]={ 0.0,  0.0,   0.0,   0.0};
-        float z_allocator_dir_LPwrap_4= 0.0;
-        unsigned int iters_allocator_dir_LPwrap_4= 0;
+        
+        //========================DP_LPCA_prio=============================
+        float u4[4];int err4=0;float rho4=0;float u4_tmp[4]; 
+	    // float m_lower[3]={30.0f,  0.0f,   -0.0f};
+        int err41=0;float rho41=0;float u4_tmp1[4]; float m_tmp[3]={0.0,  0.0,  0.0f};
         start = std::chrono::high_resolution_clock::now();
-        allocator_dir_LPwrap_4(_B_array, y_all, _uMin, _uMax, u4, &z_allocator_dir_LPwrap_4, &iters_allocator_dir_LPwrap_4); // allocator_dir_LPwrap_4 execution time: 7.08e-07s
+        Allocator.DP_LPCA_copy(m_higher,yd, u4_tmp, err4, rho4); 
+        if (err4<0){
+            // std::cout << "Allocator.err4: " << err4 << "\n";
+            Allocator.DP_LPCA_copy(m_tmp,m_higher, u4_tmp1, err41, rho41); 
+            Allocator.restoring(u4_tmp1,u4);
+        }else{
+            Allocator.restoring(u4_tmp,u4);
+            // std::cout << "Allocator.err4: " << err4 << "\n";
+        }
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
         total_elapsed4 += elapsed.count();
-        // std::cout << "allocator_dir_LPwrap_4 execution time: " << elapsed.count() << "s\n";
-        // // 使用循环打印数组元素
+        // std::cout << "Allocator.DP_LPCA execution time: " << elapsed.count() << "s\n";
+        // std::cout << "Allocator.err4: " << err4 << "\n";
+        // std::cout << "Allocator.err41: " << err41 << "\n";
         // std::cout << "u4: [";
         // for (size_t i = 0; i < 4; ++i) {
         //     std::cout << u4[i];
@@ -228,26 +238,17 @@ int main() {
         //     }
         // }
         // std::cout << "]" << std::endl;
-        //========================DP_LPCA_prio=============================
-        float u5[4];int err5=0;float rho5=0;float u5_tmp[4]; 
-	    // float m_lower[3]={30.0f,  0.0f,   -0.0f};
-        int err51=0;float rho51=0;float u5_tmp1[4]; float m_tmp[3]={0.0,  0.0,  0.0f};
+        //========================allocator_dir_LPwrap_4 (generate by matlab) =============================
+        float u5[4]={ 0.0,  0.0,   0.0,   0.0};
+        float z_allocator_dir_LPwrap_4= 0.0;
+        unsigned int iters_allocator_dir_LPwrap_4= 0;
         start = std::chrono::high_resolution_clock::now();
-        Allocator.DP_LPCA_copy(m_higher,yd, u5_tmp, err5, rho5); 
-        if (err5<0){
-            // std::cout << "Allocator.err5: " << err5 << "\n";
-            Allocator.DP_LPCA_copy(m_tmp,m_higher, u5_tmp1, err51, rho51); 
-            Allocator.restoring(u5_tmp1,u5);
-        }else{
-            Allocator.restoring(u5_tmp,u5);
-            // std::cout << "Allocator.err5: " << err5 << "\n";
-        }
+        allocator_dir_LPwrap_4(_B_array, y_all, _uMin, _uMax, u5, &z_allocator_dir_LPwrap_4, &iters_allocator_dir_LPwrap_4); // allocator_dir_LPwrap_4 execution time: 7.08e-07s
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
         total_elapsed5 += elapsed.count();
-        // std::cout << "Allocator.DP_LPCA execution time: " << elapsed.count() << "s\n";
-        // std::cout << "Allocator.err5: " << err5 << "\n";
-        // std::cout << "Allocator.err51: " << err51 << "\n";
+        // std::cout << "allocator_dir_LPwrap_4 execution time: " << elapsed.count() << "s\n";
+        // // 使用循环打印数组元素
         // std::cout << "u5: [";
         // for (size_t i = 0; i < 4; ++i) {
         //     std::cout << u5[i];
@@ -267,7 +268,7 @@ int main() {
         total_elapsed6 += elapsed.count();
         // 写入CSV文件 change to u1 u2 u3 u4 for your test.
         for (size_t i = 0; i < array_size; ++i) {
-            outFile << u5[i] << (i < array_size - 1 ? "," : "\n");
+            outFile << u6[i] << (i < array_size - 1 ? "," : "\n");
         }
     }
     // 求平均运行时间
@@ -278,9 +279,9 @@ int main() {
     double average_elapsed3 = total_elapsed3 / num;
     std::cout << "Allocator.DP_LPCA Average execution time: " << average_elapsed3 << "s" << std::endl;
     double average_elapsed4 = total_elapsed4 / num;
-    std::cout << "allocator_dir_LPwrap_4 Average execution time: " << average_elapsed4 << "s" << std::endl;
+    std::cout << "Allocator.DP_LPCA_prio Average execution time: " << average_elapsed4 << "s" << std::endl;
     double average_elapsed5 = total_elapsed5 / num;
-    std::cout << "Allocator.DP_LPCA_prio Average execution time: " << average_elapsed5 << "s" << std::endl;
+    std::cout << "allocator_dir_LPwrap_4 Average execution time: " << average_elapsed5 << "s" << std::endl;
     double average_elapsed6 = total_elapsed6 / num;
     std::cout << "wls_alloc_gen Average execution time: " << average_elapsed6 << "s" << std::endl;
     // running on M1 pro MacOS: 

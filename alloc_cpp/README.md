@@ -169,4 +169,15 @@ INFO  [mixer_module] DP_LPCA_prio: u1: 0.349100, u2: 0.349100, u3: 0.349100, u4:
 INFO  [mixer_module] DP_LPCA_prio time: 354
 ```
 
-ToDo: delete inital of A b h
+add test:
+```sh
+INFO  [mixer_module] allocator test running time: 41us 
+
+INFO  [mixer_module] DPscaled_LPCA test running time: 74us 
+
+INFO  [mixer_module] DP_LPCA test running time: 178us 
+
+INFO  [mixer_module] DP_LPCA_prio test running time: 178us 
+
+INFO  [mixer_module] WLS test running time: 182us 
+```

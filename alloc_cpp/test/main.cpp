@@ -172,16 +172,15 @@ int main() {
         //     }
         // }
         // std::cout << "]" << std::endl;
-        //=========================DPscaled_LPCA=======have problem=====================INFO  [mixer_module] dir_alloc_sim time: 16
+        //========================DP_LPCA=============================
         float u2[4];int err2=0;float rho2=0;float u2_tmp[4];
         start = std::chrono::high_resolution_clock::now();
-        Allocator.DPscaled_LPCA(y_all, u2_tmp, err2, rho2);  
+        Allocator.DP_LPCA(y_all, u2_tmp, err2, rho2);  
         Allocator.restoring(u2_tmp,u2);
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
         total_elapsed2 += elapsed.count();
-        // std::cout << "DPscaled_LPCA rho: "<< rho <<std::endl; 
-        // std::cout << "Allocator.DPscaled_LPCA execution time: " << elapsed.count() << "s\n";
+        // std::cout << "Allocator.DP_LPCA execution time: " << elapsed.count() << "s\n";
         // std::cout << "Allocator.err2: " << err2 << "\n";
         // std::cout << "u2: [";
         // for (size_t i = 0; i < 4; ++i) {
@@ -191,15 +190,16 @@ int main() {
         //     }
         // }
         // std::cout << "]" << std::endl;
-        //========================DP_LPCA=============================
+        //=========================DPscaled_LPCA=======have problem=====================INFO  [mixer_module] dir_alloc_sim time: 16
         float u3[4];int err3=0;float rho3=0;float u3_tmp[4];
         start = std::chrono::high_resolution_clock::now();
-        Allocator.DP_LPCA(y_all, u3_tmp, err3, rho3);  
+        Allocator.DPscaled_LPCA(y_all, u3_tmp, err3, rho3);  
         Allocator.restoring(u3_tmp,u3);
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
         total_elapsed3 += elapsed.count();
-        // std::cout << "Allocator.DP_LPCA execution time: " << elapsed.count() << "s\n";
+        // std::cout << "DPscaled_LPCA rho: "<< rho <<std::endl; 
+        // std::cout << "Allocator.DPscaled_LPCA execution time: " << elapsed.count() << "s\n";
         // std::cout << "Allocator.err3: " << err3 << "\n";
         // std::cout << "u3: [";
         // for (size_t i = 0; i < 4; ++i) {
@@ -209,7 +209,6 @@ int main() {
         //     }
         // }
         // std::cout << "]" << std::endl;
-        
         //========================DP_LPCA_prio=============================
         float u4[4];int err4=0;float rho4=0;float u4_tmp[4]; 
 	    // float m_lower[3]={30.0f,  0.0f,   -0.0f};
@@ -268,16 +267,16 @@ int main() {
         total_elapsed6 += elapsed.count();
         // 写入CSV文件 change to u1 u2 u3 u4 for your test.
         for (size_t i = 0; i < array_size; ++i) {
-            outFile << u6[i] << (i < array_size - 1 ? "," : "\n");
+            outFile << u4[i] << (i < array_size - 1 ? "," : "\n");
         }
     }
     // 求平均运行时间
     double average_elapsed1 = total_elapsed1 / num;
     std::cout << "Allocator.allocateControl Average execution time: " << average_elapsed1 << "s" << std::endl;
     double average_elapsed2 = total_elapsed2 / num;
-    std::cout << "Allocator.DPscaled_LPCA Average execution time: " << average_elapsed2 << "s" << std::endl;
+    std::cout << "Allocator.DP_LPCA Average execution time: " << average_elapsed2 << "s" << std::endl;
     double average_elapsed3 = total_elapsed3 / num;
-    std::cout << "Allocator.DP_LPCA Average execution time: " << average_elapsed3 << "s" << std::endl;
+    std::cout << "Allocator.DPscaled_LPCA Average execution time: " << average_elapsed3 << "s" << std::endl;
     double average_elapsed4 = total_elapsed4 / num;
     std::cout << "Allocator.DP_LPCA_prio Average execution time: " << average_elapsed4 << "s" << std::endl;
     double average_elapsed5 = total_elapsed5 / num;

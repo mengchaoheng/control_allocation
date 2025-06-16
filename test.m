@@ -50,7 +50,7 @@ load 'input.mat'; % get v and the len_command_px4 (len_command_px4 is size of co
 %% setup ACA
 global NumU
 NumU=m;
-LPmethod=3; % LPmethod should be an integer between 0 and 5. when LPmethod=2 set upper of lambda to Inf can't save this method!!! but big number is the same as that method based linprog
+LPmethod=2; % LPmethod should be an integer between 0 and 5. when LPmethod=2 set upper of lambda to Inf can't save this method!!! but big number is the same as that method based linprog
 % DPscaled_LPCA的结果和restoring接近但是有细微区别，对lambda限制在0-1之间，有助于优先级的理论推导。
 INDX=ones(1,m);  % active effectors
 IN_MAT = [B     zeros(k,1)
@@ -110,9 +110,9 @@ for idx=1:N  % or x:N for debug
     % x_LPwrap(:,idx) =restoring(B,u,umin,umax);
 
 
-    % [u, ~,~] = DP_LPCA_prio(m_higher,v(:,idx),B,umin,umax,100);
-    % u=min(max(u, umin), umax);
-    % x_PCA(:,idx) =restoring_cpp(B,u,umin,umax);
+    [u, ~,~] = DP_LPCA_prio(m_higher,v(:,idx),B,umin,umax,100);
+    u=min(max(u, umin), umax);
+    x_PCA(:,idx) =restoring_cpp(B,u,umin,umax);
 
     % u = LPwrap(IN_MAT1); % incremental form. 
     % The control constraint δ ≤ δ ≤ δ must contain the origin, i.e., δ = 0
@@ -143,9 +143,9 @@ for idx=1:N  % or x:N for debug
     % u=min(max(u, umin), umax);
     % x_wls(:,idx) = restoring(B,u,umin,umax);
     % 
-    u =wls_alloc_gen(B,v(:,idx),umin,umax,eye(k),eye(m),zeros(m,1),1e6,zeros(m,1),zeros(m,1),100,4);
-    u=min(max(u, umin), umax);
-    x_wls_gen(:,idx) = restoring(B,u,umin,umax);
+    % u =wls_alloc_gen(B,v(:,idx),umin,umax,eye(k),eye(m),zeros(m,1),1e6,zeros(m,1),zeros(m,1),100,4);
+    % u=min(max(u, umin), umax);
+    % x_wls_gen(:,idx) = restoring(B,u,umin,umax);
     % 
     % [u,~] = dir_alloc_linprog(B,v(:,idx), umin, umax, 1e4); % LPmethod=2 and lam=1 of dir_alloc_linprog is lager but similar
     % u=min(max(u, umin), umax);
@@ -176,7 +176,7 @@ alloc_cpp_output = readmatrix('output.csv')';% or delete this line to just compa
 command_px4=v(:,1:len_command_px4);
 % just use the flight data to compare.
 
-x1=x_inv(:,1:len_command_px4); % or x_xxx above
+x1=x_PCA(:,1:len_command_px4); % or x_xxx above
 % x1=x_LPwrap(:,1:len_command_px4);
 x2=alloc_cpp_output(:,1:len_command_px4);
 % x2=x_LPwrap(:,1:len_command_px4);

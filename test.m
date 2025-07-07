@@ -99,11 +99,11 @@ x_dir_alloc_linprog_re=zeros(m,N);
 x_dir_alloc_linprog_re_bound=zeros(m,N);
 x_use_LP_lib=zeros(m,N);
 tic;
-m_higher=[0;0;0];
+m_higher=zeros(k,1);
 %% simulate flight process  
 for idx=1:N  % or x:N for debug
     
-    IN_MAT(1:3,end) = v(:,idx)+m_higher; %[ 36.8125; 0;92.9776];%
+    IN_MAT(1:k,end) = v(:,idx)+m_higher; %[ 36.8125; 0;92.9776];%
 
     % u = LPwrap(IN_MAT); % function of ACA lib
     % u=min(max(u, umin), umax);
@@ -196,45 +196,28 @@ tt=1:1:(len_command_px4-1);
 error1=U1-command_px4;
 error2=U2-command_px4;
 figure,
-subplot(4,1,1)
-plot(t,x1(1,:),'r-');hold on;
-plot(t,x2(1,:),'b--');hold on;
-% plot(u_t,u_px4(:,1),'g-.');hold on;
-subplot(4,1,2)
-plot(t,x1(2,:),'r-');hold on;
-plot(t,x2(2,:),'b--');hold on;
-% plot(u_t,u_px4(:,2),'g-.');hold on;
-subplot(4,1,3)
-plot(t,x1(3,:),'r-');hold on;
-plot(t,x2(3,:),'b--');hold on;
-% plot(u_t,u_px4(:,3),'g-.');hold on;
-subplot(4,1,4)
-plot(t,x1(4,:),'r-');hold on;
-plot(t,x2(4,:),'b--');hold on;
-% plot(u_t,u_px4(:,4),'g-.');hold on;
-% figure,
-% subplot(3,1,1)
-% plot(t,error1(1,:),'Color','r','LineStyle','-','Marker','+','MarkerIndices',tt);hold on;
-% plot(t,error2(1,:),'Color','b','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
-% % plot(t,error1(1,:)-error2(1,:),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
-% % plot(t,U1(1,:),'Color','b','LineStyle','-.','Marker','+','MarkerIndices',tt);hold on;
-% % plot(t,U2(1,:),'Color','g','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
-% % plot(t,command_px4(:,1),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
-% 
-% subplot(3,1,2)
-% plot(t,error1(2,:),'Color','r','LineStyle','-','Marker','+','MarkerIndices',tt);hold on;
-% plot(t,error2(2,:),'Color','b','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
-% % plot(t,error1(2,:)-error2(2,:),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
-% % plot(t,U1(2,:),'Color','b','LineStyle','-.','Marker','+','MarkerIndices',tt);hold on;
-% % plot(t,U2(2,:),'Color','g','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
-% % plot(t,command_px4(:,2),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
-% subplot(3,1,3)
-% plot(t,error1(3,:),'Color','r','LineStyle','-','Marker','+','MarkerIndices',tt);hold on;
-% plot(t,error2(3,:),'Color','b','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
-% % plot(t,error1(3,:)-error2(3,:),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
-% % plot(t,U1(3,:),'Color','b','LineStyle','-.','Marker','+','MarkerIndices',tt);hold on;
-% % plot(t,U2(3,:),'Color','g','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
-% % plot(t,command_px4(:,3),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
+for indx=1:m
+subplot(m,1,indx)
+plot(t,x1(indx,:),'r-');hold on;
+plot(t,x2(indx,:),'b--');hold on;
+% plot(u_t,u_px4(:,k),'g-.');hold on;
+end
+
+figure,
+for indx=1:k
+subplot(k,1,indx)
+plot(t,error1(indx,:),'Color','r','LineStyle','-','Marker','+','MarkerIndices',tt);hold on;
+plot(t,error2(indx,:),'Color','b','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
+end
+
+figure,
+for indx=1:k
+subplot(k,1,indx)
+plot(t,U1(indx,:),'Color','b','LineStyle','-.','Marker','+','MarkerIndices',tt);hold on;
+plot(t,U2(indx,:),'Color','g','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
+% plot(t,command_px4(:,indx),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
+end
+
 
 
 % outside_x1=alloc_cpp_output(:,len_command_px4+1:end); 

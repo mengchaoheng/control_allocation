@@ -3,7 +3,7 @@ function [u_rest] = restoring(B,u,uMin,uMax)
 % u have to be admissible
 % restoring
 % by all(abs(null(B)'*u)) < eps or norm(null(B)'*u)<100*eps or rank([B_aug v_aug]) ~= rank(B_aug)
-% for cpp is difficult to calc null(B) but we can calc 
+% for cpp is difficult to calc null(B) but we can calc orm(B*u_null)>0.00001
 % rank([B_aug v_aug]) ~= rank(B_aug)
 if(norm(null(B)'*u)<100*eps) % a=0
     % null(B)

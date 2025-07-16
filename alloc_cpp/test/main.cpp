@@ -63,6 +63,27 @@ int main() {
     
     // float _B[3][4] = { {-0.4440,0.0,0.4440,0.0}, {0.0,-0.4440,0.0,0.4440},{0.2070,0.2070,0.2070,0.2070}};
     float _B[3][4] = { {-43.6031,0.0,43.6031,0.0}, {0.0,-43.4519,0.0,43.4519},{42.5051,42.5051,42.5051,42.5051}};
+    float _I_x{0.01149f};//setting in the .sdf
+	float _I_y{0.01153f};//setting in the .sdf
+	float _I_z{0.00487f};//setting in the .sdf
+	float _L_1{0.167f}; //setting in the .sdf
+	float _L_2{0.069f}; //setting in the .sdf
+	float _k{3.0f};	// USER_OMEGA_2_F, k  =_k_cv*_k_v*_k_v, setting k in the gazebo
+
+
+	matrix::Matrix<float, 4, 3> B_inv;
+    B_inv.setZero();
+	B_inv(0, 0)=-0.5f* _I_x/(_k*_L_1);
+	B_inv(0, 2)=0.25f* _I_z/(_k*_L_2);
+
+	B_inv(1, 1)=-0.5f* _I_y/(_k*_L_1);
+	B_inv(1, 2)=0.25f* _I_z/(_k*_L_2);
+
+	B_inv(2, 0)=0.5f* _I_x/(_k*_L_1);
+	B_inv(2, 2)=0.25f* _I_z/(_k*_L_2);
+
+	B_inv(3, 1)=0.5f* _I_y/(_k*_L_1);
+	B_inv(3, 2)=0.25f* _I_z/(_k*_L_2);
     float _B_array[12];
     for (int i = 0; i < 3; i++)
     {
@@ -158,7 +179,11 @@ int main() {
         //==========================allocateControl===========================
         float u1[4]; int err1=0;
         start = std::chrono::high_resolution_clock::now();
+        // test allocateControl
         Allocator.allocateControl(y_all, u1, err1); 
+        //test inv
+        // matrix::Matrix<float, 3, 1> y_desire (y_all);
+        // matrix::Matrix<float, 4, 1> u_inv=B_inv*y_desire;
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
         total_elapsed1 += elapsed.count();
@@ -289,7 +314,8 @@ int main() {
     // Allocator.DPscaled_LPCA Average execution time: 5.95756e-07s
     // Allocator.DP_LPCA Average execution time: 1.23543e-06s
     // allocator_dir_LPwrap_4 Average execution time: 1.23543e-06s
-    // Allocator.DP_LPCA_prio Average execution time: 1.66456e-06s
+    // Allocator.DP_LPCA_prio Average execution time: 1.23973e-06s
+    // INV Average execution time: 1.82271e-08s
     // float m_higher[3]={0.0,  0.0,  150.0}; // No Initial Feasible Solution found m_higher+yd unattainable and m_higher unattainable
     // 关闭文件
     outFile.close();

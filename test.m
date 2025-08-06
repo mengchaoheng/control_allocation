@@ -176,7 +176,7 @@ alloc_cpp_output = readmatrix('output.csv')';% or delete this line to just compa
 command_px4=v(:,1:len_command_px4);
 % just use the flight data to compare.
 
-x1=x_PCA(:,1:len_command_px4); % or x_xxx above
+x1=alloc_cpp_output(:,1:len_command_px4); % or x_xxx above
 % x1=x_LPwrap(:,1:len_command_px4);
 % x2=alloc_cpp_output(:,1:len_command_px4);
 x2=x_wls(:,1:len_command_px4);

@@ -137,7 +137,7 @@ for idx=1:N  % or x:N for debug
     % 
     u=pinv(B)*v(:,idx);
     u=min(max(u, umin), umax);
-    x_inv(:,idx) = restoring(B,u,umin,umax);
+    x_inv(:,idx) = u;%restoring(B,u,umin,umax);
     % 
     % [u,~,~] = wls_alloc(B,v(:,idx),umin,umax,Wv,Wu,ud,gam,u0,W0,imax);
     % u=min(max(u, umin), umax);
@@ -178,8 +178,8 @@ command_px4=v(:,1:len_command_px4);
 
 x1=x_PCA(:,1:len_command_px4); % or x_xxx above
 % x1=x_LPwrap(:,1:len_command_px4);
-x2=alloc_cpp_output(:,1:len_command_px4);
-% x2=x_LPwrap(:,1:len_command_px4);
+% x2=alloc_cpp_output(:,1:len_command_px4);
+x2=x_inv(:,1:len_command_px4);
 
 % actual moments produced. The B matrix have to be the same.
 U1=B*x1;

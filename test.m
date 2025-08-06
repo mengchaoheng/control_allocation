@@ -135,13 +135,13 @@ for idx=1:N  % or x:N for debug
     % u=min(max(u, umin), umax);
     % x_VJAwrap(:,idx) = restoring(B,u,umin,umax);
     % 
-    u=pinv(B)*v(:,idx);
-    u=min(max(u, umin), umax);
-    x_inv(:,idx) = u;%restoring(B,u,umin,umax);
-    % 
-    % [u,~,~] = wls_alloc(B,v(:,idx),umin,umax,Wv,Wu,ud,gam,u0,W0,imax);
+    % u=pinv(B)*v(:,idx);
     % u=min(max(u, umin), umax);
-    % x_wls(:,idx) = restoring(B,u,umin,umax);
+    % x_inv(:,idx) = u;%restoring(B,u,umin,umax);
+    % 
+    [u,~,~] = wls_alloc(B,v(:,idx),umin,umax,Wv,Wu,ud,gam,u0,W0,imax);
+    u=min(max(u, umin), umax);
+    x_wls(:,idx) = u;%restoring(B,u,umin,umax);
     % 
     % u =wls_alloc_gen(B,v(:,idx),umin,umax,eye(k),eye(m),zeros(m,1),1e6,zeros(m,1),zeros(m,1),100,4);
     % u=min(max(u, umin), umax);
@@ -179,7 +179,7 @@ command_px4=v(:,1:len_command_px4);
 x1=x_PCA(:,1:len_command_px4); % or x_xxx above
 % x1=x_LPwrap(:,1:len_command_px4);
 % x2=alloc_cpp_output(:,1:len_command_px4);
-x2=x_inv(:,1:len_command_px4);
+x2=x_wls(:,1:len_command_px4);
 
 % actual moments produced. The B matrix have to be the same.
 U1=B*x1;
@@ -203,20 +203,20 @@ plot(t,x2(indx,:),'b--');hold on;
 % plot(u_t,u_px4(:,k),'g-.');hold on;
 end
 
-figure,
-for indx=1:k
-subplot(k,1,indx)
-plot(t,error1(indx,:),'Color','r','LineStyle','-','Marker','+','MarkerIndices',tt);hold on;
-plot(t,error2(indx,:),'Color','b','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
-end
-
-figure,
-for indx=1:k
-subplot(k,1,indx)
-plot(t,U1(indx,:),'Color','b','LineStyle','-.','Marker','+','MarkerIndices',tt);hold on;
-plot(t,U2(indx,:),'Color','g','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
-% plot(t,command_px4(:,indx),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
-end
+% figure,
+% for indx=1:k
+% subplot(k,1,indx)
+% plot(t,error1(indx,:),'Color','r','LineStyle','-','Marker','+','MarkerIndices',tt);hold on;
+% plot(t,error2(indx,:),'Color','b','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
+% end
+% 
+% figure,
+% for indx=1:k
+% subplot(k,1,indx)
+% plot(t,U1(indx,:),'Color','b','LineStyle','-.','Marker','+','MarkerIndices',tt);hold on;
+% plot(t,U2(indx,:),'Color','g','LineStyle','--','Marker','o','MarkerIndices',tt);hold on;
+% % plot(t,command_px4(:,indx),'Color','r','LineStyle','-','Marker','none','MarkerIndices',tt);hold on;
+% end
 
 
 

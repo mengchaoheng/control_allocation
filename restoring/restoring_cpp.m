@@ -2,7 +2,8 @@
 function [u_rest] = restoring_cpp(B,u,uMin,uMax)
 % u have to be admissible
 % restoring
-if(all(abs(u) < eps)) % a=0 
+tol=0.00001;
+if(all(abs(u) < tol)) % a=0 
     u_rest=u;
     return;
 end
@@ -23,7 +24,7 @@ u_null=pinv(B_aug)*v_aug;
 % by all(abs(null(B)'*u)) < eps or norm(null(B)'*u)<100*eps or rank([B_aug v_aug]) ~= rank(B_aug)
 % for cpp is difficult to calc null(B) but we can calc 
 % norm(B*u_null)>0.00001 where u_null=pinv(B_aug)*v_aug;
-if(norm(B*u_null)>0.00001) % a=0 
+if(norm(B*u_null)>tol) % a=0 
     % null(B)
     % null(B)'
     % null(null(B)')
@@ -45,16 +46,12 @@ K_opt=-a/(u_null'*u_null); %
 % 0<K find K_max for K*u_null in new limits
 K_max=Inf;
 for i=1:m
-
+    if(abs(u_null(i))<tol)
+        continue;
+    end
     if(u_null(i)>0)
-        if(abs(u_null(i))<eps)
-            u_null(i)=eps;
-        end
         tmp=uMax_new(i)/u_null(i);
     else
-        if(abs(u_null(i))<eps)
-            u_null(i)=-eps;
-        end
         tmp=uMin_new(i)/u_null(i);
     end
     if(tmp<K_max) % find smaller

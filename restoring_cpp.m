@@ -22,7 +22,7 @@ u_null=pinv(B_aug)*v_aug;
 % R=rank(B_aug) = k
 % by all(abs(null(B)'*u)) < eps or norm(null(B)'*u)<100*eps or rank([B_aug v_aug]) ~= rank(B_aug)
 % for cpp is difficult to calc null(B) but we can calc 
-% norm(B*u_null)>0.00001
+% norm(B*u_null)>0.00001 where u_null=pinv(B_aug)*v_aug;
 if(norm(B*u_null)>0.00001) % a=0 
     % null(B)
     % null(B)'

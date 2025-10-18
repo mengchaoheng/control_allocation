@@ -3,9 +3,7 @@
 This repository is designed for testing a new control allocation algorithm. The algorithm is developed based on simulations from the book ["aircraft control allocation"](https://github.com/mengchaoheng/aircraft-control-allocation) and the [QCAT](https://github.com/mengchaoheng/qcat) project
 
 
-The new algorithm will be used in ducted fan UAVs, but it is not limited to this application. It can be applied to any over-actuated aircraft design.. The structure of a modern flight control system is as shown below
-
-<img src="./system.png" width="60%" height="60%" />
+ 
 
 The function of control allocation is to generate control effector commands that satisfy constraints within a given moment space. Because of these constraints, only a limited set of moments can be achieved.
 

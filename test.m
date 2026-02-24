@@ -105,14 +105,14 @@ for idx=1:N  % or x:N for debug
     
     IN_MAT(1:k,end) = v(:,idx)+m_higher; %[ 36.8125; 0;92.9776];%
 
-    % u = LPwrap(IN_MAT); % function of ACA lib
-    % u=min(max(u, umin), umax);
-    % x_LPwrap(:,idx) =restoring(B,u,umin,umax);
-
-
-    [u, ~,~] = DP_LPCA_prio(m_higher,v(:,idx),B,umin,umax,100);
+    u = LPwrap(IN_MAT); % function of ACA lib
     u=min(max(u, umin), umax);
-    x_PCA(:,idx) =restoring_cpp(B,u,umin,umax);
+    x_LPwrap(:,idx) =restoring(B,u,umin,umax);
+
+
+    % [u, ~,~] = DP_LPCA_prio(m_higher,v(:,idx),B,umin,umax,100);
+    % u=min(max(u, umin), umax);
+    % x_PCA(:,idx) =restoring_cpp(B,u,umin,umax);
 
     % u = LPwrap(IN_MAT1); % incremental form. 
     % The control constraint δ ≤ δ ≤ δ must contain the origin, i.e., δ = 0
@@ -176,8 +176,8 @@ alloc_cpp_output = readmatrix('output.csv')';% or delete this line to just compa
 command_px4=v(:,1:len_command_px4);
 % just use the flight data to compare.
 
-x1=alloc_cpp_output(:,1:len_command_px4); % or x_xxx above
-% x1=x_LPwrap(:,1:len_command_px4);
+% x1=x_inv(:,1:len_command_px4); % or x_xxx above
+x1=x_LPwrap(:,1:len_command_px4);
 % x2=alloc_cpp_output(:,1:len_command_px4);
 x2=x_wls(:,1:len_command_px4);
 

@@ -9,8 +9,10 @@ set(groot, ...
     'defaultAxesLabelFontSizeMultiplier', 1, ...
     'defaultAxesTitleFontSizeMultiplier', 1);
 %% setup aircraft and load input data
-% B= [1  1 0;0 0.  1];
-B= [1  0 -0.5;0 1  -0.5];
+% B= [1  1 0;0 0  1];% yea -> No need for robust full rank
+% B= [1  0 0.5;0 -1  -0.5]; 
+% B= [1 -1 -1 -1 1 1;1 -1 1 -1 1 -1];
+B= [1 -1 -1 -1 1 1;1 1 0 -1 -1 0;1 -1 1 -1 1 -1];
 %=============================4==================================
 % l1=0.167;l2=0.069;k_v=3;
 % I_x=0.01149;
@@ -55,42 +57,37 @@ umax=ones(m,1)*0.5;
 plim=[umin umax];
 
 % run Generate_input_data;
-r_d=0.65;% determin by AS  10
+% ---- User-level design parameters ----
+r0   = 0.00;      % start radius
+r1   =  8;      % end   radius (e.g., your r_d)
+z0   = 0.00;      % start height
+z1   = 8;      % end   height
+n    = 5.0;       % desired turns
+T    = 10;       % total time duration [s]
+dt   = 0.01;     % time step
 
-dt=0.001;
-% T_len=3.65;
-T_len=3.5;
-t=0:dt:T_len;
+% ---- Derived parameters ----
+omega = 2*pi*n / T;               % angular rate so that we make n turns in T
+b     = (r1 - r0) / (2*pi*n);     % radial growth per radian
+c     = (z1 - z0) / (2*pi*n);     % axial growth per radian
+
+% ---- Trajectory generation ----
+t     = 0:dt:T;
+theta = omega * t;
+rho   = r0 + b * theta;
+x     = rho .* cos(theta);
+y     = rho .* sin(theta);
+z     = z0 + c * theta;
+
 N=size(t,2);
-% v=zeros(k,N);
-%============case
-% v(1:2,:)=r_d*[sin(2*pi*t);cos(2*pi*t)];
-a = 0;       % 起始半径 0
-b = 0.01;     % 螺距控制参数 2
-c = 0.1;    % 螺距系数 2
-theta = t*10*pi;  % 角度范围（0~10π）
-rho = a + b * theta;   % 极径方程
-x = rho .* cos(theta); % 转直角坐标x
-y = rho .* sin(theta); % 转直角坐标y
-z = c * theta;  % z轴线性增长
-v=[x;y];
-%===============df
-% a = 0;       % 起始半径 0
-% b = 0.55;     % 螺距控制参数 2
-% c = 0.0;    % 螺距系数 2
-% theta = t*10*pi;  % 角度范围（0~10π）
-% rho = a + b * theta;   % 极径方程
-% x = rho .* cos(theta); % 转直角坐标x
-% y = rho .* sin(theta); % 转直角坐标y
-% z = c * theta;  % z轴线性增长
-% v=[x;z;y];
+v=[x;y;z];
 
 %% setup function of allocation lib
 % ========
 %% setup ACA
 global NumU
 NumU=m;
-LPmethod=5; % LPmethod should be an integer between 0 and 5. when LPmethod=2 set upper of lambda to Inf can't save this method!!! but big number is the same as that method based linprog
+LPmethod=2; % LPmethod should be an integer between 0 and 5. when LPmethod=2 set upper of lambda to Inf can't save this method!!! but big number is the same as that method based linprog
 % DPscaled_LPCA的结果和restoring接近但是有细微区别，对lambda限制在0-1之间，有助于优先级的理论推导。
 INDX=ones(1,m);  % active effectors
 IN_MAT = [B     zeros(k,1)
@@ -123,8 +120,10 @@ x_inv=zeros(m,N);
 x_wls=zeros(m,N);
 x_wls_gen=zeros(m,N);
 x_dir_alloc_linprog=zeros(m,N);
+x_dir_alloc_linprog_res=zeros(m,N);
 x_dir_alloc_linprog_re=zeros(m,N);
 x_dir_alloc_linprog_re_bound=zeros(m,N);
+x_dir_alloc_linprog_re_bound_res=zeros(m,N);
 x_use_LP_lib=zeros(m,N);
 
 m_higher=zeros(k,1);
@@ -141,7 +140,7 @@ K_status = zeros(N,1);
 elapsed_time = zeros(N,1);
 %% simulate flight process  
 for idx=1:N  % or x:N for debug
-    
+    tic;
     IN_MAT(1:k,end) = v(:,idx)+m_higher; %[ 36.8125; 0;92.9776];%
 
     % u = LPwrap(IN_MAT); % function of ACA lib
@@ -149,13 +148,13 @@ for idx=1:N  % or x:N for debug
     
     %% for deriv
     
-    [u, ~,Deriv_xF_v(:,:,idx),inF(:,idx),inD(:,idx),xout] = DP_LPCA_copy_for_dec(v(:,idx),B,umin,umax,100);
+    % [u, ~,Deriv_xF_v(:,:,idx),inF(:,idx),inD(:,idx),xout] = DP_LPCA_copy_for_dec(v(:,idx),B,umin,umax,1000);
     % u=min(max(u, umin), umax);
-    x_LPwrap(:,idx) =u;%restoring(B,u,umin,umax);
-    tic;
+    % x_LPwrap(:,idx) =u;%restoring(B,u,umin,umax);
+    
     % [x_LPwrap_rest(:,idx),K_u(idx),K_status(idx),Deriv_ku_u(:,:,idx)]=restoring_opt2(B,u,umin,umax);
-    [x_LPwrap_rest(:,idx)]=restoring_opt(B,u,umin,umax);
-    elapsed_time(i) = toc;
+    % [x_LPwrap_rest(:,idx)]=restoring_opt(B,u,umin,umax);
+    
     
     % x_LPwrap_rest(:,idx)=min(max(x_LPwrap_rest(:,idx), umin), umax);
     % 
@@ -213,9 +212,10 @@ for idx=1:N  % or x:N for debug
     % u=min(max(u, umin), umax);
     % x_wls_gen(:,idx) = restoring(B,u,umin,umax);
     % 
-    % [u,~] = dir_alloc_linprog(B,v(:,idx), umin, umax, 1e4); % LPmethod=2 and lam=1 of dir_alloc_linprog is lager but similar
-    % u=min(max(u, umin), umax);
-    % x_dir_alloc_linprog(:,idx) = restoring(B,u,umin,umax);
+    [u,~] = dir_alloc_linprog(B,v(:,idx), umin, umax, 1); % LPmethod=2 and lam=1 of dir_alloc_linprog is lager but similar
+    u=min(max(u, umin), umax);
+    x_dir_alloc_linprog(:,idx)=u;
+    x_dir_alloc_linprog_res(:,idx) = restoring(B,u,umin,umax);
     % 
     % [u,~] = dir_alloc_linprog_re(B,v(:,idx), umin, umax);
     % u=min(max(u, umin), umax);
@@ -225,21 +225,23 @@ for idx=1:N  % or x:N for debug
     % % same as dir_alloc_linprog for any lam >=1, lam have to be >1 when use
     % % linprog, that will be the same as LPmethod=3
     % u=min(max(u, umin), umax);
-    % x_dir_alloc_linprog_re_bound(:,idx) = restoring(B,u,umin,umax);
+    % x_dir_alloc_linprog_re_bound(:,idx)=u;
+    % x_dir_alloc_linprog_re_bound_res(:,idx) = restoring(B,u,umin,umax);
 
     % [u,~] = use_LP_lib(B,v(:,idx), umin, umax); % ToDo: use the LP lib
     % x_use_LP_lib(:,idx)=min(max(u, umin), umax);
 
     % [u,~,~] =allocator_dir_LPwrap_4(single(B), single( v(:,idx)), single(umin),single(umax)); % ToDo: 警告: 矩阵接近奇异值，或者缩放不良。结果可能不准确。RCOND =  1.914283e-09。 
     % x_allocator_dir_LPwrap_4(:,idx) = min(max(u, umin), umax);
+    elapsed_time(i) = toc;
     
 end
 fprintf('代码执行时间：%.9f 秒\n',mean( elapsed_time));
 
 
 x1=x_inv; 
-x2=x_LPwrap;
-x3=x_LPwrap_rest;
+x2=x_dir_alloc_linprog;
+x3=x_dir_alloc_linprog_res;
 x4=x_wls;
 
 

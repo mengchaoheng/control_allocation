@@ -1,3 +1,6 @@
+
+
+
 clear all;
 close all;clc
 addpath(genpath('/Users/mch/Proj/control_allocation'));
@@ -15,60 +18,13 @@ L=0.14;
 beta=56*pi/180;
 c_q=2.37e-8;
 c_t=1.51e-6;
-% B= [1 1 1 1;
-% L*sin(beta) -L*sin(beta) -L*sin(beta) L*sin(beta);
-%     -L*cos(beta) -L*cos(beta) L*cos(beta) L*cos(beta);
-%     c_q/c_t -c_q/c_t c_q/c_t -c_q/c_t]; % ture value
-
-% B= [1  1 0;0 0.  1];% for robustly
+% B= [1 1 1 1;L*sin(beta) -L*sin(beta) -L*sin(beta) L*sin(beta);-L*cos(beta) -L*cos(beta) L*cos(beta) L*cos(beta);c_q/c_t -c_q/c_t c_q/c_t -c_q/c_t];
+% B= [1  0;0 1]; % for zero
+% B= [1  1 0;0 0  1];% for robustly
 % B= [1  0 -0.5;0 1  -0.5]; % for case
-
-% B= [1 -1 -1 1;-1 -1 1 1;1 -1 1 -1]; % for tau of quad
-% B= [1 1 1 1;1 -1 -1 1;-1 -1 1 1]; % for T and tilt of quad
-% B= [1 1 1 1;1 -1 -1 1;-1 -1 1 1;1 -1 1 -1];% for full quad 4
-
-% 
-% beta=30*pi/180;
-% B= [1 1 1 1 1 1;1 -1 -1 -1 1 1;1 1 0 -1 -1 0;1 -1 1 -1 1 -1];% for full quad 6
-% B= [1 -1 -1 -1 1 1;1 1 0 -1 -1 0;1 -1 1 -1 1 -1];% for tau quad 6
-% B= [1 1 1 1 1 1;1 -1 -1 -1 1 1;1 1 0 -1 -1 0];% for not yaw quad 6
-% B= [1 1 1 1 1 1;...
-%     10*[L*sin(beta) -L*sin(beta) -L -L*sin(beta) L*sin(beta) L;...
-%     -L*cos(beta) -L*cos(beta) 0 L*cos(beta) L*cos(beta) 0;...
-%     c_q/c_t -c_q/c_t c_q/c_t -c_q/c_t c_q/c_t -c_q/c_t];
-% B= 10*[L*sin(beta) -L*sin(beta) -L -L*sin(beta) L*sin(beta) L;...
-%     -L*cos(beta) -L*cos(beta) 0 L*cos(beta) L*cos(beta) 0;...
-%     c_q/c_t -c_q/c_t c_q/c_t -c_q/c_t c_q/c_t -c_q/c_t]; % ture value
-% B=[0 -1 -1 0 1 1;1 1 -1 -1 -1 1;-1 1 -1 1 -1 1];
-% B=[-1 -1 -1 1 1 1;-1 0 1 1 0 -1;1 -1 1 -1 1 -1];
-% l1=0.167;l2=0.069;k_v=3;
-% I_x=0.01149;
-% I_y=0.01153;
-% I_z=0.00487;
-% I=[I_x 0 0;0 I_y 0;0 0 I_z];
-%=============================4==================================
-% B=I\[-l1     0       l1     0;
-%      0      -l1     0       l1;
-%      l2    l2    l2    l2]*k_v;
-% B=I\diag([l1 l1 l2])[-1     0     1     0;
-%                       0    -1     0     1;
-%                       1     1     1     1]*k;
-% 
- % B^+= B^T (B B^T)^{-1}
-%    1X
-% 4     2Y
-%    3
-%=============================6==================================
-% d=60*pi/180;
-% B=I\[-l1 -l1*cos(d) l1*cos(d) l1 l1*cos(d) -l1*cos(d);0 -l1*sin(d) -l1*sin(d) 0 l1*sin(d) l1*sin(d);l2 l2 l2 l2 l2 l2]*k_v;
-%      1X
-%  6       2
-% -------------->Y
-%  5       3
-%      4
-%
-
-
+% B= [1  1 1 1;1 -1 -1 1;-1 -1 1 1;1 -1 1 -1];% for full quad 
+B= [1 -1 -1 1;-1 -1 1 1;1 -1 1 -1]; % for tau of quad
+% B= [1  1 1 1;1 -1 -1 1;-1 -1 1 1]; % for T and tilt of quad
 
 [k,m] = size(B);
 %检查robust
@@ -97,18 +53,17 @@ else
 end
 
 
-umin=ones(m,1)*0-0.0001;
-umax=ones(m,1)*8-0.0001;
-
+umin=ones(m,1)*0.0;
+umax=ones(m,1)*8;
 plim=[umin umax];
 
 % run Generate_input_data;
 % ---- User-level design parameters ----
 r0   = 0.00;      % start radius
-r1   =  25;      % end   radius (e.g., your r_d)
-z0   = -2;      % start height
-z1   = 2;      % end   height
-n    = 3.0;       % desired turns
+r1   =  12;      % end   radius (e.g., your r_d)
+z0   = 0.00;      % start height
+z1   = 7;      % end   height
+n    = 5.0;       % desired turns
 T    = 10;       % total time duration [s]
 dt   = 0.01;     % time step
 
@@ -127,9 +82,15 @@ z     = z0 + c * theta;
 
 N=size(t,2);
 
-f=mass*g*2+0.2*sin(theta*3);
+f=mass*g*2;
 
-v=[x;y;z]; % f  zeros(1,N)
+% update limits
+u_b=ones(m,1)*f/4;
+% u_b=(umin+umax)/2;
+umin=umin-u_b; % max q in the u_b=(umin+umax)/2, but only 0.66.
+umax=umax-u_b;
+plim=[umin umax];
+v=[x;y;z];
 % v=[x;y;z];
 
 %% setup function of allocation lib
@@ -170,10 +131,8 @@ x_inv=zeros(m,N);
 x_wls=zeros(m,N);
 x_wls_gen=zeros(m,N);
 x_dir_alloc_linprog=zeros(m,N);
-x_dir_alloc_linprog_res=zeros(m,N);
 x_dir_alloc_linprog_re=zeros(m,N);
 x_dir_alloc_linprog_re_bound=zeros(m,N);
-x_dir_alloc_linprog_re_bound_res=zeros(m,N);
 x_use_LP_lib=zeros(m,N);
 
 m_higher=zeros(k,1);
@@ -190,22 +149,17 @@ K_status = zeros(N,1);
 elapsed_time = zeros(N,1);
 %% simulate flight process  
 for idx=1:N  % or x:N for debug
-    % update limits
-    % u_b=ones(m,1)*f(idx)/4;
-    u_b=0;
-    % u_b=(umin+umax)/2;
-    umin=ones(m,1)*0-u_b; % max q in the u_b=(umin+umax)/2, but only 0.66.
-    umax=ones(m,1)*8-u_b;
+    
     IN_MAT(1:k,end) = v(:,idx)+m_higher; %[ 36.8125; 0;92.9776];%
 
     % u = LPwrap(IN_MAT); % function of ACA lib
     % u= CGIwrap(IN_MAT);
     % u = LPwrap(IN_MAT); % function of ACA lib
     % [u, ~,~,~,~,~] = DP_LPCA_copy_for_dec(v(:,idx),B,umin,umax,100);
-    % [u, ~,~] = DP_LPCA_prio(m_higher,v(:,idx),B,umin,umax,100);
-    % u=min(max(u, umin), umax);
-    % x_LPwrap(:,idx) =u+u_b;
-    % x_LPwrap_rest(:,idx) =restoring_opt(B,u,umin,umax)+u_b;
+    [u, ~,~] = DP_LPCA_prio(m_higher,v(:,idx),B,umin,umax,100);
+    u=min(max(u, umin), umax);
+    x_LPwrap(:,idx) =u;
+    x_LPwrap_rest(:,idx) =restoring_opt(B,u,umin,umax);
     
     %% for deriv
     
@@ -227,12 +181,12 @@ for idx=1:N  % or x:N for debug
 
     u=pinv(B)*v(:,idx);
     u=min(max(u, umin), umax);
-    x_inv(:,idx) =u+u_b;% restoring(B,u,umin,umax);
+    x_inv(:,idx) =u;% restoring(B,u,umin,umax);
     % [x_inv(:,idx),K_u(idx),K_status(idx),Deriv_ku_u(:,:,idx)] = restoring_return_k(B,u,umin,umax);
 
     [u,~,~] = wls_alloc(B,v(:,idx),umin,umax,Wv,Wu,ud,gam,u0,W0,imax);
     u=min(max(u, umin), umax);
-    x_wls(:,idx) = u+u_b;
+    x_wls(:,idx) = u;
     % [x_wls(:,idx),K_u(idx),K_status(idx),Deriv_ku_u(:,:,idx)] = restoring_return_k(B,u,umin,umax);
     %%
 
@@ -273,10 +227,9 @@ for idx=1:N  % or x:N for debug
     % u=min(max(u, umin), umax);
     % x_wls_gen(:,idx) = restoring(B,u,umin,umax);
     % 
-    [u,~] = dir_alloc_linprog(B,v(:,idx), umin, umax, 1); % LPmethod=2 and lam=1 of dir_alloc_linprog is lager but similar
-    u=min(max(u, umin), umax);
-    x_dir_alloc_linprog(:,idx)=u+u_b;
-    x_dir_alloc_linprog_res(:,idx) = restoring_opt(B,u,umin,umax)+u_b;
+    % [u,~] = dir_alloc_linprog(B,v(:,idx), umin, umax, 1e4); % LPmethod=2 and lam=1 of dir_alloc_linprog is lager but similar
+    % u=min(max(u, umin), umax);
+    % x_dir_alloc_linprog(:,idx) = restoring(B,u,umin,umax);
     % 
     % [u,~] = dir_alloc_linprog_re(B,v(:,idx), umin, umax);
     % u=min(max(u, umin), umax);
@@ -286,9 +239,7 @@ for idx=1:N  % or x:N for debug
     % % same as dir_alloc_linprog for any lam >=1, lam have to be >1 when use
     % % linprog, that will be the same as LPmethod=3
     % u=min(max(u, umin), umax);
-    % x_dir_alloc_linprog_re_bound(:,idx)=u;
-    % x_dir_alloc_linprog_re_bound_res(:,idx) = restoring(B,u,umin,umax);
-
+    % x_dir_alloc_linprog_re_bound(:,idx) = restoring(B,u,umin,umax);
 
     % [u,~] = use_LP_lib(B,v(:,idx), umin, umax); % ToDo: use the LP lib
     % x_use_LP_lib(:,idx)=min(max(u, umin), umax);
@@ -301,8 +252,8 @@ fprintf('代码执行时间：%.9f 秒\n',mean( elapsed_time));
 
 
 x1=x_inv; 
-x2=x_dir_alloc_linprog;
-x3=x_dir_alloc_linprog_res;
+x2=x_LPwrap;
+x3=x_LPwrap_rest;
 x4=x_wls;
 
 

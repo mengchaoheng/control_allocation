@@ -162,7 +162,7 @@ if nargin > 2 && exist('Vlin', 'var') && ~isempty(Vlin)
     ratio = area2 / area1;
 end
 
-% ===== 添加圆形区域 =====
+% ===== 螺旋参考指令 =====
 if exist('v_cmd','var') && ~isempty(v_cmd)
     xc=v_cmd(1,:);yc=v_cmd(2,:);
     U1xc=U1(1,:);U1yc=U1(2,:);
@@ -210,7 +210,7 @@ legend(legend_handles, legend_labels, 'Location', 'northeast', 'NumColumns', 1,'
       % Illustrate
       if nargin > 2
 	h = polyplot(Klin,Vlin',1);
-	set(h,'EdgeColor',INV_edge_color,'FaceColor',INV_fill_color);
+	set(h,'EdgeColor',INV_edge_color,'FaceColor','none');%INV_fill_color
 	hold on;
 	% Fix: Make V wireframe enclose Vlin
 	V0 = repmat(mean(V')',1,size(V,2));

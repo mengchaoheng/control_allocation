@@ -80,8 +80,9 @@ function [u,a] = dir_alloc_linprog(B,v, umin, umax, lam)
   [x,fval,exitflag,output,lambda]= linprog(f,A,b,Aeq,beq,lb,ub,options);
   if(exitflag~=1)
       a=0;
-      u=[0;0;0;0];
+      u=zeros(m,1);
       disp('stop!');
+      exitflag
       
   else
       a = x(1);

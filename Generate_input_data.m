@@ -23,4 +23,6 @@ filename = 'input.mat';
 save(filename, 'v',"len_command_px4",'u_px4','len_u_px4','controls_delta_t_s','u_delta_t_s');
 
 filename = 'input.csv';
-writematrix(v',filename);
+fid = fopen(filename, 'w');
+fprintf(fid, '%.17g,%.17g,%.17g\n', v);
+fclose(fid);

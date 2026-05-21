@@ -1,0 +1,85 @@
+function [u, itlim, errout, rho] = DPscaled_LPCA(yd, B, uMin, uMax, itlim, opts)
+% Direction Preserving Control Allocation Linear Program, reduced form.
+%
+% Top-level version of the book DPscaled_LPCA routine.  The problem
+% construction matches control_allocation_lib/aircraft-control-allocation-
+% book-simulation, while the simplex backend is simplxuprevsol_tiebreak so
+% MATLAB follows the same deterministic pivot/tie-break rules as the C++
+% allocator.
+
+if nargin < 6
+    opts = struct();
+end
+
+errout = 0;
+rho = 0;
+[n, m] = size(B);
+
+[my, iy] = max(abs(yd));
+if my < eps
+    errout = -1;
+    u = zeros(m, 1);
+    return;
+end
+
+Bt = B([iy setdiff(1:n, iy)], :);
+ydt = yd([iy setdiff(1:n, iy)]);
+ydt(2:3) = ydt([3 2]);
+Bt([2 3], :) = Bt([3 2], :);
+
+M = [ydt(2:n) -ydt(1) * eye(n - 1)];
+A = M * Bt;
+b = -A * uMin;
+c = -Bt' * ydt;
+h = uMax - uMin;
+
+sb = 2 * (b > 0) - 1;
+Ai = [A diag(sb)];
+ci = [zeros(m, 1); ones(n - 1, 1)];
+inBi = m + 1:m + n - 1;
+ei = true(m + n - 1, 1);
+hi = [h; 2 * abs(b)];
+
+[y1, inB1, e1, itlim, errsimp] = simplxuprevsol_tiebreak(Ai, ci', b, inBi, hi, ei, opts, n - 1, m + n - 1, itlim);
+
+if itlim <= 0
+    errout = -3;
+    disp('Too Many Iterations Finding initial Solution');
+end
+if any(inB1 > m)
+    errout = -2;
+    disp('No Initial Feasible Solution found');
+end
+if errsimp
+    errout = -1;
+    disp('Solver error');
+end
+
+if errout ~= 0
+    xout = zeros(m, 1);
+    xout(inB1(1:n - 1)) = y1(1:n - 1);
+    xout(~e1(1:m)) = -xout(~e1(1:m)) + h(~e1(1:m));
+else
+    [y2, inB2, e2, itlim, errsimp] = simplxuprevsol_tiebreak(A, c', b, inB1, h, e1(1:m), opts, n - 1, m, itlim);
+
+    xout = zeros(m, 1);
+    xout(inB2) = y2;
+    xout(~e2) = -xout(~e2) + h(~e2);
+
+    if itlim <= 0
+        errout = 3;
+        disp('Too Many Iterations Finding Final Solution');
+    end
+    if errsimp
+        errout = 1;
+        disp('Solver error');
+    end
+end
+
+u = xout + uMin;
+rho = ydt' * Bt * u / (ydt' * ydt);
+if rho > 1
+    u = u / rho;
+end
+
+end

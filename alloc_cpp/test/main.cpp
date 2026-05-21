@@ -8,6 +8,9 @@
 #include <stdio.h>
 #include <math.h>
 #include <chrono>
+#include <iomanip>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include "allocator_dir_LPwrap_4.h"
 #include "wls_alloc_gen.h"
@@ -54,21 +57,53 @@ int main() {
             array[i][j] = data[i][j];
         }
     }
-    // 打开CSV文件进行写入
-    std::ofstream outFile("/Users/mch/Proj/control_allocation/output.csv");
-    if (!outFile.is_open()) {
+    // 打开CSV文件进行写入。所有 C++ 对比输出集中放在 results/cpp_outputs，
+    // /results 已在 .gitignore 中，避免在工程根目录散落大 CSV 文件。
+    const std::string outputRoot = "/Users/mch/Proj/control_allocation/results";
+    const std::string outputDir = outputRoot + "/cpp_outputs";
+    mkdir(outputRoot.c_str(), 0755);
+    mkdir(outputDir.c_str(), 0755);
+    const std::string outputPrefix = outputDir + "/";
+    std::ofstream outFile(outputPrefix + "output.csv");
+    std::ofstream outFile4(outputPrefix + "output_cpp_4.csv");
+    std::ofstream outFile6(outputPrefix + "output_cpp_6.csv");
+    std::ofstream outFile4DP(outputPrefix + "output_cpp_4_dp.csv");
+    std::ofstream outFile4DPRaw(outputPrefix + "output_cpp_4_dp_raw.csv");
+    std::ofstream outFile4DPscaled(outputPrefix + "output_cpp_4_dpscaled.csv");
+    std::ofstream outFile4Prio(outputPrefix + "output_cpp_4_prio.csv");
+    std::ofstream outFile6DP(outputPrefix + "output_cpp_6_dp.csv");
+    std::ofstream outFile6DPRaw(outputPrefix + "output_cpp_6_dp_raw.csv");
+    std::ofstream outFile6DPscaled(outputPrefix + "output_cpp_6_dpscaled.csv");
+    std::ofstream outFile6Prio(outputPrefix + "output_cpp_6_prio.csv");
+    if (!outFile.is_open() || !outFile4.is_open() || !outFile6.is_open()
+        || !outFile4DP.is_open() || !outFile4DPRaw.is_open() || !outFile4DPscaled.is_open() || !outFile4Prio.is_open()
+        || !outFile6DP.is_open() || !outFile6DPRaw.is_open() || !outFile6DPscaled.is_open() || !outFile6Prio.is_open()) {
         std::cerr << "无法打开文件" << std::endl;
         return 1;
     }
+    outFile << std::setprecision(17);
+    outFile4 << std::setprecision(17);
+    outFile6 << std::setprecision(17);
+    outFile4DP << std::setprecision(17);
+    outFile4DPRaw << std::setprecision(17);
+    outFile4DPscaled << std::setprecision(17);
+    outFile4Prio << std::setprecision(17);
+    outFile6DP << std::setprecision(17);
+    outFile6DPRaw << std::setprecision(17);
+    outFile6DPscaled << std::setprecision(17);
+    outFile6Prio << std::setprecision(17);
     
-    // float _B[3][4] = { {-0.4440,0.0,0.4440,0.0}, {0.0,-0.4440,0.0,0.4440},{0.2070,0.2070,0.2070,0.2070}};
-    float _B[3][4] = { {-43.6031,0.0,43.6031,0.0}, {0.0,-43.4519,0.0,43.4519},{42.5051,42.5051,42.5051,42.5051}};
     float _I_x{0.01149f};//setting in the .sdf
 	float _I_y{0.01153f};//setting in the .sdf
 	float _I_z{0.00487f};//setting in the .sdf
 	float _L_1{0.167f}; //setting in the .sdf
 	float _L_2{0.069f}; //setting in the .sdf
 	float _k{3.0f};	// USER_OMEGA_2_F, k  =_k_cv*_k_v*_k_v, setting k in the gazebo
+    float _B[3][4] = {
+        {-_L_1 / _I_x * _k, 0.0f, _L_1 / _I_x * _k, 0.0f},
+        {0.0f, -_L_1 / _I_y * _k, 0.0f, _L_1 / _I_y * _k},
+        {_L_2 / _I_z * _k, _L_2 / _I_z * _k, _L_2 / _I_z * _k, _L_2 / _I_z * _k}
+    };
 
 
 	matrix::Matrix<float, 4, 3> B_inv;
@@ -121,10 +156,32 @@ int main() {
     // 使用模板类时，可以指定 ControlSize 和 EffectSize 的具体值
     // 例如：
     float l1=0.167;float l2=0.069;float k_v=3;
-    Aircraft<3, 4> df_4(_B, -0.3491, 0.3491); // 创建一个具有 4 个操纵向量和 3 个广义力矩的飞行器对象
+    Aircraft<3, 4> df_4(_B, -0.3491f, 0.3491f); // 创建一个具有 4 个操纵向量和 3 个广义力矩的飞行器对象
     DP_LP_ControlAllocator<3, 4> Allocator(df_4); // 创建一个控制分配器对象，用于具有 4 个操纵向量和 3 个广义力矩的飞行器(转化为线性规划问题，其维数和参数 <3, 4> 有关。)
+    DP_LP_ControlAllocator<3, 4> Allocator_raw(df_4);
+    Allocator_raw.enable_restoring = false;
     // 然后可以使用飞行器对象和控制分配器对象进行操作
    
+
+    // float _B_for6[3][6]    = { {-17.9880,   -8.9940,    8.9940,   17.9880,    8.9940,   -8.9940}, { 0,  -19.4726,  -19.4726,         0,   19.4726,   19.4726},{15.3231,   15.3231,   15.3231,   15.3231,   15.3231,   15.3231}};
+    float l1_for6=0.2998f;float l2_for6=0.0664f;float k_for6=1.0f;
+    float I_x_for6=0.05f; float I_y_for6=0.04f; float I_z_for6=0.013f;
+    constexpr float DEG2RAD = 0.01745329251994329577f;
+    const float d_for6 = 60.0f * DEG2RAD;
+    float _B_for6[3][6] = {
+        {-l1_for6/I_x_for6*k_for6, -l1_for6*std::cos(d_for6)/I_x_for6*k_for6,  l1_for6*std::cos(d_for6)/I_x_for6*k_for6,
+          l1_for6/I_x_for6*k_for6,  l1_for6*std::cos(d_for6)/I_x_for6*k_for6, -l1_for6*std::cos(d_for6)/I_x_for6*k_for6},
+        {0.0,  l1_for6*std::sin(d_for6)/I_y_for6*k_for6,  l1_for6*std::sin(d_for6)/I_y_for6*k_for6,
+         0.0, -l1_for6*std::sin(d_for6)/I_y_for6*k_for6, -l1_for6*std::sin(d_for6)/I_y_for6*k_for6},
+        {l2_for6/I_z_for6*k_for6, l2_for6/I_z_for6*k_for6, l2_for6/I_z_for6*k_for6,
+         l2_for6/I_z_for6*k_for6, l2_for6/I_z_for6*k_for6, l2_for6/I_z_for6*k_for6}
+    };
+    constexpr float U_LIM = 40.0f * DEG2RAD;
+    Aircraft<3, 6> df_6(_B_for6, -U_LIM, U_LIM);// 创建一个具有 6 个操纵向量和 3 个广义力矩的飞行器对象
+    DP_LP_ControlAllocator<3, 6> Allocator_for6(df_6); // 创建一个控制分配器对象，用于具有 6 个操纵向量和 3 个广义力矩的飞行器(转化为线性规划问题，其维数和参数 <3, 6> 有关。)
+    DP_LP_ControlAllocator<3, 6> Allocator_for6_raw(df_6);
+    Allocator_for6_raw.enable_restoring = false;
+    // 然后可以使用飞行器对象和控制分配器对象进行操作
 
     size_t array_size =4;
 
@@ -132,12 +189,14 @@ int main() {
     auto finish = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed;
 
-    double total_elapsed1 = 0.0;
     double total_elapsed2 = 0.0;
     double total_elapsed3 = 0.0;
     double total_elapsed4 = 0.0;
     double total_elapsed5 = 0.0;
     double total_elapsed6 = 0.0;
+    double total_elapsed7 = 0.0;
+    double total_elapsed8 = 0.0;
+    double total_elapsed9 = 0.0;
     // main loop
     for(int i=0;i<num;i++)
 	{
@@ -176,32 +235,18 @@ int main() {
         //     Allocator.isupdate = true; // have to set isupdate to true, otherwise the Allocator will not update the B and limits.
         // }
 
-        //==========================allocateControl===========================
-        float u1[4]; int err1=0;
-        start = std::chrono::high_resolution_clock::now();
-        // test allocateControl
-        Allocator.allocateControl(y_all, u1, err1); 
-        //test inv
-        // matrix::Matrix<float, 3, 1> y_desire (y_all);
-        // matrix::Matrix<float, 4, 1> u_inv=B_inv*y_desire;
-        finish = std::chrono::high_resolution_clock::now();
-        elapsed = finish - start;
-        total_elapsed1 += elapsed.count();
-        // std::cout << "Allocator.allocateControl execution time: " << elapsed.count() << "s\n";
-        // std::cout << "Allocator.err1: " << err1 << "\n";
-        // std::cout << "u1: [";
-        // for (size_t i = 0; i < 4; ++i) {
-        //     std::cout << u1[i];
-        //     if (i < 3) {
-        //         std::cout << ", ";
-        //     }
-        // }
-        // std::cout << "]" << std::endl;
         //========================DP_LPCA=============================
+        // MATLAB test.m counterpart:
+        //   DP_LPCA(...), then restoring_cpp(...)
+        // C++ allocator restoring() is aligned with restoring_cpp.m.
         float u2[4];int err2=0;float rho2=0;float u2_tmp[4];
         start = std::chrono::high_resolution_clock::now();
         Allocator.DP_LPCA(y_all, u2_tmp, err2, rho2);  
-        Allocator.restoring(u2_tmp,u2);
+        for (size_t j = 0; j < 4; ++j) {
+            u2[j] = u2_tmp[j];
+        }
+        float u2_raw[4]; int err2_raw=0; float rho2_raw=0;
+        Allocator_raw.DP_LPCA(y_all, u2_raw, err2_raw, rho2_raw);
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
         total_elapsed2 += elapsed.count();
@@ -219,7 +264,9 @@ int main() {
         float u3[4];int err3=0;float rho3=0;float u3_tmp[4];
         start = std::chrono::high_resolution_clock::now();
         Allocator.DPscaled_LPCA(y_all, u3_tmp, err3, rho3);  
-        Allocator.restoring(u3_tmp,u3);
+        for (size_t j = 0; j < 4; ++j) {
+            u3[j] = u3_tmp[j];
+        }
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
         total_elapsed3 += elapsed.count();
@@ -235,33 +282,19 @@ int main() {
         // }
         // std::cout << "]" << std::endl;
         //========================DP_LPCA_prio=============================
-        float u4[4];int err4=0;float rho4=0;float u4_tmp[4]; 
-	    // float m_lower[3]={30.0f,  0.0f,   -0.0f};
-        int err41=0;float rho41=0;float u4_tmp1[4]; float m_tmp[3]={0.0,  0.0,  0.0f};
+        // MATLAB test.m counterpart:
+        //   DP_LPCA_prio(...), then restoring_cpp(...)
+        // C++ DP_LPCA_prio() calls DP_LPCA_copy(), whose simplex
+        // pivot/tie-break rules follow PCA/simplxuprevsol_tiebreak.m.
+        float u4[4]; int err4=0; float rho4=0; float u4_tmp[4];
         start = std::chrono::high_resolution_clock::now();
-        Allocator.DP_LPCA_copy(m_higher,yd, u4_tmp, err4, rho4); 
-        if (err4<0){
-            // std::cout << "Allocator.err4: " << err4 << "\n";
-            Allocator.DP_LPCA_copy(m_tmp,m_higher, u4_tmp1, err41, rho41); 
-            Allocator.restoring(u4_tmp1,u4);
-        }else{
-            Allocator.restoring(u4_tmp,u4);
-            // std::cout << "Allocator.err4: " << err4 << "\n";
+        Allocator.DP_LPCA_prio(m_higher, yd, u4_tmp, err4, rho4);
+        for (size_t j = 0; j < 4; ++j) {
+            u4[j] = u4_tmp[j];
         }
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
         total_elapsed4 += elapsed.count();
-        // std::cout << "Allocator.DP_LPCA execution time: " << elapsed.count() << "s\n";
-        // std::cout << "Allocator.err4: " << err4 << "\n";
-        // std::cout << "Allocator.err41: " << err41 << "\n";
-        // std::cout << "u4: [";
-        // for (size_t i = 0; i < 4; ++i) {
-        //     std::cout << u4[i];
-        //     if (i < 3) {
-        //         std::cout << ", ";
-        //     }
-        // }
-        // std::cout << "]" << std::endl;
         //========================allocator_dir_LPwrap_4 (generate by matlab) =============================
         float u5[4]={ 0.0,  0.0,   0.0,   0.0};
         float z_allocator_dir_LPwrap_4= 0.0;
@@ -290,14 +323,72 @@ int main() {
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
         total_elapsed6 += elapsed.count();
-        // 写入CSV文件 change to u1 u2 u3 u4 for your test.
-        for (size_t i = 0; i < array_size; ++i) {
-            outFile << u4[i] << (i < array_size - 1 ? "," : "\n");
+
+        float m_higher_for6[3]={m_higher[0], m_higher[1], m_higher[2]};
+        float yd_for6[3]={static_cast<float>(data[i][0]), static_cast<float>(data[i][1]), static_cast<float>(data[i][2])};
+        float y_all_for6[3]={yd_for6[0]+m_higher_for6[0], yd_for6[1]+m_higher_for6[1], yd_for6[2]+m_higher_for6[2]};
+
+        //========================DP_LPCA for 6 cs=============================
+        // MATLAB test.m counterpart:
+        //   DP_LPCA(...), then restoring_cpp(...)
+        // C++ allocator restoring() is aligned with restoring_cpp.m.
+        float u8[6];int err8=0;float rho8=0;float u8_tmp[6];
+        start = std::chrono::high_resolution_clock::now();
+        Allocator_for6.DP_LPCA(y_all_for6, u8_tmp, err8, rho8);
+        for (size_t j = 0; j < 6; ++j) {
+            u8[j] = u8_tmp[j];
+        }
+        float u8_raw[6]; int err8_raw=0; float rho8_raw=0;
+        Allocator_for6_raw.DP_LPCA(y_all_for6, u8_raw, err8_raw, rho8_raw);
+        finish = std::chrono::high_resolution_clock::now();
+        elapsed = finish - start;
+        total_elapsed8 += elapsed.count();
+
+        //========================DPscaled_LPCA for 6 cs=============================
+        float u9[6];int err9=0;float rho9=0;float u9_tmp[6];
+        start = std::chrono::high_resolution_clock::now();
+        Allocator_for6.DPscaled_LPCA(y_all_for6, u9_tmp, err9, rho9);
+        for (size_t j = 0; j < 6; ++j) {
+            u9[j] = u9_tmp[j];
+        }
+        finish = std::chrono::high_resolution_clock::now();
+        elapsed = finish - start;
+        total_elapsed9 += elapsed.count();
+
+        //========================DP_LPCA_prio for 6 cs=============================
+        float u7[6]; int err7=0; float rho7=0; float u7_tmp[6];
+        start = std::chrono::high_resolution_clock::now();
+        Allocator_for6.DP_LPCA_prio(m_higher_for6, yd_for6, u7_tmp, err7, rho7);
+        for (size_t j = 0; j < 6; ++j) {
+            u7[j] = u7_tmp[j];
+        }
+        finish = std::chrono::high_resolution_clock::now();
+        elapsed = finish - start;
+        total_elapsed7 += elapsed.count();
+
+        //========================
+        // 写入CSV文件：4舵和6舵分别输出，output.csv 保持为6舵 DP_LPCA 兼容输出。
+        for (size_t i = 0; i < 4; ++i) {
+            outFile4DP << u2[i] << (i < 4 - 1 ? "," : "\n");
+            outFile4DPRaw << u2_raw[i] << (i < 4 - 1 ? "," : "\n");
+            outFile4DPscaled << u3[i] << (i < 4 - 1 ? "," : "\n");
+            outFile4Prio << u4[i] << (i < 4 - 1 ? "," : "\n");
+        }
+        for (size_t i = 0; i < 6; ++i) {
+            outFile6DP << u8[i] << (i < 6 - 1 ? "," : "\n");
+            outFile6DPRaw << u8_raw[i] << (i < 6 - 1 ? "," : "\n");
+            outFile6DPscaled << u9[i] << (i < 6 - 1 ? "," : "\n");
+            outFile6Prio << u7[i] << (i < 6 - 1 ? "," : "\n");
+        }
+        for (size_t i = 0; i < 4; ++i) {
+            outFile4 << u2[i] << (i < 4 - 1 ? "," : "\n");
+        }
+        for (size_t i = 0; i < 6; ++i) {
+            outFile6 << u8[i] << (i < 6 - 1 ? "," : "\n");
+            outFile << u8[i] << (i < 6 - 1 ? "," : "\n");
         }
     }
     // 求平均运行时间
-    double average_elapsed1 = total_elapsed1 / num;
-    std::cout << "Allocator.allocateControl Average execution time: " << average_elapsed1 << "s" << std::endl;
     double average_elapsed2 = total_elapsed2 / num;
     std::cout << "Allocator.DP_LPCA Average execution time: " << average_elapsed2 << "s" << std::endl;
     double average_elapsed3 = total_elapsed3 / num;
@@ -308,17 +399,31 @@ int main() {
     std::cout << "allocator_dir_LPwrap_4 Average execution time: " << average_elapsed5 << "s" << std::endl;
     double average_elapsed6 = total_elapsed6 / num;
     std::cout << "wls_alloc_gen Average execution time: " << average_elapsed6 << "s" << std::endl;
+    double average_elapsed7 = total_elapsed7 / num;
+    std::cout << "Allocator_for6.DP_LPCA_prio Average execution time: " << average_elapsed7 << "s" << std::endl;
+    double average_elapsed8 = total_elapsed8 / num;
+    std::cout << "Allocator_for6.DP_LPCA Average execution time: " << average_elapsed8 << "s" << std::endl;
+    double average_elapsed9 = total_elapsed9 / num;
+    std::cout << "Allocator_for6.DPscaled_LPCA Average execution time: " << average_elapsed9 << "s" << std::endl;
     // running on M1 pro MacOS: 
     // for float m_higher[3]={0.0,  0.0,  50.0}; //   have solution, m_higher attainable or m_higher+yd attainable
-    // Allocator.allocateControl Average execution time: 5.01194e-07s
     // Allocator.DPscaled_LPCA Average execution time: 5.95756e-07s
     // Allocator.DP_LPCA Average execution time: 1.23543e-06s
     // allocator_dir_LPwrap_4 Average execution time: 1.23543e-06s
-    // Allocator.DP_LPCA_prio Average execution time: 1.23973e-06s
     // INV Average execution time: 1.82271e-08s
     // float m_higher[3]={0.0,  0.0,  150.0}; // No Initial Feasible Solution found m_higher+yd unattainable and m_higher unattainable
     // 关闭文件
     outFile.close();
+    outFile4.close();
+    outFile6.close();
+    outFile4DP.close();
+    outFile4DPRaw.close();
+    outFile4DPscaled.close();
+    outFile4Prio.close();
+    outFile6DP.close();
+    outFile6DPRaw.close();
+    outFile6DPscaled.close();
+    outFile6Prio.close();
     // 释放内存
     for (size_t i = 0; i < data.size(); ++i) {
         delete[] array[i];

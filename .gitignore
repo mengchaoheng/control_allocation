@@ -17,6 +17,7 @@ slprj/
 input.csv
 input.mat
 output.csv
+output_cpp_*.csv
 
 alloc_cpp/build
 LP_lib/alglib_demo/build/*

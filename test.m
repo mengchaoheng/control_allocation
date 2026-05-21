@@ -9,10 +9,10 @@ addpath(genpath(pwd))
 %
 % 行满秩时pinv(B)=The Moore–Penrose Pseudo-inverse
     % // If B is full raw rank, The Moore–Penrose Pseudo-inverse B^+= B^T (B B^T)^{-1},since
-    % // B=K*P, K=I\diag([l1 l1 l2])k, P=[-1     0     1     0; 0    -1     0     1; 1     1     1     1];   K=diag([ k*l1/I_x  k*l1/I_y  k*l2/I_z  ])
+    % // B=K*P, K=I\diag([l1 l1 l2])k, P=[-1     0     1     0; 0    -1     0     1; 1     1     1     1];   K=diag([ k_omega2force*l1/I_x  k_omega2force*l1/I_y  k_omega2force*l2/I_z  ])
     %     // B^{\dagger} = P^\top K K^{-1} (P P^\top)^{-1} K^{-1} = P^\top (P P^\top)^{-1} K^{-1}=P^{\dagger} K^{-1}
     % // P^{\dagger}=[-0.5000   -0.0000    0.2500;0   -0.5000    0.2500;0.5000   -0.0000    0.2500;0    0.5000    0.2500]
-    % // B^{\dagger}=P^{\dagger} K^{-1}=[-0.5000   -0.0000    0.2500;0   -0.5000    0.2500;0.5000   -0.0000    0.2500;0    0.5000    0.2500]*diag([ I_x/(k*l1)  I_y/(k*l1)  I_z/(k*l2)  ])
+    % // B^{\dagger}=P^{\dagger} K^{-1}=[-0.5000   -0.0000    0.2500;0   -0.5000    0.2500;0.5000   -0.0000    0.2500;0    0.5000    0.2500]*diag([ I_x/(k_omega2force*l1)  I_y/(k_omega2force*l1)  I_z/(k_omega2force*l2)  ])
 
 load 'input.mat'; % provides v, len_command_px4, controls_delta_t_s, ...
 if isfile('input.csv')
@@ -92,11 +92,11 @@ function aircraft = make_aircraft_4()
     % If B is full row rank, The Moore-Penrose Pseudo-inverse
     % B^+ = B^T (B B^T)^{-1}, since
     % B = K*P,
-    % K = I\diag([l1 l1 l2])*k,
+    % K = I\diag([l1 l1 l2])*k_omega2force,
     % P = [-1     0     1     0;
     %       0    -1     0     1;
     %       1     1     1     1];
-    % K = diag([ k*l1/I_x  k*l1/I_y  k*l2/I_z ])
+    % K = diag([ k_omega2force*l1/I_x  k_omega2force*l1/I_y  k_omega2force*l2/I_z ])
     %
     % B^{dagger} = P^T K K^{-1} (P P^T)^{-1} K^{-1}
     %            = P^T (P P^T)^{-1} K^{-1}
@@ -108,11 +108,11 @@ function aircraft = make_aircraft_4()
     %                0        0.5000   0.2500]
     %
     % B^{dagger} = P^{dagger} K^{-1}
-    %            = P^{dagger} * diag([ I_x/(k*l1)  I_y/(k*l1)  I_z/(k*l2) ])
+    %            = P^{dagger} * diag([ I_x/(k_omega2force*l1)  I_y/(k_omega2force*l1)  I_z/(k_omega2force*l2) ])
 
     l1 = 0.167;
     l2 = 0.069;
-    k_v = 3;
+    k_omega2force = 3;
     I_x = 0.01149;
     I_y = 0.01153;
     I_z = 0.00487;
@@ -121,10 +121,11 @@ function aircraft = make_aircraft_4()
     %=============================4==================================
     B = I \ [-l1     0       l1     0;
               0      -l1     0      l1;
-              l2     l2      l2     l2] * k_v;
+              l2     l2      l2     l2] * k_omega2force;
+    
     % B = I\diag([l1 l1 l2])[-1     0     1     0;
     %                         0    -1     0     1;
-    %                         1     1     1     1]*k_v;
+    %                         1     1     1     1]*k_omega2force;
     %
     % B^+ = B^T (B B^T)^{-1}
     %    1X
@@ -141,12 +142,12 @@ end
 
 function aircraft = make_aircraft_6()
     % Six-effector model, same physical construction as alloc_cpp/test/main.cpp.
-    l1 = 0.2998;
-    l2 = 0.0664;
-    k_omega2force = 1.0;
-    I_x = 0.05;
-    I_y = 0.04;
-    I_z = 0.013;
+    l1 = 0.292166;
+    l2 = 0.073699;
+    k_omega2force = 1.93;
+    I_x = 0.0438;
+    I_y = 0.0436;
+    I_z = 0.005006;
     d = 60*pi/180;
     I = diag([I_x, I_y, I_z]);
 
@@ -165,7 +166,14 @@ function aircraft = make_aircraft_6()
     B = I \ [-l1, -l1*cos(d),  l1*cos(d),  l1,  l1*cos(d), -l1*cos(d);
               0,   l1*sin(d),  l1*sin(d),  0,  -l1*sin(d), -l1*sin(d);
               l2,  l2,         l2,         l2,  l2,         l2] * k_omega2force;
-
+    % K = I\diag([l1 l1 l2])*k_omega2force;
+    % P = [-1     -cos(d)     cos(d)    1    cos(d)  -cos(d);
+    %       0,    sin(d),     sin(d),   0,  -sin(d), -sin(d);
+    %       1     1           1         1    1        1];%B = K*P
+    % B_inv_pid=[-1 0 1;-1 1 1;1 1 1;1 0 1;1 -1 1;-1 -1 1]
+    % B_pid=pinv(B_inv_pid)=[-0.1667   -0.1667    0.1667    0.1667    0.1667   -0.1667;
+    %                         0         0.2500    0.2500    0        -0.2500   -0.2500;
+    %                         0.1667    0.1667    0.1667    0.1667    0.1667    0.1667];
     ulim = 40*pi/180;
     aircraft.name = '6-effector';
     aircraft.cpp_tag = '6';
@@ -386,11 +394,15 @@ function ensure_cpp_outputs()
                         fullfile(cpp_output_dir, "output_cpp_6_dpscaled_raw.csv"), ...
                         fullfile(cpp_output_dir, "output_cpp_6_prio.csv"), ...
                         fullfile(cpp_output_dir, "output_cpp_6_prio_raw.csv")];
-    if all(isfile(cpp_output_files))
-        return;
-    end
     if ~isfile('./alloc_cpp/build/main')
         error('test:MissingCppBinary', 'Build alloc_cpp/build/main before running test.m.');
+    end
+    if all(isfile(cpp_output_files))
+        cpp_binary_info = dir('./alloc_cpp/build/main');
+        output_info = dir(cpp_output_files(1));
+        if ~isempty(cpp_binary_info) && ~isempty(output_info) && output_info.datenum >= cpp_binary_info.datenum
+            return;
+        end
     end
     status = system('./alloc_cpp/build/main');
     if status ~= 0

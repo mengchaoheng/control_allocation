@@ -240,7 +240,7 @@ inline float calculateRho(float ydt[ControlSize], float u[EffectorSize], float B
     for (int k = 0; k < EffectorSize; ++k) {
         numerator += ydt_T_Bt[k] * u[k];
     }
-    // 计算 ydt 的2范数
+    // Calculate the 2-norm of ydt
     // std::cout << "ydt: [";
     //     for (size_t i = 0; i < SIZE_ydt; ++i) {
     //         std::cout << ydt[i];
@@ -253,13 +253,12 @@ inline float calculateRho(float ydt[ControlSize], float u[EffectorSize], float B
         denominator += ydt[i] * ydt[i];
         // std::cout <<"denominator"<< denominator<< std::endl;
     }
-    // 避免除以零  // ydt的模不会很小
+    // Avoid division by zero  // The norm of ydt will not be very small
     // std::cout <<"denominator"<< denominator<< std::endl;
     // std::cout <<"fabs(denominator)"<< fabs(denominator)<< std::endl;
     // std::cout <<"tol"<< tol<< std::endl;
-    float relativeEpsilon = tol * fabs(numerator); // 动态阈值
-
-    // //或者
+    float relativeEpsilon = tol * fabs(numerator); // Dynamic threshold
+    // // or
     // const double ABSOLUTE_EPSILON = 1e-10;
     // const double RELATIVE_EPSILON = 1e-10;
 
@@ -276,36 +275,36 @@ inline float calculateRho(float ydt[ControlSize], float u[EffectorSize], float B
         std::cerr << "Error: Division by zero." << std::endl;
         return 1.0f;
     }
-    // 计算 rho
+    // Calculate rho
     return numerator / denominator;
 }
 
-// 函数用于计算两个正整数集合的差
+// Function that computes the difference between two sets of positive integers
 inline void setdiff(int setA[], int sizeA, int setB[], int sizeB, int result[]) {
     int sizeResult = 0;
     for (int i = 0; i < sizeA; ++i) {
         bool foundInB = false;
-        // 检查当前 setA 中的元素是否在 setB 中
+        // Check if the current element of setA is in setB
         for (int j = 0; j < sizeB; ++j) {
             if (setA[i] == setB[j]) {
                 foundInB = true;
                 break;
             }
         }
-        // 如果当前元素不在 setB 中，则将其添加到结果中
+        // If the current element is not in setB, add it to the result.
         if (!foundInB) {
             result[sizeResult++] = setA[i];
         }
     }
 }
 
-// 定义线性规划问题结构体
+// Define the structure of the linear programming problem
 template<int M, int N>
 struct LinearProgrammingProblem {
     int m=M;
     int n=N;
     int inB[M];
-    int inD[N-M]; // 
+    int inD[N-M]; //
     int itlim;
     float A[M][N];
     float b[N];
@@ -320,9 +319,8 @@ struct LinearProgrammingProblem {
     float tie_rel_tol=1e-5f;
     float tie_abs_tol=1e-6f;
     float zero_tie_abs_tol=3e-5f;
-    // 默认构造函数，将所有成员变量初始化为0
     LinearProgrammingProblem() : m(M), n(N), itlim(0) {
-        // 将数组成员变量初始化为0
+        // Initialize array member variables to 0
         for (int i = 0; i < M; ++i) {
             inB[i] = 0;
         }
@@ -341,7 +339,7 @@ struct LinearProgrammingProblem {
             e[i] = false;
         }
     }
-    // 赋值运算符
+    // Assignment operator
     LinearProgrammingProblem& operator=(const LinearProgrammingProblem& other) {
         if (this != &other) {
             m = other.m;
@@ -352,7 +350,7 @@ struct LinearProgrammingProblem {
             tie_rel_tol = other.tie_rel_tol;
             tie_abs_tol = other.tie_abs_tol;
             zero_tie_abs_tol = other.zero_tie_abs_tol;
-            // 复制数组成员变量
+            // Copy array member variables
             for (int i = 0; i < M; ++i) {
                 inB[i] = other.inB[i];
             }
@@ -373,7 +371,7 @@ struct LinearProgrammingProblem {
         }
         return *this;
     }
-    // 拷贝构造函数
+    // Copy constructor
     LinearProgrammingProblem(const LinearProgrammingProblem<M, N>& other) {
         m = other.m;
         n = other.n;
@@ -383,7 +381,7 @@ struct LinearProgrammingProblem {
         tie_rel_tol = other.tie_rel_tol;
         tie_abs_tol = other.tie_abs_tol;
         zero_tie_abs_tol = other.zero_tie_abs_tol;
-        // 复制数组成员变量
+        // Copy array member variables
         for (int i = 0; i < M; ++i) {
             inB[i] = other.inB[i];
         }
@@ -403,7 +401,7 @@ struct LinearProgrammingProblem {
         }
     }
 };
-// 定义结果结构体
+// Define the result structure
 template<int M, int N>
 struct LinearProgrammingResult {
     float y0[M];
@@ -411,10 +409,10 @@ struct LinearProgrammingResult {
     bool e[N];
     int iters;
     bool errout;
-    // 其他结果成员
-    // 默认构造函数，将所有成员变量初始化为0
+    // Other result members
+    // Default constructor, initializes all member variables to 0
     LinearProgrammingResult() : iters(0), errout(false) {
-        // 将数组成员变量初始化为0
+        // Initialize array member variables to 0
         for (int i = 0; i < M; ++i) {
             y0[i] = 0.0f;
             inB[i] = 0;
@@ -423,9 +421,9 @@ struct LinearProgrammingResult {
             e[i] = false;
         }
     }
-    // 拷贝构造函数
+    // Copy constructor
     LinearProgrammingResult(const LinearProgrammingResult<M, N>& other) {
-        // 将成员变量从另一个对象复制到当前对象
+        // Copy member variables from another object to the current object
         for (int i = 0; i < M; ++i) {
             y0[i] = other.y0[i];
             inB[i] = other.inB[i];
@@ -439,8 +437,8 @@ struct LinearProgrammingResult {
 };
 
 
-// 定义函数模板，修正单纯形算法实现。要求A行满秩，求解问题前已知inB和e，即需要找到一个初始基本可行解开始算法迭代。e=0表示该初始解在上限h上，否则就是0
-// see A.6.3 Simplex Method[1]. this function reimplements the bounded revised simplex used by simplxuprevsol.
+// Define the function template, which is the implementation of the modified simplex algorithm. It is required that row A has full rank, and inB and e are known before solving the problem, that is, an initial basic feasible solution needs to be found to start the algorithm iteration. e=0 indicates that the initial solution is on the upper limit h, otherwise it is 0.
+// see A.6.3 Simplex Method[1]. this function reimplement the simplxuprevsol of this book:
 // [1] W. Durham, K. A. Bordignon, and R. Beck, Aircraft control allocation. none: John Wiley & Sons, 2017.
 // and you can download the code on: https://github.com/mengchaoheng/control_allocation.git
 //
@@ -466,12 +464,12 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
     // function [yout, inBout,eout, itout,errout] = simplxuprevsol(A,ct,b,inB,inD,h,e,m,n,itlim)
 
     // Solves the linear program:
-    //         minimize c'y 
-    //         subject to 
+    //         minimize c'y
+    //         subject to
     //         Ay = b
     //         0<= y <= h
 
-    // Inputs: 
+    // Inputs:
     //         A [m,n]   = lhs Matrix of equaltity constraints
     //         ct [1,n]  = transpose of cost vector
     //         b [m,1]   = rhs vector for equality constraint
@@ -496,7 +494,7 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
     // 8/2014    Roger Beck  Update for use
     // 9/2014    Roger Beck  Added anti-cycling rule
     // 4/2024    Meng ChaoHeng
-    // 5/2026    Meng ChaoHeng/Codex  Align pivot tie-breaks with
+    // 5/2026    Meng ChaoHeng  Align pivot tie-breaks with
     //           PCA/simplxuprevsol_tiebreak.m for deterministic C++/MATLAB tests.
 
     LinearProgrammingResult<M, N> result;
@@ -507,7 +505,7 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
     for (int num = 0, index = 0; num < n_m; ++num, ++index) {
         nind[index] = num;
     }
-    // Index list for all variables 
+    // Index list for all variables
     int ind_all[N];
     for (int num = 0, index = 0; num < N; ++num, ++index) {
         ind_all[index] = num;
@@ -595,7 +593,7 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
         select_entering_tiebreak<n_m>(rdt, problem.inD, minr, qind,
                                       problem.useTieBreak, problem.tie_rel_tol, problem.tie_abs_tol);
         if(minr >=0)  // If all relative costs are positive then the solution is optimal. have to compare with 0 !
-        { 
+        {
             done = true;
             break;
         }
@@ -607,9 +605,9 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
          // Check wether all the abs of yq[i] is greater than tol.
         bool flag=false;
         for(int i=0;i<M;++i){
-            if(fabs(yq(i)) > problem.tol) 
+            if(fabs(yq(i)) > problem.tol)
             {
-                flag = true; 
+                flag = true;
                 break;
             }
         }
@@ -668,7 +666,7 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
                 for(int i=0;i<N-M;++i)
                 {
                     // indm is the index of rdt < 0, qind is the first one.
-                    if(rdt(0,i)<0){ // Note that since minr <0 indm is not empty 
+                    if(rdt(0,i)<0){ // Note that since minr <0 indm is not empty
                         qind=nind[i];
                         qel = problem.inD[qind];// Unknown to Enter the basis is first indexed to avoid cycling
                         break;
@@ -683,7 +681,7 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
             for(int i=0;i<M;++i){
                 if(fabs(yq(i)) > problem.tol)
                 {
-                    flag1 = true; 
+                    flag1 = true;
                     break;
                 }
             }
@@ -697,16 +695,16 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
             for(int i=0;i<M;++i)
             {
                 hinB1[i]=problem.h[problem.inB[i]];
-                if(fabs(yq(i))>problem.tol) 
+                if(fabs(yq(i))>problem.tol)
                 {
                     rat(i)=y0(i)/yq(i);
                     if(yq(i)<0) // If yq < 0 then increasing variable when it leaves the basis will minimize cost
-                    {                    
+                    {
                         rat(i)-=hinB1[i]/yq(i);
                     }
                 }
                 else
-                { 
+                {
                     rat(i)=INFINITY; // If an element yq ~=0 then it doesn't change for the entering variable and shouldn't be chosen
                 }
             }
@@ -803,7 +801,7 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
         solveSquareLU(A_inB, b_vec, y0);
     }
     result.errout = unbounded;
-    // 设置 result.y0, result.inB, result.e 等结果
+    // Set result.y0, result.inB, result.e, etc.
     for(int i=0; i<M; ++i)
     {
         result.y0[i]=y0(i);
@@ -820,26 +818,26 @@ LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, 
 
 
 
-// 飞行器基类模板
+// Aerocraft base class template
 template <int ControlSize, int EffectorSize>
 class AircraftBase {
 public:
-    float controlVector[EffectorSize]; // 操纵向量
-    float controlEffectMatrix[ControlSize][EffectorSize]; // 控制效应矩阵 (generalizedMomentSize X controlVectorSize)
-    float upperLimits[EffectorSize]; // 操纵向量上限变量
-    float lowerLimits[EffectorSize]; // 操纵向量下限变量
-    float BuMin[ControlSize]; 
-    // 构造函数
-    // 拷贝构造函数
+    float controlVector[EffectorSize]; // Control vector
+    float controlEffectMatrix[ControlSize][EffectorSize]; // Control effect matrix (generalizedMomentSize X controlVectorSize)
+    float upperLimits[EffectorSize]; // Control vector upper limits
+    float lowerLimits[EffectorSize]; // Control vector lower limits
+    float BuMin[ControlSize];
+    // Constructor
+    // Copy constructor
     AircraftBase(const AircraftBase& other) {
-        // 复制 controlVector
+        // Copy controlVector
         for (int i = 0; i < EffectorSize; ++i) {
             controlVector[i] = other.controlVector[i];
             upperLimits[i] = other.upperLimits[i];
             lowerLimits[i] = other.lowerLimits[i];
         }
 
-        // 复制 controlEffectMatrix
+        // Copy controlEffectMatrix
         for (int i = 0; i < ControlSize; ++i) {
             for (int j = 0; j < EffectorSize; ++j) {
                 controlEffectMatrix[i][j] = other.controlEffectMatrix[i][j];
@@ -848,9 +846,9 @@ public:
         }
     }
     AircraftBase() {
-        // 初始化 controlVector, controlEffectMatrix, generalizedMoment, upperLimits, lowerLimits 等数组
-        // 可以使用默认初始化或者自定义初始化方式
-        // 例如：
+        // Initialize controlVector, controlEffectMatrix, generalizedMoment, upperLimits, lowerLimits arrays
+        // Can use default initialization or custom initialization methods
+        // For example:
         for (int i = 0; i < EffectorSize; ++i) {
             controlVector[i] = 0.0f;
             upperLimits[i] = 0.0f;
@@ -863,23 +861,23 @@ public:
             BuMin[i]=0;
         }
     }
-    // 析构函数
+    // Destructor
     ~AircraftBase() {
-        // 不需要手动释放内存，因为数组是在栈上分配的，会在对象生命周期结束时自动释放
+        // No need to manually release memory because arrays are allocated on the stack and will be automatically released at the end of the object's lifecycle
     }
 };
 
-// 飞行器类模板, 不同飞机定义新的类继承基类
+// Aircraft class template, different aircraft define new classes inheriting from the base class
 template <int ControlSize, int EffectorSize>
 class Aircraft : public AircraftBase<ControlSize, EffectorSize> {
 private:
-    // 添加特定飞行器类型的模型参数
+    // Add model parameters specific to the aircraft type
 public:
-    // 构造函数
-    // 拷贝构造函数
-    // 拷贝构造函数
+    // Constructor
+    // Copy constructor
+    // Copy constructor
     Aircraft(const Aircraft& other) : AircraftBase<ControlSize, EffectorSize>(other) {
-        // 将其他对象的成员变量值复制到新对象中
+        // Copy member variables from the other object to the new object
         l1 = other.l1;
         l2 = other.l2;
         k_v = other.k_v;
@@ -887,16 +885,16 @@ public:
         lower = other.lower;
     }
     Aircraft() : AircraftBase<ControlSize, EffectorSize>() {
-        // 可选的初始化代码
+        // Optional initialization code
         l1=0;
         l2=0;
         k_v=0;
     }
-    // 构造函数，接受对应于飞行器类模板参数的初始化参数
+    // Constructor accepting initialization parameters corresponding to the aircraft class template parameters
     Aircraft(const float (&controlEffectMatrixInit)[ControlSize][EffectorSize],
              const float (&upperLimitsInit)[EffectorSize],
              const float (&lowerLimitsInit)[EffectorSize]) {
-        // 使用传入的初始化参数对飞行器的数组成员进行初始化
+        // Use the passed initialization parameters to initialize the aircraft's array members
         for (int i = 0; i < EffectorSize; ++i) {
             this->controlVector[i] = 0;
             this->upperLimits[i] = upperLimitsInit[i];
@@ -910,13 +908,13 @@ public:
             for (int j = 0; j < EffectorSize; ++j) {
                 temp +=  this->controlEffectMatrix[i][j]*this->lowerLimits[j];
             }
-            this->BuMin[i] = temp; // 计算BuMin
+            this->BuMin[i] = temp; // Calculate BuMin
         }
     }
-    // 构造函数，接受对应于飞行器类模板参数的初始化参数
+    // Constructor accepting initialization parameters corresponding to the aircraft class template parameters
     Aircraft(const float (&upperLimitsInit)[EffectorSize],
              const float (&lowerLimitsInit)[EffectorSize]) {
-        // 使用传入的初始化参数和飞行器
+        // Use the passed initialization parameters and aircraft
         for (int i = 0; i < EffectorSize; ++i) {
             this->controlVector[i] = 0;
             this->upperLimits[i] = upperLimitsInit[i];
@@ -931,11 +929,11 @@ public:
             for (int j = 0; j < EffectorSize; ++j) {
                 temp +=  this->controlEffectMatrix[i][j]*this->lowerLimits[j];
             }
-            this->BuMin[i] = temp; // 计算BuMin
+            this->BuMin[i] = temp; // Calculate BuMin
         }
     }
     Aircraft(const float (&controlEffectMatrixInit)[ControlSize][EffectorSize], const float& lowerBound, const float& upperBound) : lower(lowerBound), upper(upperBound){
-        // 使用传入的初始化参数和飞行器
+        // Use the passed initialization parameters and aircraft
         for (int i = 0; i < EffectorSize; ++i) {
             this->controlVector[i] = 0;
             this->upperLimits[i] = upper;
@@ -949,11 +947,11 @@ public:
             for (int j = 0; j < EffectorSize; ++j) {
                 temp +=  this->controlEffectMatrix[i][j]*this->lowerLimits[j];
             }
-            this->BuMin[i] = temp; // 计算BuMin
+            this->BuMin[i] = temp; // Calculate BuMin
         }
     }
 
-    // 设置模型参数函数
+    // Set model parameters function
     int num_control=ControlSize;
     int num_effector=EffectorSize;
     float l1;
@@ -962,48 +960,48 @@ public:
     float lower;
     float upper;
 
-    // 析构函数
+    // Destructor
     ~Aircraft() {
-        // 如果有需要释放的资源，可以在这里添加代码
+        // If there are resources to release, you can add code here
     }
 
-    // 其他成员函数和成员变量定义
+    // Other member functions and member variable definitions
 };
-// 控制分配基类模板
+// Control allocation base class template
 template <int ControlSize, int EffectorSize>
 class ControlAllocatorBase {
 public:
-    // 构造函数
+    // Constructor
     ControlAllocatorBase() : aircraft() {
-        // 在此初始化成员变量，或者留空
+        // Optional initialization code
     }
-    // 参数列表构造函数
+    // Parameterized constructor
     ControlAllocatorBase(const Aircraft<ControlSize, EffectorSize>& ac)
         : aircraft(ac) {
-        // 使用传入的aircraft对象初始化aircraft成员
+        // Use the passed aircraft object to initialize the aircraft member
     }
 
-    // 其他数学函数和成员变量定义
-    Aircraft<ControlSize, EffectorSize> aircraft; // 构造函数设置
+    // Other mathematical functions and member variable definitions
+    Aircraft<ControlSize, EffectorSize> aircraft; // Constructor initialized
 
 };
-// 控制分配类模板
+// Control allocation class template
 template <int ControlSize, int EffectorSize>
 class DP_LP_ControlAllocator : public ControlAllocatorBase<ControlSize, EffectorSize> {
 private:
-    // 添加算法设置参数
+    // Add algorithm setting parameters
 public:
-    // 构造函数, 利用aircraft 预设置LinearProgrammingProblem
-    // 构造函数
+    // Constructor, use aircraft to preset LinearProgrammingProblem
+    // Constructor
     DP_LP_ControlAllocator(const Aircraft<ControlSize, EffectorSize>& ac)
         : ControlAllocatorBase<ControlSize, EffectorSize>(ac){
-        // 在此处用aircraft, generalizedMoment初始化 成员变量 DP_LPCA_problem 和 Pre_DP_LPCA_problem
-        // 线性规划数据
+        // Use aircraft, generalizedMoment to initialize member variables DP_LPCA_problem and Pre_DP_LPCA_problem
+        // Linear programming data
         //=====================================DP_LPCA_problem================================
-        // float cs_max=this->aircraft.upperLimits[0]-this->aircraft.lowerLimits[0]; // 存储最大的绝对值
+        // float cs_max=this->aircraft.upperLimits[0]-this->aircraft.lowerLimits[0]; // Store the maximum absolute value
         // for (int i = 0; i < ControlSize; ++i) {
-        //     float absValue = fabs(this->aircraft.upperLimits[i]-this->aircraft.lowerLimits[i]); // 计算 yd 中第 i 个元素的绝对值
-        //     if (absValue > cs_max) { // 如果当前绝对值大于 my，则更新 my 和 iy
+        //     float absValue = fabs(this->aircraft.upperLimits[i]-this->aircraft.lowerLimits[i]); // Calculate the absolute value of the i-th element in 'yd'
+        //     if (absValue > cs_max) { // If the current absolute value is greater than 'my', update my and 'iy'
         //         cs_max = absValue;
         //     }
         // }
@@ -1032,7 +1030,7 @@ public:
         }
         //==================================PreDP_LPCA_problem================================
         Pre_DP_LPCA_problem.itlim = 100;
-        
+
         //ci
         for(int i=0; i<DP_LPCA_problem.n; ++i)
         {
@@ -1079,11 +1077,11 @@ public:
         DPscaled_LPCA_problem.itlim = 100;
         float yd[3]={0.1,0.2,-0.1}; // random value for inital.
         // update A b c h every time
-        float my=yd[0]; // 存储最大的绝对值
-        int iy=0; // 存储最大绝对值的索引
+        float my=yd[0]; // Store the maximum absolute value
+        int iy=0; // Store the index of the maximum absolute value
         for (int i = 0; i < ControlSize; ++i) {
-            float absValue = fabs(yd[i]); // 计算 yd 中第 i 个元素的绝对值
-            if (absValue > my) { // 如果当前绝对值大于 my，则更新 my 和 iy
+            float absValue = fabs(yd[i]); // Calculate the absolute value of the i-th element in 'yd'
+            if (absValue > my) { // If the current absolute value is greater than 'my', update my and 'iy'
                 my = absValue;
                 iy = i;
             }
@@ -1131,17 +1129,17 @@ public:
         // M[0][2]=0;
         // M[1][2]=-ydt[0];
         // or
-        // 将 M 的所有元素初始化为0，并同时填充 M 的第一列和对角线元素
+        // Initialize all elements of M to 0, and simultaneously fill the first column and diagonal elements of M
         for (int i = 0; i < ControlSize - 1; ++i) {
             for (int j = 0; j < ControlSize; ++j) {
                 if (j == 0) {
-                    // 填充 M 的第一列
+                    // Fill the first column of M
                     M[i][0] = ydt[i + 1];
                 } else if (j == i + 1) {
-                    // 填充对角线元素
+                    // Fill the diagonal elements
                     M[i][j] = -ydt[0];
                 } else {
-                    // 初始化其他元素为0
+                    // Initialize other elements to 0
                     M[i][j] = 0.0f;
                 }
             }
@@ -1225,10 +1223,10 @@ public:
         v_aug(ControlSize)=a_constant;
         u_null.setZero();
     }
-    // 设置算法参数函数
-    // 析构函数
+    // Set Algorithm Parameter Function
+    // Destructor
     ~DP_LP_ControlAllocator() {
-        // 如果有需要释放的资源，可以在这里添加代码
+        // If there are resources that need to be released, you can add code here
     }
     // To find an initial condition, many linear programming solvers treat the solution in two phases. Phase one solves a specially constructed problem designed to yield a basic feasible solution that is used to initialize the original problem in phase two.
     // So we have DP_LPCA and DPscaled_LPCA
@@ -1297,7 +1295,7 @@ public:
         err = 0;
         rho = 0;
 
-        // DP_LPCA函数利用飞行器数据，将分配问题描述为DP_LP问题并用BoundedRevisedSimplex求解
+        // DP_LPCA function uses aircraft data to describe the allocation problem as a DP_LP problem and solves it using  BoundedRevisedSimplex
         //=======================
         // Figure out how big the problem is (use standard CA definitions for m & n)
         // but in here we use [m,k] = size(B) instead of [n,m] = size(B) in matlab. just for adapt to BoundedRevisedSimplex
@@ -1335,7 +1333,7 @@ public:
         for(int i=0; i<DP_LPCA_problem.m; ++i)
         {
             DP_LPCA_problem.A[i][DP_LPCA_problem.n-1] = -input[i];
-            DP_LPCA_problem.b[i] = -this->aircraft.BuMin[i]; // 
+            DP_LPCA_problem.b[i] = -this->aircraft.BuMin[i]; //
 
             Pre_DP_LPCA_problem.A[i][DP_LPCA_problem.n-1] = -input[i]; // the same as DP_LPCA_problem.A[i][DP_LPCA_problem.n-1]
             Pre_DP_LPCA_problem.b[i] = -this->aircraft.BuMin[i]; // the same as DP_LPCA_problem
@@ -1489,7 +1487,7 @@ public:
         err = 0;
         rho = 0;
 
-        // DPscaled_LPCA函数利用飞行器数据，将分配问题描述为DP_LP问题并用BoundedRevisedSimplex求解
+        // The DPscaled_LPCA function utilizes aircraft data, formulating the allocation problem as a DP_LP problem and solving it using the BoundedRevisedSimplex method.
         //=======================
         // Figure out how big the problem is (use standard CA definitions for m & n)
         // but in here we use [m,k] = size(B) instead of [n,m] = size(B) in matlab. just for adapt to BoundedRevisedSimplex
@@ -1522,11 +1520,11 @@ public:
         // float yd[3]={0.1,0.1,0.2}; // random value for inital.
         //================================== DPscaled_LPCA_problem ================================
         // update A b c h every time
-        float my=fabs(input[0]); // 存储最大的绝对值
-        int iy=0; // 存储最大绝对值的索引
+        float my=fabs(input[0]); // Store the maximum absolute value
+        int iy=0; // Store the index of the maximum absolute value
         for (int i = 0; i < ControlSize; ++i) {
-            float absValue = fabs(input[i]); // 计算 yd 中第 i 个元素的绝对值
-            if (absValue > my) { // 如果当前绝对值大于 my，则更新 my 和 iy
+            float absValue = fabs(input[i]); // Calculate the absolute value of the i-th element in yd
+            if (absValue > my) { // If the current absolute value is greater than my, update my and iy
                 my = absValue;
                 iy = i;
             }
@@ -1575,17 +1573,17 @@ public:
         // M[0][2]=0;
         // M[1][2]=-ydt[0];
         // or
-        // 将 M 的所有元素初始化为0，并同时填充 M 的第一列和对角线元素
+        // Initialize all elements of M to 0, while filling the first column and diagonal elements of M
         for (int i = 0; i < ControlSize - 1; ++i) {
             for (int j = 0; j < ControlSize; ++j) {
                 if (j == 0) {
-                    // 填充 M 的第一列
+                    // Fill the first column of M
                     M[i][0] = ydt[i + 1];
                 } else if (j == i + 1) {
-                    // 填充对角线元素
+                    // Fill the diagonal elements
                     M[i][j] = -ydt[0];
                 } else {
-                    // 初始化其他元素为0
+                    // Initialize other elements to 0
                     M[i][j] = 0.0f;
                 }
             }
@@ -1765,7 +1763,7 @@ public:
         err = 0;
         rho = 0;
 
-        // DP_LPCA函数利用飞行器数据，将分配问题描述为DP_LP问题并用BoundedRevisedSimplex求解
+        // The DP_LPCA function utilizes aircraft data to describe the allocation problem as a DP_LP problem and solves it using BoundedRevisedSimplex
         //=======================
         // Figure out how big the problem is (use standard CA definitions for m & n)
         // but in here we use [m,k] = size(B) instead of [n,m] = size(B) in matlab. just for adapt to BoundedRevisedSimplex
@@ -1984,8 +1982,8 @@ public:
         }
         float K_opt=-a_constant/u_null.norm_squared();
         //% update limits
-        float uMax_new[EffectorSize]; // 操纵向量上限变量
-        float uMin_new[EffectorSize]; // 操纵向量下限变量
+        float uMax_new[EffectorSize]; // Control vector upper limit variables
+        float uMin_new[EffectorSize]; // Control vector lower limit variables
         for(int i=0;i<EffectorSize;++i){
             uMax_new[i]=this->aircraft.upperLimits[i]-u[i];
             uMin_new[i]=this->aircraft.lowerLimits[i]-u[i];
@@ -2018,8 +2016,8 @@ public:
             for (int j = 0; j < EffectorSize; ++j) {
                 temp +=  this->aircraft.controlEffectMatrix[i][j]*this->aircraft.lowerLimits[j];
             }
-            this->aircraft.BuMin[i] = temp; // 计算BuMin
-            DP_LPCA_problem.b[i]=-temp; //暂时。还需要重新计算
+            this->aircraft.BuMin[i] = temp; // Calculate BuMin
+            DP_LPCA_problem.b[i]=-temp; // Temporarily. Needs recalculation
 
         }
 
@@ -2042,7 +2040,7 @@ public:
             DP_LPCA_problem.h[i] = this->aircraft.upperLimits[i]-this->aircraft.lowerLimits[i];  //[n] is fixed 1
             Pre_DP_LPCA_problem.h[i] = DP_LPCA_problem.h[i];
         }
-        // for DPscaled_LPCA is update every time 
+        // for DPscaled_LPCA is update every time
         //   for restoring
         B_aug.setZero();
         B.setZero();
@@ -2058,13 +2056,13 @@ public:
         // std::cout << "is updated" << std::endl;
         isupdate = false;
     }
-    // 其他成员函数和成员变量定义
-    float generalizedMoment[ControlSize]; // 构造函数设置
-    // 线性规划相关
-    LinearProgrammingProblem<ControlSize, EffectorSize+1> DP_LPCA_problem;// 提前设置 inital by  aircraft data
-    LinearProgrammingProblem<ControlSize, (EffectorSize+1) + ControlSize> Pre_DP_LPCA_problem;// 提前设置 inital by aircraft data
-    LinearProgrammingProblem<ControlSize-1, EffectorSize> DPscaled_LPCA_problem;// 提前设置 inital by  aircraft data
-    LinearProgrammingProblem<ControlSize-1, EffectorSize + (ControlSize-1)> Pre_DPscaled_LPCA_problem;// 提前设置 inital by aircraft data
+    // Other member functions and member variables definitions
+    float generalizedMoment[ControlSize]; // Set in constructor
+    // Linear programming related
+    LinearProgrammingProblem<ControlSize, EffectorSize+1> DP_LPCA_problem;// Pre-set initial by aircraft data
+    LinearProgrammingProblem<ControlSize, (EffectorSize+1) + ControlSize> Pre_DP_LPCA_problem;// Pre-set initial by aircraft data
+    LinearProgrammingProblem<ControlSize-1, EffectorSize> DPscaled_LPCA_problem;// Pre-set initial by aircraft data
+    LinearProgrammingProblem<ControlSize-1, EffectorSize + (ControlSize-1)> Pre_DPscaled_LPCA_problem;// Pre-set initial by aircraft data
     float upper_lam=1; // 2024-10-18 upper_lam=1
     // for restoring
     matrix::Matrix<float, ControlSize+1, EffectorSize> B_aug;

@@ -171,9 +171,9 @@ int main() {
     // 然后可以使用飞行器对象和控制分配器对象进行操作
    
 
-    // float _B_for6[3][6]    = { {-17.9880,   -8.9940,    8.9940,   17.9880,    8.9940,   -8.9940}, { 0,  -19.4726,  -19.4726,         0,   19.4726,   19.4726},{15.3231,   15.3231,   15.3231,   15.3231,   15.3231,   15.3231}};
-    float l1_for6=0.2998f;float l2_for6=0.0664f;float k_for6=1.0f;
-    float I_x_for6=0.05f; float I_y_for6=0.04f; float I_z_for6=0.013f;
+    // Six-effector model must match test.m::make_aircraft_6().
+    float l1_for6=0.292166f;float l2_for6=0.073699f;float k_for6=1.93f;
+    float I_x_for6=0.0438f; float I_y_for6=0.0436f; float I_z_for6=0.005006f;
     constexpr float DEG2RAD = 0.01745329251994329577f;
     const float d_for6 = 60.0f * DEG2RAD;
     float _B_for6[3][6] = {

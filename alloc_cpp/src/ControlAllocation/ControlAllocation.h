@@ -1423,13 +1423,6 @@ public:
         }
         // Use upper_lam to prevent control surfaces from approaching position limits
         rho = xout[EffectorSize];
-        if(enable_restoring){
-            float output_rest[EffectorSize];
-            restoring(output, output_rest);
-            for(int i=0;i<EffectorSize;++i){
-                output[i]=output_rest[i];
-            }
-        }
         return;
     }
     void DPscaled_LPCA(float input[ControlSize], float output[EffectorSize], int& err, float & rho){
@@ -1733,13 +1726,6 @@ public:
                 output[i]/=rho;
             }
         }
-        if(enable_restoring){
-            float output_rest[EffectorSize];
-            restoring(output, output_rest);
-            for(int i=0;i<EffectorSize;++i){
-                output[i]=output_rest[i];
-            }
-        }
         return;
     }
     void DP_LPCA_copy(float input_higher[ControlSize], float input_lower[ControlSize], float output[EffectorSize], int& err, float & rho){
@@ -1904,13 +1890,6 @@ public:
             output[i]=xout[i]+this->aircraft.lowerLimits[i];
         }
         rho = xout[EffectorSize];
-        if(enable_restoring){
-            float output_rest[EffectorSize];
-            restoring(output, output_rest);
-            for(int i=0;i<EffectorSize;++i){
-                output[i]=output_rest[i];
-            }
-        }
         return;
     }
     void DP_LPCA_prio(float input_higher[ControlSize], float input_lower[ControlSize], float output[EffectorSize], int& err, float & rho){
@@ -2094,7 +2073,6 @@ public:
     float a_constant=-2; //arbitrary a<0 (if null(B)'*u = 0, rank([B_aug v_aug]) ~= rank(B_aug), it have to be a=0)
     matrix::Matrix<float, ControlSize, EffectorSize> B;
     bool isupdate{false}; //if update aircraft data, then set isupdate = true.
-    bool enable_restoring{true};
 
 };
 // and user can define more...

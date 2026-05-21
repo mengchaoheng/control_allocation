@@ -375,11 +375,17 @@ end
 function ensure_cpp_outputs()
     cpp_output_dir = fullfile('results', 'cpp_outputs');
     cpp_output_files = [fullfile(cpp_output_dir, "output_cpp_4_dp.csv"), ...
+                        fullfile(cpp_output_dir, "output_cpp_4_dp_raw.csv"), ...
                         fullfile(cpp_output_dir, "output_cpp_4_dpscaled.csv"), ...
+                        fullfile(cpp_output_dir, "output_cpp_4_dpscaled_raw.csv"), ...
                         fullfile(cpp_output_dir, "output_cpp_4_prio.csv"), ...
+                        fullfile(cpp_output_dir, "output_cpp_4_prio_raw.csv"), ...
                         fullfile(cpp_output_dir, "output_cpp_6_dp.csv"), ...
+                        fullfile(cpp_output_dir, "output_cpp_6_dp_raw.csv"), ...
                         fullfile(cpp_output_dir, "output_cpp_6_dpscaled.csv"), ...
-                        fullfile(cpp_output_dir, "output_cpp_6_prio.csv")];
+                        fullfile(cpp_output_dir, "output_cpp_6_dpscaled_raw.csv"), ...
+                        fullfile(cpp_output_dir, "output_cpp_6_prio.csv"), ...
+                        fullfile(cpp_output_dir, "output_cpp_6_prio_raw.csv")];
     if all(isfile(cpp_output_files))
         return;
     end
@@ -400,17 +406,29 @@ function result = load_cpp_outputs_for_case(result, sample_indices)
     tag = result.cpp_tag;
     cpp_output_dir = fullfile('results', 'cpp_outputs');
     dp_file = fullfile(cpp_output_dir, sprintf('output_cpp_%s_dp.csv', tag));
+    dp_raw_file = fullfile(cpp_output_dir, sprintf('output_cpp_%s_dp_raw.csv', tag));
     dpscaled_file = fullfile(cpp_output_dir, sprintf('output_cpp_%s_dpscaled.csv', tag));
+    dpscaled_raw_file = fullfile(cpp_output_dir, sprintf('output_cpp_%s_dpscaled_raw.csv', tag));
     prio_file = fullfile(cpp_output_dir, sprintf('output_cpp_%s_prio.csv', tag));
+    prio_raw_file = fullfile(cpp_output_dir, sprintf('output_cpp_%s_prio_raw.csv', tag));
 
     if isfile(dp_file)
         result.cpp_dp = slice_cpp_output(readmatrix(dp_file)', sample_indices);
     end
+    if isfile(dp_raw_file)
+        result.cpp_dp_raw = slice_cpp_output(readmatrix(dp_raw_file)', sample_indices);
+    end
     if isfile(dpscaled_file)
         result.cpp_dpscaled = slice_cpp_output(readmatrix(dpscaled_file)', sample_indices);
     end
+    if isfile(dpscaled_raw_file)
+        result.cpp_dpscaled_raw = slice_cpp_output(readmatrix(dpscaled_raw_file)', sample_indices);
+    end
     if isfile(prio_file)
         result.cpp_prio = slice_cpp_output(readmatrix(prio_file)', sample_indices);
+    end
+    if isfile(prio_raw_file)
+        result.cpp_prio_raw = slice_cpp_output(readmatrix(prio_raw_file)', sample_indices);
     end
 end
 
@@ -425,22 +443,31 @@ function x = slice_cpp_output(x_full, sample_indices)
 end
 
 function report_case(result, command_px4, len_command_px4, t)
+    if isfield(result, 'cpp_dp_raw')
+        report_cpp_matlab_case([result.name ' DP_LPCA raw'], result.B, result.cpp_dp_raw, result.matlab_dp_raw, command_px4, len_command_px4, t);
+    end
     if isfield(result, 'cpp_dp')
-        report_cpp_matlab_case([result.name ' DP_LPCA'], result.B, result.cpp_dp, result.matlab_dp, command_px4, len_command_px4, t);
+        report_cpp_matlab_case([result.name ' DP_LPCA restored'], result.B, result.cpp_dp, result.matlab_dp, command_px4, len_command_px4, t);
     else
-        report_matlab_case([result.name ' DP_LPCA'], result.B, result.matlab_dp, command_px4, len_command_px4);
+        report_matlab_case([result.name ' DP_LPCA restored'], result.B, result.matlab_dp, command_px4, len_command_px4);
     end
 
+    if isfield(result, 'cpp_dpscaled_raw')
+        report_cpp_matlab_case([result.name ' DPscaled_LPCA raw'], result.B, result.cpp_dpscaled_raw, result.matlab_dpscaled_raw, command_px4, len_command_px4, t);
+    end
     if isfield(result, 'cpp_dpscaled')
-        report_cpp_matlab_case([result.name ' DPscaled_LPCA'], result.B, result.cpp_dpscaled, result.matlab_dpscaled, command_px4, len_command_px4, t);
+        report_cpp_matlab_case([result.name ' DPscaled_LPCA restored'], result.B, result.cpp_dpscaled, result.matlab_dpscaled, command_px4, len_command_px4, t);
     else
-        report_matlab_case([result.name ' DPscaled_LPCA'], result.B, result.matlab_dpscaled, command_px4, len_command_px4);
+        report_matlab_case([result.name ' DPscaled_LPCA restored'], result.B, result.matlab_dpscaled, command_px4, len_command_px4);
     end
 
+    if isfield(result, 'cpp_prio_raw')
+        report_cpp_matlab_case([result.name ' DP_LPCA_prio raw'], result.B, result.cpp_prio_raw, result.matlab_prio_raw, command_px4, len_command_px4, t);
+    end
     if isfield(result, 'cpp_prio')
-        report_cpp_matlab_case([result.name ' DP_LPCA_prio'], result.B, result.cpp_prio, result.matlab_prio, command_px4, len_command_px4, t);
+        report_cpp_matlab_case([result.name ' DP_LPCA_prio restored'], result.B, result.cpp_prio, result.matlab_prio, command_px4, len_command_px4, t);
     else
-        report_matlab_case([result.name ' DP_LPCA_prio'], result.B, result.matlab_prio, command_px4, len_command_px4);
+        report_matlab_case([result.name ' DP_LPCA_prio restored'], result.B, result.matlab_prio, command_px4, len_command_px4);
     end
 
 end

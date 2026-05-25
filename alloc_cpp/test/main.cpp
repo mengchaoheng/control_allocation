@@ -108,7 +108,7 @@ int main() {
 	float _I_z{0.00487f};//setting in the .sdf
 	float _L_1{0.167f}; //setting in the .sdf
 	float _L_2{0.069f}; //setting in the .sdf
-	float _k{3.0f};	// USER_OMEGA_2_F, k  =_k_cv*_k_v*_k_v, setting k in the gazebo
+	float _k{1.0f};	// 15003_ductedfan4 USER_OMEGA_2_F; keep aligned with test.m::make_aircraft_4().
     float _B[3][4] = {
         {-_L_1 / _I_x * _k, 0.0f, _L_1 / _I_x * _k, 0.0f},
         {0.0f, -_L_1 / _I_y * _k, 0.0f, _L_1 / _I_y * _k},
@@ -165,13 +165,13 @@ int main() {
     // 示例代码
     // 使用模板类时，可以指定 ControlSize 和 EffectSize 的具体值
     // 例如：
-    float l1=0.167;float l2=0.069;float k_v=3;
+    float l1=0.167;float l2=0.069;float k_v=1;
     Aircraft<3, 4> df_4(_B, -0.3491f, 0.3491f); // 创建一个具有 4 个操纵向量和 3 个广义力矩的飞行器对象
     DP_LP_ControlAllocator<3, 4> Allocator(df_4); // 创建一个控制分配器对象，用于具有 4 个操纵向量和 3 个广义力矩的飞行器(转化为线性规划问题，其维数和参数 <3, 4> 有关。)
     // 然后可以使用飞行器对象和控制分配器对象进行操作
    
 
-    // Six-effector model must match test.m::make_aircraft_6().
+    // SHC09 six-effector model must match test.m::make_aircraft_6().
     float l1_for6=0.292166f;float l2_for6=0.073699f;float k_for6=1.93f;
     float I_x_for6=0.0438f; float I_y_for6=0.0436f; float I_z_for6=0.005006f;
     constexpr float DEG2RAD = 0.01745329251994329577f;

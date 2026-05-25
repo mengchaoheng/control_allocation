@@ -115,7 +115,7 @@ function [u,a] = use_LP_lib(B,v, umin, umax)
     % % Interior Point Methods
     % [xsol, fval, exitflag, iterations] = ipdipm(A, c, b, Eqin);
 
-     [xsol, fval, exitflag, iterations] = linprogSolver(A, c, b, Eqin,-1,0, 'dual-simplex')
+     [xsol, fval, exitflag, iterations] = linprogSolver(A, c, b, Eqin,-1,0, 'dual-simplex');
      %%
     % sensitivity Analysis
 

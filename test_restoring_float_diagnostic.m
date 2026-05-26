@@ -24,7 +24,7 @@ umin = result.umin;
 umax = result.umax;
 u_raw_all = result.alloc.cpp_dir.u_raw;
 u_cpp_all = result.alloc.cpp_dir.u;
-u_matlab_all = result.alloc.dir.u;
+u_matlab_all = result.alloc.pca_dir.u;
 n = size(u_raw_all, 2);
 
 u_double = zeros(size(u_raw_all));
@@ -50,7 +50,7 @@ fprintf('current C++ restored vs MATLAB restoring_cpp(cpp raw): %.12g\n', max(ab
 fprintf('float normal-equation restoring vs MATLAB restoring_cpp(cpp raw): %.12g\n', max(abs(u_float_normal - u_double), [], 'all'));
 fprintf('float normal-equation restoring, residual tol=1e-4, vs MATLAB restoring_cpp(cpp raw): %.12g\n', max(abs(u_float_normal_relaxed - u_double), [], 'all'));
 fprintf('float MGS restoring vs MATLAB restoring_cpp(cpp raw): %.12g\n', max(abs(u_float_mgs - u_double), [], 'all'));
-fprintf('MATLAB dir restored vs MATLAB restoring_cpp(cpp raw): %.12g\n', max(abs(u_matlab_all - u_double), [], 'all'));
+fprintf('MATLAB pca_dir restored vs MATLAB restoring_cpp(cpp raw): %.12g\n', max(abs(u_matlab_all - u_double), [], 'all'));
 
 [~, worst_normal_linear] = max(abs(u_float_normal - u_double), [], 'all', 'linear');
 [~, worst_mgs_linear] = max(abs(u_float_mgs - u_double), [], 'all', 'linear');

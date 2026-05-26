@@ -47,15 +47,15 @@ end
 end
 
 function plot_case(result, t, len_command_px4)
-    plot_algorithm(result.name, 'DP_LPCA', result, 'matlab_dp', 'cpp_dp', t, len_command_px4);
-    plot_algorithm(result.name, 'DPscaled_LPCA', result, 'matlab_dpscaled', 'cpp_dpscaled', t, len_command_px4);
-    plot_algorithm(result.name, 'DP_LPCA_prio', result, 'matlab_prio', 'cpp_prio', t, len_command_px4);
+    plot_algorithm(result.name, 'pca_dir vs cpp_dir', result, 'pca_dir', 'cpp_dir', t, len_command_px4);
+    plot_algorithm(result.name, 'pca_dpscaled vs cpp_dpscaled', result, 'pca_dpscaled', 'cpp_dpscaled', t, len_command_px4);
+    plot_algorithm(result.name, 'pca_prio vs cpp_prio', result, 'pca_prio', 'cpp_prio', t, len_command_px4);
 
     default_fields = {'name', 'cpp_tag', 'B', 'umin', 'umax', ...
-        'matlab_dp', 'matlab_dpscaled', 'matlab_prio', ...
-        'matlab_dp_raw', 'matlab_dpscaled_raw', 'matlab_prio_raw', ...
-        'cpp_dp', 'cpp_dpscaled', 'cpp_prio', ...
-        'cpp_dp_raw', 'cpp_dpscaled_raw', 'cpp_prio_raw'};
+        'pca_dir', 'pca_dpscaled', 'pca_prio', ...
+        'pca_dir_raw', 'pca_dpscaled_raw', 'pca_prio_raw', ...
+        'cpp_dir', 'cpp_dpscaled', 'cpp_prio', ...
+        'cpp_dir_raw', 'cpp_dpscaled_raw', 'cpp_prio_raw'};
     fields = fieldnames(result);
     for idx = 1:numel(fields)
         field = fields{idx};
@@ -141,8 +141,15 @@ function plot_case_diff_u_curves(results, case_comparison_pairs, methods_to_run,
 
             for output_idx = 1:n_outputs
                 nexttile;
-                plot(t(1:n), u_a(output_idx, 1:n), '-', 'LineWidth', 1.05); hold on;
-                plot(t(1:n), u_b(output_idx, 1:n), '--', 'LineWidth', 1.05);
+                styles = make_curve_styles({result_a.name, result_b.name});
+                plot(t(1:n), u_a(output_idx, 1:n), ...
+                     'Color', styles(1).color, ...
+                     'LineStyle', styles(1).line_style, ...
+                     'LineWidth', styles(1).line_width); hold on;
+                plot(t(1:n), u_b(output_idx, 1:n), ...
+                     'Color', styles(2).color, ...
+                     'LineStyle', styles(2).line_style, ...
+                     'LineWidth', styles(2).line_width);
                 ylabel(sprintf('u_%d', output_idx));
                 grid on;
 
@@ -187,7 +194,7 @@ function plot_method_diff_u_curves(results, methods_to_run, t, len_command_px4, 
 
         figure('Name', sprintf('%s allocator u comparison (%s)', result.name, mode_label));
         tiledlayout(n_outputs, 1, 'TileSpacing', 'compact');
-        line_styles = make_method_line_styles(method_names);
+        line_styles = make_curve_styles(method_names);
 
         for output_idx = 1:n_outputs
             nexttile;
@@ -198,6 +205,7 @@ function plot_method_diff_u_curves(results, methods_to_run, t, len_command_px4, 
                 n = min([len_command_px4, numel(t), size(u, 2)]);
                 style = line_styles(method_idx);
                 plot(t(1:n), u(output_idx, 1:n), ...
+                     'Color', style.color, ...
                      'LineStyle', style.line_style, ...
                      'LineWidth', style.line_width);
             end
@@ -217,20 +225,34 @@ function plot_method_diff_u_curves(results, methods_to_run, t, len_command_px4, 
     end
 end
 
-function styles = make_method_line_styles(method_names)
+function styles = make_curve_styles(curve_names)
+    % Stable per-curve styles for visual comparison.  Width stays in
+    % [0.5, 1.5], while color and line style are also varied so two curves
+    % in the same axes are easy to distinguish.
     line_styles = {'-', '--', ':', '-.'};
-    styles = struct('line_style', {}, 'line_width', {});
+    color_order = [
+        0.0000 0.4470 0.7410
+        0.8500 0.3250 0.0980
+        0.9290 0.6940 0.1250
+        0.4940 0.1840 0.5560
+        0.4660 0.6740 0.1880
+        0.3010 0.7450 0.9330
+        0.6350 0.0780 0.1840
+        0.2500 0.2500 0.2500
+    ];
+    styles = struct('color', {}, 'line_style', {}, 'line_width', {});
 
-    for method_idx = 1:numel(method_names)
-        seed = sum(double(method_names{method_idx})) + 37 * method_idx;
+    for curve_idx = 1:numel(curve_names)
+        seed = sum(double(curve_names{curve_idx})) + 37 * curve_idx;
         width_random = mod(sin(seed * 12.9898) * 43758.5453, 1);
 
         if width_random < 0
             width_random = width_random + 1;
         end
 
-        styles(method_idx).line_style = line_styles{mod(seed, numel(line_styles)) + 1};
-        styles(method_idx).line_width = 0.5 + width_random;
+        styles(curve_idx).color = color_order(mod(curve_idx - 1, size(color_order, 1)) + 1, :);
+        styles(curve_idx).line_style = line_styles{mod(curve_idx - 1, numel(line_styles)) + 1};
+        styles(curve_idx).line_width = 0.5 + width_random;
     end
 end
 

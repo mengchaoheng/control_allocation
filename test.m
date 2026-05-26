@@ -85,7 +85,7 @@ aircraft_cases{end+1} = make_shw09_vtol_mc_full8();
 aircraft_cases{end+1} = make_shw09_vtol_mc_reduced6();
 % To test another B, append a case here:
 % aircraft_cases{end+1} = make_aircraft_from_matrix('my-B', B, umin, umax, '');
-% If cpp_tag is '4' or '6', test.m loads results/cpp_outputs/output_cpp_<tag>_*.csv for C++ comparison.
+% If cpp_tag is a formal case name, test.m loads results/cpp_outputs/output_cpp_<cpp_tag>_*.csv for C++ comparison.
 % If cpp_tag is '', only MATLAB outputs are simulated and saved/plotted.
 aircraft_cases = select_aircraft_cases(aircraft_cases, aircraft_case_selection);
 
@@ -94,8 +94,8 @@ tie_opts.tie_rel_tol = 1e-5;
 tie_opts.tie_abs_tol = 1e-6;
 tie_opts.zero_tie_abs_tol = 3e-5;
 
-fprintf('MATLAB path: PCA/DP_LPCA, PCA/DPscaled_LPCA, PCA/DP_LPCA_prio + restoring_cpp\n');
-fprintf('C++ PCA path: DP_LPCA / DPscaled_LPCA / DP_LPCA_prio + restoring() aligned to restoring_cpp\n');
+fprintf('MATLAB PCA methods: pca_dir=PCA/DP_LPCA, pca_dpscaled=PCA/DPscaled_LPCA, pca_prio=PCA/DP_LPCA_prio + restoring_cpp\n');
+fprintf('C++ methods: cpp_dir=DP_LPCA, cpp_dpscaled=DPscaled_LPCA, cpp_prio=DP_LPCA_prio + restoring() aligned to restoring_cpp\n');
 fprintf('Restoring: %s\n', string(use_restoring));
 fprintf('Allocator methods enabled: %s\n', strjoin(allocation_methods_to_run, ', '));
 fprintf('Aircraft cases enabled: %d\n', numel(aircraft_cases));
@@ -207,7 +207,7 @@ function aircraft = make_aircraft_4()
 
     ulim = 0.3491;
     aircraft.name = '15003_ductedfan4';
-    aircraft.cpp_tag = '4';
+    aircraft.cpp_tag = aircraft.name;
     aircraft.B = B;
     aircraft.umin = ones(4, 1) * -ulim;
     aircraft.umax = ones(4, 1) * ulim;
@@ -249,7 +249,7 @@ function aircraft = make_aircraft_6()
     %                         0.1667    0.1667    0.1667    0.1667    0.1667    0.1667];
     ulim = 40*pi/180;
     aircraft.name = '15006_SHC09';
-    aircraft.cpp_tag = '6';
+    aircraft.cpp_tag = aircraft.name;
     aircraft.B = B;
     aircraft.umin = ones(6, 1) * -ulim;
     aircraft.umax = ones(6, 1) * ulim;
@@ -480,12 +480,6 @@ function result = simulate_flight_process(aircraft, v, tie_opts, allocation_meth
     [~, N] = size(v);
 
     result = aircraft;
-    result.matlab_dp_raw = nan(m, N);
-    result.matlab_dpscaled_raw = nan(m, N);
-    result.matlab_prio_raw = nan(m, N);
-    result.matlab_dp = nan(m, N);
-    result.matlab_dpscaled = nan(m, N);
-    result.matlab_prio = nan(m, N);
     result.allocation_methods = allocation_methods_to_run;
     result.use_restoring = use_restoring;
 
@@ -531,18 +525,6 @@ function result = simulate_flight_process(aircraft, v, tie_opts, allocation_meth
             end
 
             switch method
-                case 'pca_dir'
-                    result.matlab_dp_raw(:, idx) = u_raw;
-                    result.matlab_dp(:, idx) = u_alloc;
-
-                case 'pca_dpscaled'
-                    result.matlab_dpscaled_raw(:, idx) = u_raw;
-                    result.matlab_dpscaled(:, idx) = u_alloc;
-
-                case 'pca_prio'
-                    result.matlab_prio_raw(:, idx) = u_raw;
-                    result.matlab_prio(:, idx) = u_alloc;
-
                 case 'inv'
                     result.inv_raw(:, idx) = u_raw;
                     result.inv(:, idx) = u_alloc;
@@ -770,18 +752,9 @@ end
 
 function ensure_cpp_outputs()
     cpp_output_dir = fullfile('results', 'cpp_outputs');
-    cpp_output_files = [fullfile(cpp_output_dir, "output_cpp_4_dp.csv"), ...
-                        fullfile(cpp_output_dir, "output_cpp_4_dp_raw.csv"), ...
-                        fullfile(cpp_output_dir, "output_cpp_4_dpscaled.csv"), ...
-                        fullfile(cpp_output_dir, "output_cpp_4_dpscaled_raw.csv"), ...
-                        fullfile(cpp_output_dir, "output_cpp_4_prio.csv"), ...
-                        fullfile(cpp_output_dir, "output_cpp_4_prio_raw.csv"), ...
-                        fullfile(cpp_output_dir, "output_cpp_6_dp.csv"), ...
-                        fullfile(cpp_output_dir, "output_cpp_6_dp_raw.csv"), ...
-                        fullfile(cpp_output_dir, "output_cpp_6_dpscaled.csv"), ...
-                        fullfile(cpp_output_dir, "output_cpp_6_dpscaled_raw.csv"), ...
-                        fullfile(cpp_output_dir, "output_cpp_6_prio.csv"), ...
-                        fullfile(cpp_output_dir, "output_cpp_6_prio_raw.csv")];
+    cpp_output_files = [
+        cpp_output_file_names(cpp_output_dir, '15003_ductedfan4'), ...
+        cpp_output_file_names(cpp_output_dir, '15006_SHC09')];
     if ~isfile('./alloc_cpp/build/main')
         error('test:MissingCppBinary', 'Build alloc_cpp/build/main before running test.m.');
     end
@@ -798,6 +771,15 @@ function ensure_cpp_outputs()
     end
 end
 
+function files = cpp_output_file_names(cpp_output_dir, cpp_tag)
+    files = [fullfile(cpp_output_dir, sprintf('output_cpp_%s_dir.csv', cpp_tag)), ...
+             fullfile(cpp_output_dir, sprintf('output_cpp_%s_dir_raw.csv', cpp_tag)), ...
+             fullfile(cpp_output_dir, sprintf('output_cpp_%s_dpscaled.csv', cpp_tag)), ...
+             fullfile(cpp_output_dir, sprintf('output_cpp_%s_dpscaled_raw.csv', cpp_tag)), ...
+             fullfile(cpp_output_dir, sprintf('output_cpp_%s_prio.csv', cpp_tag)), ...
+             fullfile(cpp_output_dir, sprintf('output_cpp_%s_prio_raw.csv', cpp_tag))];
+end
+
 function result = load_cpp_outputs_for_case(result, sample_indices, use_restoring)
     if nargin < 3
         use_restoring = true;
@@ -808,18 +790,18 @@ function result = load_cpp_outputs_for_case(result, sample_indices, use_restorin
 
     tag = result.cpp_tag;
     cpp_output_dir = fullfile('results', 'cpp_outputs');
-    dp_file = fullfile(cpp_output_dir, sprintf('output_cpp_%s_dp.csv', tag));
-    dp_raw_file = fullfile(cpp_output_dir, sprintf('output_cpp_%s_dp_raw.csv', tag));
+    dir_file = fullfile(cpp_output_dir, sprintf('output_cpp_%s_dir.csv', tag));
+    dir_raw_file = fullfile(cpp_output_dir, sprintf('output_cpp_%s_dir_raw.csv', tag));
     dpscaled_file = fullfile(cpp_output_dir, sprintf('output_cpp_%s_dpscaled.csv', tag));
     dpscaled_raw_file = fullfile(cpp_output_dir, sprintf('output_cpp_%s_dpscaled_raw.csv', tag));
     prio_file = fullfile(cpp_output_dir, sprintf('output_cpp_%s_prio.csv', tag));
     prio_raw_file = fullfile(cpp_output_dir, sprintf('output_cpp_%s_prio_raw.csv', tag));
 
-    if isfile(dp_file)
-        result.cpp_dp = slice_cpp_output(readmatrix(dp_file)', sample_indices);
+    if isfile(dir_file)
+        result.cpp_dir = slice_cpp_output(readmatrix(dir_file)', sample_indices);
     end
-    if isfile(dp_raw_file)
-        result.cpp_dp_raw = slice_cpp_output(readmatrix(dp_raw_file)', sample_indices);
+    if isfile(dir_raw_file)
+        result.cpp_dir_raw = slice_cpp_output(readmatrix(dir_raw_file)', sample_indices);
     end
     if isfile(dpscaled_file)
         result.cpp_dpscaled = slice_cpp_output(readmatrix(dpscaled_file)', sample_indices);
@@ -835,8 +817,8 @@ function result = load_cpp_outputs_for_case(result, sample_indices, use_restorin
     end
 
     if ~should_apply_restoring(use_restoring)
-        if isfield(result, 'cpp_dp_raw')
-            result.cpp_dp = result.cpp_dp_raw;
+        if isfield(result, 'cpp_dir_raw')
+            result.cpp_dir = result.cpp_dir_raw;
         end
         if isfield(result, 'cpp_dpscaled_raw')
             result.cpp_dpscaled = result.cpp_dpscaled_raw;
@@ -846,8 +828,8 @@ function result = load_cpp_outputs_for_case(result, sample_indices, use_restorin
         end
     end
 
-    if isfield(result, 'cpp_dp_raw') && isfield(result, 'cpp_dp')
-        result = attach_cpp_allocator_output(result, 'cpp_dir', result.cpp_dp_raw, result.cpp_dp);
+    if isfield(result, 'cpp_dir_raw') && isfield(result, 'cpp_dir')
+        result = attach_cpp_allocator_output(result, 'cpp_dir', result.cpp_dir_raw, result.cpp_dir);
     end
     if isfield(result, 'cpp_dpscaled_raw') && isfield(result, 'cpp_dpscaled')
         result = attach_cpp_allocator_output(result, 'cpp_dpscaled', result.cpp_dpscaled_raw, result.cpp_dpscaled);
@@ -891,35 +873,35 @@ function report_case(result, command_px4, len_command_px4, t)
     show_raw_report = ~isfield(result, 'use_restoring') || should_apply_restoring(result.use_restoring);
 
     if isempty(method_names) || any(strcmp(method_names, 'pca_dir'))
-        if show_raw_report && isfield(result, 'cpp_dp_raw')
-            report_cpp_matlab_case([result.name ' PCA/DP_LPCA raw'], result.B, result.cpp_dp_raw, result.matlab_dp_raw, command_px4, len_command_px4, t);
+        if show_raw_report && isfield(result, 'cpp_dir_raw')
+            report_cpp_matlab_case([result.name ' pca_dir raw'], result.B, result.cpp_dir_raw, result.pca_dir_raw, command_px4, len_command_px4, t);
         end
-        if isfield(result, 'cpp_dp')
-            report_cpp_matlab_case([result.name ' PCA/DP_LPCA ' final_label], result.B, result.cpp_dp, result.matlab_dp, command_px4, len_command_px4, t);
+        if isfield(result, 'cpp_dir')
+            report_cpp_matlab_case([result.name ' pca_dir ' final_label], result.B, result.cpp_dir, result.pca_dir, command_px4, len_command_px4, t);
         else
-            report_matlab_case([result.name ' PCA/DP_LPCA ' final_label], result.B, result.matlab_dp, command_px4, len_command_px4);
+            report_matlab_case([result.name ' pca_dir ' final_label], result.B, result.pca_dir, command_px4, len_command_px4);
         end
     end
 
     if isempty(method_names) || any(strcmp(method_names, 'pca_dpscaled'))
         if show_raw_report && isfield(result, 'cpp_dpscaled_raw')
-            report_cpp_matlab_case([result.name ' PCA/DPscaled_LPCA raw'], result.B, result.cpp_dpscaled_raw, result.matlab_dpscaled_raw, command_px4, len_command_px4, t);
+            report_cpp_matlab_case([result.name ' pca_dpscaled raw'], result.B, result.cpp_dpscaled_raw, result.pca_dpscaled_raw, command_px4, len_command_px4, t);
         end
         if isfield(result, 'cpp_dpscaled')
-            report_cpp_matlab_case([result.name ' PCA/DPscaled_LPCA ' final_label], result.B, result.cpp_dpscaled, result.matlab_dpscaled, command_px4, len_command_px4, t);
+            report_cpp_matlab_case([result.name ' pca_dpscaled ' final_label], result.B, result.cpp_dpscaled, result.pca_dpscaled, command_px4, len_command_px4, t);
         else
-            report_matlab_case([result.name ' PCA/DPscaled_LPCA ' final_label], result.B, result.matlab_dpscaled, command_px4, len_command_px4);
+            report_matlab_case([result.name ' pca_dpscaled ' final_label], result.B, result.pca_dpscaled, command_px4, len_command_px4);
         end
     end
 
     if isempty(method_names) || any(strcmp(method_names, 'pca_prio'))
         if show_raw_report && isfield(result, 'cpp_prio_raw')
-            report_cpp_matlab_case([result.name ' PCA/DP_LPCA_prio raw'], result.B, result.cpp_prio_raw, result.matlab_prio_raw, command_px4, len_command_px4, t);
+            report_cpp_matlab_case([result.name ' pca_prio raw'], result.B, result.cpp_prio_raw, result.pca_prio_raw, command_px4, len_command_px4, t);
         end
         if isfield(result, 'cpp_prio')
-            report_cpp_matlab_case([result.name ' PCA/DP_LPCA_prio ' final_label], result.B, result.cpp_prio, result.matlab_prio, command_px4, len_command_px4, t);
+            report_cpp_matlab_case([result.name ' pca_prio ' final_label], result.B, result.cpp_prio, result.pca_prio, command_px4, len_command_px4, t);
         else
-            report_matlab_case([result.name ' PCA/DP_LPCA_prio ' final_label], result.B, result.matlab_prio, command_px4, len_command_px4);
+            report_matlab_case([result.name ' pca_prio ' final_label], result.B, result.pca_prio, command_px4, len_command_px4);
         end
     end
 

@@ -64,40 +64,35 @@ int main() {
     mkdir(outputRoot.c_str(), 0755);
     mkdir(outputDir.c_str(), 0755);
     const std::string outputPrefix = outputDir + "/";
-    std::ofstream outFile(outputPrefix + "output.csv");
-    std::ofstream outFile4(outputPrefix + "output_cpp_4.csv");
-    std::ofstream outFile6(outputPrefix + "output_cpp_6.csv");
-    std::ofstream outFile4DP(outputPrefix + "output_cpp_4_dp.csv");
-    std::ofstream outFile4DPRaw(outputPrefix + "output_cpp_4_dp_raw.csv");
-    std::ofstream outFile4DPscaled(outputPrefix + "output_cpp_4_dpscaled.csv");
-    std::ofstream outFile4DPscaledRaw(outputPrefix + "output_cpp_4_dpscaled_raw.csv");
-    std::ofstream outFile4Prio(outputPrefix + "output_cpp_4_prio.csv");
-    std::ofstream outFile4PrioRaw(outputPrefix + "output_cpp_4_prio_raw.csv");
-    std::ofstream outFile6DP(outputPrefix + "output_cpp_6_dp.csv");
-    std::ofstream outFile6DPRaw(outputPrefix + "output_cpp_6_dp_raw.csv");
-    std::ofstream outFile6DPscaled(outputPrefix + "output_cpp_6_dpscaled.csv");
-    std::ofstream outFile6DPscaledRaw(outputPrefix + "output_cpp_6_dpscaled_raw.csv");
-    std::ofstream outFile6Prio(outputPrefix + "output_cpp_6_prio.csv");
-    std::ofstream outFile6PrioRaw(outputPrefix + "output_cpp_6_prio_raw.csv");
-    if (!outFile.is_open() || !outFile4.is_open() || !outFile6.is_open()
-        || !outFile4DP.is_open() || !outFile4DPRaw.is_open() || !outFile4DPscaled.is_open() || !outFile4DPscaledRaw.is_open()
+    const std::string case15003 = "15003_ductedfan4";
+    const std::string case15006 = "15006_SHC09";
+    std::ofstream outFile4Dir(outputPrefix + "output_cpp_" + case15003 + "_dir.csv");
+    std::ofstream outFile4DirRaw(outputPrefix + "output_cpp_" + case15003 + "_dir_raw.csv");
+    std::ofstream outFile4DPscaled(outputPrefix + "output_cpp_" + case15003 + "_dpscaled.csv");
+    std::ofstream outFile4DPscaledRaw(outputPrefix + "output_cpp_" + case15003 + "_dpscaled_raw.csv");
+    std::ofstream outFile4Prio(outputPrefix + "output_cpp_" + case15003 + "_prio.csv");
+    std::ofstream outFile4PrioRaw(outputPrefix + "output_cpp_" + case15003 + "_prio_raw.csv");
+    std::ofstream outFile6Dir(outputPrefix + "output_cpp_" + case15006 + "_dir.csv");
+    std::ofstream outFile6DirRaw(outputPrefix + "output_cpp_" + case15006 + "_dir_raw.csv");
+    std::ofstream outFile6DPscaled(outputPrefix + "output_cpp_" + case15006 + "_dpscaled.csv");
+    std::ofstream outFile6DPscaledRaw(outputPrefix + "output_cpp_" + case15006 + "_dpscaled_raw.csv");
+    std::ofstream outFile6Prio(outputPrefix + "output_cpp_" + case15006 + "_prio.csv");
+    std::ofstream outFile6PrioRaw(outputPrefix + "output_cpp_" + case15006 + "_prio_raw.csv");
+    if (!outFile4Dir.is_open() || !outFile4DirRaw.is_open() || !outFile4DPscaled.is_open() || !outFile4DPscaledRaw.is_open()
         || !outFile4Prio.is_open() || !outFile4PrioRaw.is_open()
-        || !outFile6DP.is_open() || !outFile6DPRaw.is_open() || !outFile6DPscaled.is_open() || !outFile6DPscaledRaw.is_open()
+        || !outFile6Dir.is_open() || !outFile6DirRaw.is_open() || !outFile6DPscaled.is_open() || !outFile6DPscaledRaw.is_open()
         || !outFile6Prio.is_open() || !outFile6PrioRaw.is_open()) {
         std::cerr << "无法打开文件" << std::endl;
         return 1;
     }
-    outFile << std::setprecision(17);
-    outFile4 << std::setprecision(17);
-    outFile6 << std::setprecision(17);
-    outFile4DP << std::setprecision(17);
-    outFile4DPRaw << std::setprecision(17);
+    outFile4Dir << std::setprecision(17);
+    outFile4DirRaw << std::setprecision(17);
     outFile4DPscaled << std::setprecision(17);
     outFile4DPscaledRaw << std::setprecision(17);
     outFile4Prio << std::setprecision(17);
     outFile4PrioRaw << std::setprecision(17);
-    outFile6DP << std::setprecision(17);
-    outFile6DPRaw << std::setprecision(17);
+    outFile6Dir << std::setprecision(17);
+    outFile6DirRaw << std::setprecision(17);
     outFile6DPscaled << std::setprecision(17);
     outFile6DPscaledRaw << std::setprecision(17);
     outFile6Prio << std::setprecision(17);
@@ -166,12 +161,12 @@ int main() {
     // 使用模板类时，可以指定 ControlSize 和 EffectSize 的具体值
     // 例如：
     float l1=0.167;float l2=0.069;float k_v=1;
-    Aircraft<3, 4> df_4(_B, -0.3491f, 0.3491f); // 创建一个具有 4 个操纵向量和 3 个广义力矩的飞行器对象
-    DP_LP_ControlAllocator<3, 4> Allocator(df_4); // 创建一个控制分配器对象，用于具有 4 个操纵向量和 3 个广义力矩的飞行器(转化为线性规划问题，其维数和参数 <3, 4> 有关。)
+    Aircraft<3, 4> aircraft_15003(_B, -0.3491f, 0.3491f); // 15003_ductedfan4
+    DP_LP_ControlAllocator<3, 4> allocator_15003(aircraft_15003);
     // 然后可以使用飞行器对象和控制分配器对象进行操作
    
 
-    // SHC09 six-effector model must match test.m::make_aircraft_6().
+    // 15006_SHC09 model must match test.m::make_aircraft_6().
     float l1_for6=0.292166f;float l2_for6=0.073699f;float k_for6=1.93f;
     float I_x_for6=0.0438f; float I_y_for6=0.0436f; float I_z_for6=0.005006f;
     constexpr float DEG2RAD = 0.01745329251994329577f;
@@ -185,8 +180,8 @@ int main() {
          l2_for6/I_z_for6*k_for6, l2_for6/I_z_for6*k_for6, l2_for6/I_z_for6*k_for6}
     };
     constexpr float U_LIM = 40.0f * DEG2RAD;
-    Aircraft<3, 6> df_6(_B_for6, -U_LIM, U_LIM);// 创建一个具有 6 个操纵向量和 3 个广义力矩的飞行器对象
-    DP_LP_ControlAllocator<3, 6> Allocator_for6(df_6); // 创建一个控制分配器对象，用于具有 6 个操纵向量和 3 个广义力矩的飞行器(转化为线性规划问题，其维数和参数 <3, 6> 有关。)
+    Aircraft<3, 6> aircraft_15006(_B_for6, -U_LIM, U_LIM); // 15006_SHC09
+    DP_LP_ControlAllocator<3, 6> allocator_15006(aircraft_15006);
     // 然后可以使用飞行器对象和控制分配器对象进行操作
 
     size_t array_size =4;
@@ -215,30 +210,30 @@ int main() {
         // if(i==1000) 
         // {
         //     for (int i = 0; i < 4; ++i) {
-        //         Allocator.aircraft.upperLimits[i] = _uMax[i] + 0.2;
-        //         Allocator.aircraft.lowerLimits[i] = _uMin[i] - 0.2;
+        //         allocator_15003.aircraft.upperLimits[i] = _uMax[i] + 0.2;
+        //         allocator_15003.aircraft.lowerLimits[i] = _uMin[i] - 0.2;
         //          // update the limits
         //     }
         //     // update B
         //     for (int i = 0; i < 3; ++i) {
         //         for (int j = 0; j < 4; ++j) {
-        //             Allocator.aircraft.controlEffectMatrix[i][j]= _B[i][j]*0.5;
+        //             allocator_15003.aircraft.controlEffectMatrix[i][j]= _B[i][j]*0.5;
         //         }
         //     }
-        //     Allocator.isupdate = true; // have to set isupdate to true, otherwise the Allocator will not update the B and limits.
+        //     allocator_15003.isupdate = true; // have to set isupdate to true, otherwise the allocator will not update the B and limits.
         // }else if(i==7000){  // need to reset the Allocator parameters
         //     for (int i = 0; i < 4; ++i) {
-        //         Allocator.aircraft.upperLimits[i] = _uMax[i];
-        //         Allocator.aircraft.lowerLimits[i] = _uMin[i];
+        //         allocator_15003.aircraft.upperLimits[i] = _uMax[i];
+        //         allocator_15003.aircraft.lowerLimits[i] = _uMin[i];
         //          // update the limits
         //     }
         //     // update B
         //     for (int i = 0; i < 3; ++i) {
         //         for (int j = 0; j < 4; ++j) {
-        //             Allocator.aircraft.controlEffectMatrix[i][j]= _B[i][j];
+        //             allocator_15003.aircraft.controlEffectMatrix[i][j]= _B[i][j];
         //         }
         //     }
-        //     Allocator.isupdate = true; // have to set isupdate to true, otherwise the Allocator will not update the B and limits.
+        //     allocator_15003.isupdate = true; // have to set isupdate to true, otherwise the allocator will not update the B and limits.
         // }
 
         //========================DP_LPCA=============================
@@ -247,13 +242,13 @@ int main() {
         // C++ allocator restoring() is aligned with restoring_cpp.m.
         float u2[4]; int err2=0; float rho2=0; float u2_raw[4];
         start = std::chrono::high_resolution_clock::now();
-        Allocator.DP_LPCA(y_all, u2_raw, err2, rho2);
-        Allocator.restoring(u2_raw, u2);
+        allocator_15003.DP_LPCA(y_all, u2_raw, err2, rho2);
+        allocator_15003.restoring(u2_raw, u2);
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
         total_elapsed2 += elapsed.count();
-        // std::cout << "Allocator.DP_LPCA execution time: " << elapsed.count() << "s\n";
-        // std::cout << "Allocator.err2: " << err2 << "\n";
+        // std::cout << "allocator_15003.DP_LPCA execution time: " << elapsed.count() << "s\n";
+        // std::cout << "allocator_15003.err2: " << err2 << "\n";
         // std::cout << "u2: [";
         // for (size_t i = 0; i < 4; ++i) {
         //     std::cout << u2[i];
@@ -265,14 +260,14 @@ int main() {
         //=========================DPscaled_LPCA=======have problem=====================INFO  [mixer_module] dir_alloc_sim time: 16
         float u3[4];int err3=0;float rho3=0;float u3_raw[4];
         start = std::chrono::high_resolution_clock::now();
-        Allocator.DPscaled_LPCA(y_all, u3_raw, err3, rho3);
-        Allocator.restoring(u3_raw, u3);
+        allocator_15003.DPscaled_LPCA(y_all, u3_raw, err3, rho3);
+        allocator_15003.restoring(u3_raw, u3);
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
         total_elapsed3 += elapsed.count();
         // std::cout << "DPscaled_LPCA rho: "<< rho <<std::endl; 
-        // std::cout << "Allocator.DPscaled_LPCA execution time: " << elapsed.count() << "s\n";
-        // std::cout << "Allocator.err3: " << err3 << "\n";
+        // std::cout << "allocator_15003.DPscaled_LPCA execution time: " << elapsed.count() << "s\n";
+        // std::cout << "allocator_15003.err3: " << err3 << "\n";
         // std::cout << "u3: [";
         // for (size_t i = 0; i < 4; ++i) {
         //     std::cout << u3[i];
@@ -288,8 +283,8 @@ int main() {
         // pivot/tie-break rules follow PCA/simplxuprevsol_tiebreak.m.
         float u4[4]; int err4=0; float rho4=0; float u4_raw[4];
         start = std::chrono::high_resolution_clock::now();
-        Allocator.DP_LPCA_prio(m_higher, yd, u4_raw, err4, rho4);
-        Allocator.restoring(u4_raw, u4);
+        allocator_15003.DP_LPCA_prio(m_higher, yd, u4_raw, err4, rho4);
+        allocator_15003.restoring(u4_raw, u4);
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
         total_elapsed4 += elapsed.count();
@@ -332,8 +327,8 @@ int main() {
         // C++ allocator restoring() is aligned with restoring_cpp.m.
         float u8[6]; int err8=0; float rho8=0; float u8_raw[6];
         start = std::chrono::high_resolution_clock::now();
-        Allocator_for6.DP_LPCA(y_all_for6, u8_raw, err8, rho8);
-        Allocator_for6.restoring(u8_raw, u8);
+        allocator_15006.DP_LPCA(y_all_for6, u8_raw, err8, rho8);
+        allocator_15006.restoring(u8_raw, u8);
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
         total_elapsed8 += elapsed.count();
@@ -341,8 +336,8 @@ int main() {
         //========================DPscaled_LPCA for 6 cs=============================
         float u9[6];int err9=0;float rho9=0;float u9_raw[6];
         start = std::chrono::high_resolution_clock::now();
-        Allocator_for6.DPscaled_LPCA(y_all_for6, u9_raw, err9, rho9);
-        Allocator_for6.restoring(u9_raw, u9);
+        allocator_15006.DPscaled_LPCA(y_all_for6, u9_raw, err9, rho9);
+        allocator_15006.restoring(u9_raw, u9);
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
         total_elapsed9 += elapsed.count();
@@ -350,74 +345,65 @@ int main() {
         //========================DP_LPCA_prio for 6 cs=============================
         float u7[6]; int err7=0; float rho7=0; float u7_raw[6];
         start = std::chrono::high_resolution_clock::now();
-        Allocator_for6.DP_LPCA_prio(m_higher_for6, yd_for6, u7_raw, err7, rho7);
-        Allocator_for6.restoring(u7_raw, u7);
+        allocator_15006.DP_LPCA_prio(m_higher_for6, yd_for6, u7_raw, err7, rho7);
+        allocator_15006.restoring(u7_raw, u7);
         finish = std::chrono::high_resolution_clock::now();
         elapsed = finish - start;
         total_elapsed7 += elapsed.count();
 
         //========================
-        // 写入CSV文件：4舵和6舵分别输出，output.csv 保持为6舵 DP_LPCA 兼容输出。
+        // Write CSV files. The "dir" suffix is the C++ counterpart of
+        // test.m method cpp_dir, i.e. DP_LPCA + restoring().
         for (size_t i = 0; i < 4; ++i) {
-            outFile4DP << u2[i] << (i < 4 - 1 ? "," : "\n");
-            outFile4DPRaw << u2_raw[i] << (i < 4 - 1 ? "," : "\n");
+            outFile4Dir << u2[i] << (i < 4 - 1 ? "," : "\n");
+            outFile4DirRaw << u2_raw[i] << (i < 4 - 1 ? "," : "\n");
             outFile4DPscaled << u3[i] << (i < 4 - 1 ? "," : "\n");
             outFile4DPscaledRaw << u3_raw[i] << (i < 4 - 1 ? "," : "\n");
             outFile4Prio << u4[i] << (i < 4 - 1 ? "," : "\n");
             outFile4PrioRaw << u4_raw[i] << (i < 4 - 1 ? "," : "\n");
         }
         for (size_t i = 0; i < 6; ++i) {
-            outFile6DP << u8[i] << (i < 6 - 1 ? "," : "\n");
-            outFile6DPRaw << u8_raw[i] << (i < 6 - 1 ? "," : "\n");
+            outFile6Dir << u8[i] << (i < 6 - 1 ? "," : "\n");
+            outFile6DirRaw << u8_raw[i] << (i < 6 - 1 ? "," : "\n");
             outFile6DPscaled << u9[i] << (i < 6 - 1 ? "," : "\n");
             outFile6DPscaledRaw << u9_raw[i] << (i < 6 - 1 ? "," : "\n");
             outFile6Prio << u7[i] << (i < 6 - 1 ? "," : "\n");
             outFile6PrioRaw << u7_raw[i] << (i < 6 - 1 ? "," : "\n");
         }
-        for (size_t i = 0; i < 4; ++i) {
-            outFile4 << u2[i] << (i < 4 - 1 ? "," : "\n");
-        }
-        for (size_t i = 0; i < 6; ++i) {
-            outFile6 << u8[i] << (i < 6 - 1 ? "," : "\n");
-            outFile << u8[i] << (i < 6 - 1 ? "," : "\n");
-        }
     }
     // 求平均运行时间
     double average_elapsed2 = total_elapsed2 / num;
-    std::cout << "Allocator.DP_LPCA Average execution time: " << average_elapsed2 << "s" << std::endl;
+    std::cout << "allocator_15003.DP_LPCA Average execution time: " << average_elapsed2 << "s" << std::endl;
     double average_elapsed3 = total_elapsed3 / num;
-    std::cout << "Allocator.DPscaled_LPCA Average execution time: " << average_elapsed3 << "s" << std::endl;
+    std::cout << "allocator_15003.DPscaled_LPCA Average execution time: " << average_elapsed3 << "s" << std::endl;
     double average_elapsed4 = total_elapsed4 / num;
-    std::cout << "Allocator.DP_LPCA_prio Average execution time: " << average_elapsed4 << "s" << std::endl;
+    std::cout << "allocator_15003.DP_LPCA_prio Average execution time: " << average_elapsed4 << "s" << std::endl;
     double average_elapsed5 = total_elapsed5 / num;
     std::cout << "allocator_dir_LPwrap_4 Average execution time: " << average_elapsed5 << "s" << std::endl;
     double average_elapsed6 = total_elapsed6 / num;
     std::cout << "wls_alloc_gen Average execution time: " << average_elapsed6 << "s" << std::endl;
     double average_elapsed7 = total_elapsed7 / num;
-    std::cout << "Allocator_for6.DP_LPCA_prio Average execution time: " << average_elapsed7 << "s" << std::endl;
+    std::cout << "allocator_15006.DP_LPCA_prio Average execution time: " << average_elapsed7 << "s" << std::endl;
     double average_elapsed8 = total_elapsed8 / num;
-    std::cout << "Allocator_for6.DP_LPCA Average execution time: " << average_elapsed8 << "s" << std::endl;
+    std::cout << "allocator_15006.DP_LPCA Average execution time: " << average_elapsed8 << "s" << std::endl;
     double average_elapsed9 = total_elapsed9 / num;
-    std::cout << "Allocator_for6.DPscaled_LPCA Average execution time: " << average_elapsed9 << "s" << std::endl;
+    std::cout << "allocator_15006.DPscaled_LPCA Average execution time: " << average_elapsed9 << "s" << std::endl;
     // running on M1 pro MacOS: 
     // for float m_higher[3]={0.0,  0.0,  50.0}; //   have solution, m_higher attainable or m_higher+yd attainable
-    // Allocator.DPscaled_LPCA Average execution time: 5.95756e-07s
-    // Allocator.DP_LPCA Average execution time: 1.23543e-06s
+    // allocator_15003.DPscaled_LPCA Average execution time: 5.95756e-07s
+    // allocator_15003.DP_LPCA Average execution time: 1.23543e-06s
     // allocator_dir_LPwrap_4 Average execution time: 1.23543e-06s
     // INV Average execution time: 1.82271e-08s
     // float m_higher[3]={0.0,  0.0,  150.0}; // No Initial Feasible Solution found m_higher+yd unattainable and m_higher unattainable
     // 关闭文件
-    outFile.close();
-    outFile4.close();
-    outFile6.close();
-    outFile4DP.close();
-    outFile4DPRaw.close();
+    outFile4Dir.close();
+    outFile4DirRaw.close();
     outFile4DPscaled.close();
     outFile4DPscaledRaw.close();
     outFile4Prio.close();
     outFile4PrioRaw.close();
-    outFile6DP.close();
-    outFile6DPRaw.close();
+    outFile6Dir.close();
+    outFile6DirRaw.close();
     outFile6DPscaled.close();
     outFile6DPscaledRaw.close();
     outFile6Prio.close();

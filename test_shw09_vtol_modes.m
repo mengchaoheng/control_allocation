@@ -24,7 +24,7 @@ addpath(genpath(script_dir));
 %   4. FW full-8: fixed-wing B/limits with elevons 7..8 enabled
 
 %% User knobs
-methods_to_run = {'inv', 'dir', 'dpscaled', 'prio', 'wls'};
+methods_to_run = {'inv', 'pca_dir', 'pca_dpscaled', 'pca_prio', 'wls'};
 plot_methods = methods_to_run;
 enable_reachable_set_view = true;
 enable_u_comparison_view = true;
@@ -138,7 +138,7 @@ function aircraft = make_shw09_vtol_case(mode, omega2f_mc, omega2f_fw, elevon_2_
     mc = make_shw09_vtol_model('mc', omega2f_mc, omega2f_fw, elevon_2_f);
     fw = make_shw09_vtol_model('fw', omega2f_mc, omega2f_fw, elevon_2_f);
 
-    aircraft.name = ['SHW09-vtol-' mode];
+    aircraft.name = ['15008_SHW09_vtol_' mode];
     aircraft.mode = mode;
     aircraft.phase = string(mode);
     aircraft.plot_num_outputs = 8;
@@ -279,17 +279,17 @@ function [u_raw, u, ok] = run_allocator(method, y, B, umin, umax, tie_opts)
                 u_raw = pinv(B) * y;
                 u = clamp_u(u_raw, umin, umax);
 
-            case 'dir'
+            case 'pca_dir'
                 [u_tmp, ~, ~] = DP_LPCA(y, B, umin, umax, 100, tie_opts);
                 u_raw = clamp_u(u_tmp(:), umin, umax);
                 u = restoring_cpp(B, u_raw, umin, umax);
 
-            case 'dpscaled'
+            case 'pca_dpscaled'
                 [u_tmp, ~, ~, ~] = DPscaled_LPCA(y, B, umin, umax, 100, tie_opts);
                 u_raw = clamp_u(u_tmp(:), umin, umax);
                 u = restoring_cpp(B, u_raw, umin, umax);
 
-            case 'prio'
+            case 'pca_prio'
                 higher = zeros(k, 1);
                 [u_tmp, ~, ~] = DP_LPCA_prio(higher, y, B, umin, umax, 100, tie_opts);
                 u_raw = clamp_u(u_tmp(:), umin, umax);

@@ -27,15 +27,17 @@ t_full = 0:dt:dt*(len_command_px4-1);
 test_time_window_s = [0 4];  % 测试时间窗口；[] = 全程，示例：[20 30] 只跑 20-30 秒。[24.8 25.4]
 use_restoring = 'both';            % true=只看 restoring；false=只看 raw allocation；'both'=raw/restoring 各画一张。
 
-allocation_method_selection = {'dir','cpp_dir'};  % 参与测试的分配算法；'all' = 全部，示例：[1 2 5] 或 {'inv','dir','wls_gen','cpp_dir'}。
+allocation_method_selection = {'pca_dir','cpp_dir'};  % 参与测试的分配算法；'all' = 全部，示例：[1 2 5] 或 {'inv','pca_dir','wls_gen','cpp_dir'}。
 % 常用名含义：
 %   inv: pinv(B)*y 后限幅，再按 use_restoring 决定是否 restoring_cpp。
-%   dir: DP_LPCA 后按 use_restoring 决定是否 restoring_cpp。
-%   dpscaled: DPscaled_LPCA 后按 use_restoring 决定是否 restoring_cpp。
-%   prio: DP_LPCA_prio 后按 use_restoring 决定是否 restoring_cpp。
-%   cpp: 展开为 cpp_dir/cpp_dpscaled/cpp_prio，把 alloc_cpp/test/main.cpp 输出作为分配方法加入对比；只对 cpp_tag='4'/'6' 的 case 有数据。
+%   pca_dir: /PCA/DP_LPCA 后按 use_restoring 决定是否 restoring_cpp。
+%   pca_dpscaled: /PCA/DPscaled_LPCA 后按 use_restoring 决定是否 restoring_cpp。
+%   pca_prio: /PCA/DP_LPCA_prio 后按 use_restoring 决定是否 restoring_cpp。
 %   cpp_dir/cpp_dpscaled/cpp_prio: 分别对应 C++ DP_LPCA / DPscaled_LPCA / DP_LPCA_prio 输出。
-%   lpwrap_* / cgiwrap / dawrap / vjawrap: 原 aircraft-control-allocation-book-simulation 里的包装算法。
+%   lib_lpwrap_* / lib_lpwrap_par_*: 分配库 aircraft-control-allocation-book-simulation 的 LPwrap.m / LPwrap_par.m，使用 LPmethod=0..5。
+%       LPmethod=2 使用 lib_lpwrap_dir / lib_lpwrap_par_dir。
+%       LPmethod=3 使用 lib_lpwrap_dpscaled / lib_lpwrap_par_dpscaled。
+%   lib_cgiwrap / lib_dawrap / lib_vjawrap: 分配库里的独立包装算法，输入矩阵最后一格按原接口填 0。
 %   wls / wls_gen: QCAT WLS 和生成版 WLS。
 %   dir_linprog*: linprog 形式的直接分配。
 %   use_lp_lib: reformula_LP/use_LP_lib。
@@ -269,21 +271,28 @@ function catalog = get_allocation_method_catalog()
     % selection above can be 'all', numeric indices, or names.
     catalog = { ...
         'inv', ...                    % pinv(B)*y + clamp + restoring_cpp
-        'dir', ...                    % DP_LPCA + restoring_cpp
-        'dpscaled', ...               % DPscaled_LPCA + restoring_cpp
-        'prio', ...                   % DP_LPCA_prio + restoring_cpp
-        'cpp', ...                    % Alias for cpp_dir/cpp_dpscaled/cpp_prio
+        'pca_dir', ...                % /PCA/DP_LPCA + restoring_cpp
+        'pca_dpscaled', ...           % /PCA/DPscaled_LPCA + restoring_cpp
+        'pca_prio', ...               % /PCA/DP_LPCA_prio + restoring_cpp
         'cpp_dir', ...                % alloc_cpp/test/main.cpp DP_LPCA CSV output
         'cpp_dpscaled', ...           % alloc_cpp/test/main.cpp DPscaled_LPCA CSV output
         'cpp_prio', ...               % alloc_cpp/test/main.cpp DP_LPCA_prio CSV output
-        'lpwrap_dp', ...              % LPwrap with LPmethod=2
-        'lpwrap_dpscaled', ...        % LPwrap with LPmethod=3
-        'lpwrap_default', ...         % LPwrap default direct allocation path
-        'lpwrap_incre', ...           % LPwrap incremental-form placeholder, u0=0 here
-        'cgiwrap', ...                % CGIwrap from the book simulation library
-        'dawrap', ...                 % DAwrap from the book simulation library
-        'vjawrap', ...                % VJAwrap from the book simulation library
-        'pca', ...                    % Current PCA-style priority call, same core as prio
+        'lib_lpwrap_db', ...          % control_allocation_lib LPwrap.m LPmethod=0
+        'lib_lpwrap_dbinf', ...       % control_allocation_lib LPwrap.m LPmethod=1
+        'lib_lpwrap_dir', ...          % control_allocation_lib LPwrap.m LPmethod=2
+        'lib_lpwrap_dpscaled', ...    % control_allocation_lib LPwrap.m LPmethod=3
+        'lib_lpwrap_mo', ...          % control_allocation_lib LPwrap.m LPmethod=4
+        'lib_lpwrap_sb', ...          % control_allocation_lib LPwrap.m LPmethod=5
+        'lib_lpwrap_par_db', ...      % control_allocation_lib LPwrap_par.m LPmethod=0
+        'lib_lpwrap_par_dbinf', ...   % control_allocation_lib LPwrap_par.m LPmethod=1
+        'lib_lpwrap_par_dir', ...      % control_allocation_lib LPwrap_par.m LPmethod=2
+        'lib_lpwrap_par_dpscaled', ...% control_allocation_lib LPwrap_par.m LPmethod=3
+        'lib_lpwrap_par_mo', ...      % control_allocation_lib LPwrap_par.m LPmethod=4
+        'lib_lpwrap_par_sb', ...      % control_allocation_lib LPwrap_par.m LPmethod=5
+        'lib_lpwrap_incre', ...       % control_allocation_lib LPwrap.m LPmethod=2, incremental-form placeholder
+        'lib_cgiwrap', ...            % control_allocation_lib CGIwrap.m
+        'lib_dawrap', ...             % control_allocation_lib DAwrap.m
+        'lib_vjawrap', ...            % control_allocation_lib VJAwrap.m
         'wls', ...                    % QCAT weighted least-squares allocator
         'wls_gen', ...                % Generated WLS allocator
         'dir_linprog', ...            % Direct allocation using linprog
@@ -295,11 +304,11 @@ end
 
 function methods = resolve_allocation_method_selection(selection, catalog)
     if nargin < 2 || isempty(catalog)
-        catalog = {'inv', 'dir', 'dpscaled', 'prio', 'wls'};
+        catalog = {'inv', 'pca_dir', 'pca_dpscaled', 'pca_prio', 'wls'};
     end
 
     if isempty(selection)
-        methods = expand_allocation_method_aliases(catalog);
+        methods = validate_allocation_methods(catalog, catalog);
         return;
     end
 
@@ -307,46 +316,36 @@ function methods = resolve_allocation_method_selection(selection, catalog)
         selection = cellstr(selection);
 
         if numel(selection) == 1 && strcmpi(selection{1}, 'all')
-            methods = expand_allocation_method_aliases(catalog);
+            methods = validate_allocation_methods(catalog, catalog);
             return;
         end
 
-        methods = expand_allocation_method_aliases(selection);
+        methods = validate_allocation_methods(selection, catalog);
         return;
     end
 
     if isnumeric(selection)
-        methods = expand_allocation_method_aliases(catalog(selection));
+        methods = validate_allocation_methods(catalog(selection), catalog);
         return;
     end
 
     if iscell(selection)
-        methods = expand_allocation_method_aliases(selection);
+        methods = validate_allocation_methods(selection, catalog);
         return;
     end
 
     error('test:BadAllocatorSelection', 'allocation_method_selection must be ''all'', numeric indices, or method names.');
 end
 
-function methods = expand_allocation_method_aliases(methods)
-    expanded = {};
-
-    for method_idx = 1:numel(methods)
-        method = lower(char(methods{method_idx}));
-
-        switch method
-            case 'cpp'
-                expanded = [expanded, {'cpp_dir', 'cpp_dpscaled', 'cpp_prio'}]; %#ok<AGROW>
-
-            case 'cpp_dp'
-                expanded{end+1} = 'cpp_dir'; %#ok<AGROW>
-
-            otherwise
-                expanded{end+1} = method; %#ok<AGROW>
-        end
+function methods = validate_allocation_methods(methods, catalog)
+    methods = cellfun(@(method) lower(char(method)), methods, 'UniformOutput', false);
+    unknown = setdiff(methods, catalog);
+    if ~isempty(unknown)
+        error('test:UnknownAllocatorMethod', ...
+              'Unknown allocator method(s): %s. Use one of: %s', ...
+              strjoin(unknown, ', '), strjoin(catalog, ', '));
     end
-
-    methods = unique(expanded, 'stable');
+    methods = unique(methods, 'stable');
 end
 
 function selected_cases = select_aircraft_cases(aircraft_cases, selection)
@@ -468,7 +467,7 @@ end
 
 function result = simulate_flight_process(aircraft, v, tie_opts, allocation_methods_to_run, use_restoring)
     if nargin < 4 || isempty(allocation_methods_to_run)
-        allocation_methods_to_run = {'dir', 'dpscaled', 'prio'};
+        allocation_methods_to_run = {'pca_dir', 'pca_dpscaled', 'pca_prio'};
     end
     if nargin < 5
         use_restoring = true;
@@ -532,15 +531,15 @@ function result = simulate_flight_process(aircraft, v, tie_opts, allocation_meth
             end
 
             switch method
-                case 'dir'
+                case 'pca_dir'
                     result.matlab_dp_raw(:, idx) = u_raw;
                     result.matlab_dp(:, idx) = u_alloc;
 
-                case 'dpscaled'
+                case 'pca_dpscaled'
                     result.matlab_dpscaled_raw(:, idx) = u_raw;
                     result.matlab_dpscaled(:, idx) = u_alloc;
 
-                case 'prio'
+                case 'pca_prio'
                     result.matlab_prio_raw(:, idx) = u_raw;
                     result.matlab_prio(:, idx) = u_alloc;
 
@@ -577,61 +576,100 @@ function [u_raw, u, ok, err_msg] = run_allocator_method(method, y, B, umin, umax
                 u_raw = clamp_u(pinv(B) * y, umin, umax);
                 u = apply_optional_restoring(B, u_raw, umin, umax, use_restoring);
 
-            case 'dir'
+            case 'pca_dir'
                 [u_tmp, ~, ~] = DP_LPCA(y, B, umin, umax, 100, tie_opts);
                 u_raw = clamp_u(u_tmp(:), umin, umax);
                 u = apply_optional_restoring(B, u_raw, umin, umax, use_restoring);
 
-            case 'dpscaled'
+            case 'pca_dpscaled'
                 [u_tmp, ~, ~, ~] = DPscaled_LPCA(y, B, umin, umax, 100, tie_opts);
                 u_raw = clamp_u(u_tmp(:), umin, umax);
                 u = apply_optional_restoring(B, u_raw, umin, umax, use_restoring);
 
-            case 'prio'
+            case 'pca_prio'
                 m_higher = zeros(k, 1);
                 [u_tmp, ~, ~] = DP_LPCA_prio(m_higher, y, B, umin, umax, 100, tie_opts);
                 u_raw = clamp_u(u_tmp(:), umin, umax);
                 u = apply_optional_restoring(B, u_raw, umin, umax, use_restoring);
 
-            case 'lpwrap_dp'
+            case 'lib_lpwrap_db'
+                u_tmp = LPwrap(make_lpwrap_in_mat(B, y, umin, umax, 0));
+                u_raw = clamp_u(u_tmp(:), umin, umax);
+                u = apply_optional_restoring(B, u_raw, umin, umax, use_restoring);
+
+            case 'lib_lpwrap_dbinf'
+                u_tmp = LPwrap(make_lpwrap_in_mat(B, y, umin, umax, 1));
+                u_raw = clamp_u(u_tmp(:), umin, umax);
+                u = apply_optional_restoring(B, u_raw, umin, umax, use_restoring);
+
+            case 'lib_lpwrap_dir'
                 u_tmp = LPwrap(make_lpwrap_in_mat(B, y, umin, umax, 2));
                 u_raw = clamp_u(u_tmp(:), umin, umax);
                 u = apply_optional_restoring(B, u_raw, umin, umax, use_restoring);
 
-            case 'lpwrap_dpscaled'
+            case 'lib_lpwrap_dpscaled'
                 u_tmp = LPwrap(make_lpwrap_in_mat(B, y, umin, umax, 3));
                 u_raw = clamp_u(u_tmp(:), umin, umax);
                 u = apply_optional_restoring(B, u_raw, umin, umax, use_restoring);
 
-            case 'lpwrap_default'
-                u_tmp = LPwrap(make_lpwrap_in_mat(B, y, umin, umax, 2));
+            case 'lib_lpwrap_mo'
+                u_tmp = LPwrap(make_lpwrap_in_mat(B, y, umin, umax, 4));
                 u_raw = clamp_u(u_tmp(:), umin, umax);
                 u = apply_optional_restoring(B, u_raw, umin, umax, use_restoring);
 
-            case 'lpwrap_incre'
+            case 'lib_lpwrap_sb'
+                u_tmp = LPwrap(make_lpwrap_in_mat(B, y, umin, umax, 5));
+                u_raw = clamp_u(u_tmp(:), umin, umax);
+                u = apply_optional_restoring(B, u_raw, umin, umax, use_restoring);
+
+            case 'lib_lpwrap_par_db'
+                u_tmp = LPwrap_par(make_lpwrap_in_mat(B, y, umin, umax, 0), y, m);
+                u_raw = clamp_u(u_tmp(:), umin, umax);
+                u = apply_optional_restoring(B, u_raw, umin, umax, use_restoring);
+
+            case 'lib_lpwrap_par_dbinf'
+                u_tmp = LPwrap_par(make_lpwrap_in_mat(B, y, umin, umax, 1), y, m);
+                u_raw = clamp_u(u_tmp(:), umin, umax);
+                u = apply_optional_restoring(B, u_raw, umin, umax, use_restoring);
+
+            case 'lib_lpwrap_par_dir'
+                u_tmp = LPwrap_par(make_lpwrap_in_mat(B, y, umin, umax, 2), y, m);
+                u_raw = clamp_u(u_tmp(:), umin, umax);
+                u = apply_optional_restoring(B, u_raw, umin, umax, use_restoring);
+
+            case 'lib_lpwrap_par_dpscaled'
+                u_tmp = LPwrap_par(make_lpwrap_in_mat(B, y, umin, umax, 3), y, m);
+                u_raw = clamp_u(u_tmp(:), umin, umax);
+                u = apply_optional_restoring(B, u_raw, umin, umax, use_restoring);
+
+            case 'lib_lpwrap_par_mo'
+                u_tmp = LPwrap_par(make_lpwrap_in_mat(B, y, umin, umax, 4), y, m);
+                u_raw = clamp_u(u_tmp(:), umin, umax);
+                u = apply_optional_restoring(B, u_raw, umin, umax, use_restoring);
+
+            case 'lib_lpwrap_par_sb'
+                u_tmp = LPwrap_par(make_lpwrap_in_mat(B, y, umin, umax, 5), y, m);
+                u_raw = clamp_u(u_tmp(:), umin, umax);
+                u = apply_optional_restoring(B, u_raw, umin, umax, use_restoring);
+
+            case 'lib_lpwrap_incre'
                 u0 = zeros(m, 1);
                 u_tmp = LPwrap(make_lpwrap_in_mat(B, y, umin - u0, umax - u0, 2));
                 u_raw = clamp_u(u_tmp(:), umin - u0, umax - u0) + u0;
                 u = apply_optional_restoring(B, u_raw, umin, umax, use_restoring);
 
-            case 'cgiwrap'
-                u_tmp = CGIwrap(make_lpwrap_in_mat(B, y, umin, umax, 2));
+            case 'lib_cgiwrap'
+                u_tmp = CGIwrap(make_book_wrapper_in_mat(B, y, umin, umax));
                 u_raw = clamp_u(u_tmp(:), umin, umax);
                 u = apply_optional_restoring(B, u_raw, umin, umax, use_restoring);
 
-            case 'dawrap'
-                u_tmp = DAwrap(make_lpwrap_in_mat(B, y, umin, umax, 2));
+            case 'lib_dawrap'
+                u_tmp = DAwrap(make_book_wrapper_in_mat(B, y, umin, umax));
                 u_raw = clamp_u(u_tmp(:), umin, umax);
                 u = apply_optional_restoring(B, u_raw, umin, umax, use_restoring);
 
-            case 'vjawrap'
-                u_tmp = VJAwrap(make_lpwrap_in_mat(B, y, umin, umax, 2));
-                u_raw = clamp_u(u_tmp(:), umin, umax);
-                u = apply_optional_restoring(B, u_raw, umin, umax, use_restoring);
-
-            case 'pca'
-                m_higher = zeros(k, 1);
-                [u_tmp, ~, ~] = DP_LPCA_prio(m_higher, y, B, umin, umax, 100, tie_opts);
+            case 'lib_vjawrap'
+                u_tmp = VJAwrap(make_book_wrapper_in_mat(B, y, umin, umax));
                 u_raw = clamp_u(u_tmp(:), umin, umax);
                 u = apply_optional_restoring(B, u_raw, umin, umax, use_restoring);
 
@@ -701,6 +739,12 @@ function IN_MAT = make_lpwrap_in_mat(B, y, umin, umax, lp_method)
               umin(:)'         0;
               umax(:)'         0;
               active_effectors lp_method];
+end
+
+function IN_MAT = make_book_wrapper_in_mat(B, y, umin, umax)
+    % CGIwrap/DAwrap/VJAwrap use the same [B y; umin 0; umax 0; INDX 0]
+    % matrix shape as LPwrap, but the last scalar is not an LPmethod.
+    IN_MAT = make_lpwrap_in_mat(B, y, umin, umax, 0);
 end
 
 function u = clamp_u(u, umin, umax)
@@ -846,36 +890,36 @@ function report_case(result, command_px4, len_command_px4, t)
     end
     show_raw_report = ~isfield(result, 'use_restoring') || should_apply_restoring(result.use_restoring);
 
-    if isempty(method_names) || any(strcmp(method_names, 'dir'))
+    if isempty(method_names) || any(strcmp(method_names, 'pca_dir'))
         if show_raw_report && isfield(result, 'cpp_dp_raw')
-            report_cpp_matlab_case([result.name ' DP_LPCA raw'], result.B, result.cpp_dp_raw, result.matlab_dp_raw, command_px4, len_command_px4, t);
+            report_cpp_matlab_case([result.name ' PCA/DP_LPCA raw'], result.B, result.cpp_dp_raw, result.matlab_dp_raw, command_px4, len_command_px4, t);
         end
         if isfield(result, 'cpp_dp')
-            report_cpp_matlab_case([result.name ' DP_LPCA ' final_label], result.B, result.cpp_dp, result.matlab_dp, command_px4, len_command_px4, t);
+            report_cpp_matlab_case([result.name ' PCA/DP_LPCA ' final_label], result.B, result.cpp_dp, result.matlab_dp, command_px4, len_command_px4, t);
         else
-            report_matlab_case([result.name ' DP_LPCA ' final_label], result.B, result.matlab_dp, command_px4, len_command_px4);
+            report_matlab_case([result.name ' PCA/DP_LPCA ' final_label], result.B, result.matlab_dp, command_px4, len_command_px4);
         end
     end
 
-    if isempty(method_names) || any(strcmp(method_names, 'dpscaled'))
+    if isempty(method_names) || any(strcmp(method_names, 'pca_dpscaled'))
         if show_raw_report && isfield(result, 'cpp_dpscaled_raw')
-            report_cpp_matlab_case([result.name ' DPscaled_LPCA raw'], result.B, result.cpp_dpscaled_raw, result.matlab_dpscaled_raw, command_px4, len_command_px4, t);
+            report_cpp_matlab_case([result.name ' PCA/DPscaled_LPCA raw'], result.B, result.cpp_dpscaled_raw, result.matlab_dpscaled_raw, command_px4, len_command_px4, t);
         end
         if isfield(result, 'cpp_dpscaled')
-            report_cpp_matlab_case([result.name ' DPscaled_LPCA ' final_label], result.B, result.cpp_dpscaled, result.matlab_dpscaled, command_px4, len_command_px4, t);
+            report_cpp_matlab_case([result.name ' PCA/DPscaled_LPCA ' final_label], result.B, result.cpp_dpscaled, result.matlab_dpscaled, command_px4, len_command_px4, t);
         else
-            report_matlab_case([result.name ' DPscaled_LPCA ' final_label], result.B, result.matlab_dpscaled, command_px4, len_command_px4);
+            report_matlab_case([result.name ' PCA/DPscaled_LPCA ' final_label], result.B, result.matlab_dpscaled, command_px4, len_command_px4);
         end
     end
 
-    if isempty(method_names) || any(strcmp(method_names, 'prio'))
+    if isempty(method_names) || any(strcmp(method_names, 'pca_prio'))
         if show_raw_report && isfield(result, 'cpp_prio_raw')
-            report_cpp_matlab_case([result.name ' DP_LPCA_prio raw'], result.B, result.cpp_prio_raw, result.matlab_prio_raw, command_px4, len_command_px4, t);
+            report_cpp_matlab_case([result.name ' PCA/DP_LPCA_prio raw'], result.B, result.cpp_prio_raw, result.matlab_prio_raw, command_px4, len_command_px4, t);
         end
         if isfield(result, 'cpp_prio')
-            report_cpp_matlab_case([result.name ' DP_LPCA_prio ' final_label], result.B, result.cpp_prio, result.matlab_prio, command_px4, len_command_px4, t);
+            report_cpp_matlab_case([result.name ' PCA/DP_LPCA_prio ' final_label], result.B, result.cpp_prio, result.matlab_prio, command_px4, len_command_px4, t);
         else
-            report_matlab_case([result.name ' DP_LPCA_prio ' final_label], result.B, result.matlab_prio, command_px4, len_command_px4);
+            report_matlab_case([result.name ' PCA/DP_LPCA_prio ' final_label], result.B, result.matlab_prio, command_px4, len_command_px4);
         end
     end
 

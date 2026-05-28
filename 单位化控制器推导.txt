@@ -66,7 +66,9 @@ D * v / U即为对v的单位化。是根据B，u的单位化得到的。
 
 
 一、PX4的内置PID控制器:
-对用户给定B（不一定已经单位化）, 内置控制控制策略给出了v_norm，其inv分配等价于
+注意：实际缩放规则有多种选择，不一定是这里的方法，也可以控制是否缩放。
+
+对用户给定B（不一定已经单位化）, 隐含内置控制控制策略给出了v_norm，其inv分配等价于
 u_norm = B^+ / D * v_norm 
 这一点很重要，直接等价于
        = (D * B)^-1 * v_norm = B_norm^+ * v_norm = B_norm^+ * k_norm * e
@@ -80,7 +82,18 @@ D * B = D_new * B_new = B_norm
 输出不变，控制器增益也不变。单位化的控制分配，使得系统对B不敏感，控制器输出始终认为是已经单位化的，则控制增益不变。
 
 
-
+原来也不是完全的单位化控制v = B * U * u_norm，即不缩放u_norm = B^+ * v，单位化输出为
+u_norm = B^+ / U * v = B_norm^+ * D / U * k * e 
+若转到物理量纲v_new = B_new * u_new，利用
+D * B = D_new * B_new = B_norm
+u_new = B_new^+ * v_new =  B_norm^+ * D_new * k_new * e  
+若希望动态表现接近 
+u_new = u_norm 
+则
+D_new * k_new = D / U * k
+即
+k_new = inv(D_new) * D / U * k 
+时动态表现接近。k_indi= inv(D_indi) * D_px4 * [0.4;0.4;0.3] / ulim
 
 
 二、INDI控制器：
@@ -118,21 +131,23 @@ u -> u_norm
 先求B^+, 取不为零列均值D_i，构造D=diag{D_i}，则
 B_norm = D * B
 
+还有其他构造方法，可自定义。
+
 2. u的单位化：
 
 1.1. 若u可正可负，则umin<u<umax，有
-utrim= (umax-umin)/2
+ulim= (umax-umin)/2
 ucenter= (umax+umin)/2
 
 1.1.1 若ucenter!=0,则
-u_norm=(u - utrim)/ucenter
+u_norm=(u - ucenter)/ulim
 有
--1/ < (u - utrim)/ucenter < 1
+-1/ < (u - ucenter)/ulim < 1
 
 原来v = B * u变为
-D * v = D * B * u = B_norm * (u_norm * ucenter + utrim)
+D * v = D * B * u = B_norm * (u_norm * ulim + ucenter)
 此时v的单位化变为
-(D * v - B_norm * utrim) / ucenter = B_norm * u_norm 
+(D * v - B_norm * ucenter) / ulim = B_norm * u_norm 
 
 1.1.2 若ucenter=0
 umax = -umin，,则

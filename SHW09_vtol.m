@@ -138,5 +138,5 @@ disp(scale_px4.');
 
 disp('B_norm_px4 = D_px4 * B_px4 =');
 disp(B_norm_px4);
-
-k_indi=ulim * inv(D) * [0.5;0.5;0.5]
+ 
+k_indi= inv(D) * D_px4 * [0.5;0.5;0.5]/ulim

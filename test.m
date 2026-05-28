@@ -24,7 +24,7 @@ dt = mean(controls_delta_t_s);
 t_full = 0:dt:dt*(len_command_px4-1);
 
 %% Test configuration
-test_time_window_s = [0 4];  % 测试时间窗口；[] = 全程，示例：[20 30] 只跑 20-30 秒。[24.8 25.4]
+test_time_window_s = [20 40];  % 测试时间窗口；[] = 全程，示例：[20 30] 只跑 20-30 秒。[24.8 25.4]
 use_restoring = 'both';            % true=只看 restoring；false=只看 raw allocation；'both'=raw/restoring 各画一张。
 
 allocation_method_selection = {'pca_dir','cpp_dir'};  % 参与测试的分配算法；'all' = 全部，示例：[1 2 5] 或 {'inv','pca_dir','wls_gen','cpp_dir'}。
@@ -89,10 +89,8 @@ aircraft_cases{end+1} = make_shw09_vtol_mc_reduced6();
 % If cpp_tag is '', only MATLAB outputs are simulated and saved/plotted.
 aircraft_cases = select_aircraft_cases(aircraft_cases, aircraft_case_selection);
 
-%% Tie-break settings shared with alloc_cpp/src/ControlAllocation/ControlAllocation.h
-tie_opts.tie_rel_tol = 1e-5;
-tie_opts.tie_abs_tol = 1e-6;
-tie_opts.zero_tie_abs_tol = 3e-5;
+%% Simplex backend
+tie_opts = struct(); % 默认使用新版 simplxuprevsol_tiebreak；对照原版时设为 struct('simplex_backend','original')。
 
 fprintf('MATLAB PCA methods: pca_dir=PCA/DP_LPCA, pca_dpscaled=PCA/DPscaled_LPCA, pca_prio=PCA/DP_LPCA_prio + restoring_cpp\n');
 fprintf('C++ methods: cpp_dir=DP_LPCA, cpp_dpscaled=DPscaled_LPCA, cpp_prio=DP_LPCA_prio + restoring() aligned to restoring_cpp\n');
@@ -444,7 +442,7 @@ function model = make_shw09_vtol_mc_model()
     I_x = 0.050636;
     I_y = 0.042954;
     I_z = 0.012668;
-    L_1 = 0.42;
+    L_1 = 0.3;
     L_2 = 0.073699;
     k = 4.2;
     d = 60*pi/180;

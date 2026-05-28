@@ -18,9 +18,7 @@ sample_indices = find(t_full >= test_time_window_s(1) & t_full <= test_time_wind
 v_test = v(:, sample_indices);
 t = t_full(sample_indices);
 
-tie_opts.tie_rel_tol = 1e-5;
-tie_opts.tie_abs_tol = 1e-6;
-tie_opts.zero_tie_abs_tol = 3e-5;
+tie_opts = struct(); % DP/PCA 默认使用新版 simplxuprevsol_tiebreak。
 
 cases = {make_aircraft_4(), make_aircraft_6()};
 restorers = { ...

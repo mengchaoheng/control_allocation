@@ -59,7 +59,7 @@ hi = [h; 2 * abs(b)];
 
 % Use Bounded Revised Simplex to find initial basic feasible point of
 % original program.
-[y1, inB1, e1, itlim, errsimp] = simplxuprevsol_tiebreak(Ai, ci', b, inBi, hi, ei, opts, n, m + n + 1, itlim);
+[y1, inB1, e1, itlim, errsimp] = simplxuprevsol_tiebreak(Ai, ci', b, inBi, hi, ei, n, m + n + 1, itlim, opts);
 
 % Check that feasible solution was found.
 if itlim <= 0
@@ -83,7 +83,7 @@ if errout ~= 0
     xout(~e1(1:m + 1)) = -xout(~e1(1:m + 1)) + h(~e1(1:m + 1));
 else
     % Solve using initial problem from above.
-    [y2, inB2, e2, itlim, errsimp] = simplxuprevsol_tiebreak(A, c', b, inB1, h, e1(1:m + 1), opts, n, m + 1, itlim);
+    [y2, inB2, e2, itlim, errsimp] = simplxuprevsol_tiebreak(A, c', b, inB1, h, e1(1:m + 1), n, m + 1, itlim, opts);
 
     % Construct solution to original LP problem from bounded simplex output.
     xout = zeros(m + 1, 1);

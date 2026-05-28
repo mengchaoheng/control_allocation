@@ -1,0 +1,365 @@
+AI:
+对，这里面的本质就是一个**虚拟控制量坐标变换**。PX4 旧系统里的 rate controller 输出并不是物理角加速度，而是一个被分配矩阵单位化后的坐标。
+
+设真实执行器归一化命令为：
+
+```text
+s ∈ [-1, 1]^8
+```
+
+真实舵角为：
+
+```text
+delta = U s
+```
+
+如果所有舵面最大角一样，则：
+
+```text
+U = ulim * I
+```
+
+物理效能矩阵为：
+
+```text
+alpha = B_rad * delta
+```
+
+所以归一化执行器命令到真实角加速度的矩阵是：
+
+```text
+A = B_rad * U
+```
+
+也就是：
+
+```text
+alpha = A s
+```
+
+这里 `alpha` 是物理角加速度，单位是 `rad/s^2`。
+
+---
+
+PX4 那种单位化，本质是构造一个对角矩阵 `D`：
+
+```text
+B_norm = D * A
+```
+
+于是：
+
+```text
+D * alpha = D * A * s = B_norm * s
+```
+
+所以 PX4 分配器真正分配的不是：
+
+```text
+alpha
+```
+
+而是：
+
+```text
+v = D * alpha
+```
+
+这个 `v` 就是归一化的虚拟控制量。旧 rate controller 输出的就是这个东西：
+
+```text
+v = K_norm * omega_error
+```
+
+不是：
+
+```text
+alpha = K_norm * omega_error
+```
+
+因此，旧系统实际对应的物理角加速度是：
+
+```text
+alpha = D^{-1} * v
+      = D^{-1} * K_norm * omega_error
+```
+
+这就是数学本质。
+
+---
+
+所以有两种完全等价的写法。
+
+第一种，PX4 归一化写法：
+
+```text
+v = K_norm * e_omega
+s = pinv(D * A) * v
+```
+
+第二种，物理角加速度写法：
+
+```text
+alpha_cmd = K_phys * e_omega
+s = pinv(A) * alpha_cmd
+```
+
+这两种在无饱和、同一个 `A`、同一个 `D` 的前提下等价，当且仅当：
+
+```text
+K_phys = D^{-1} * K_norm
+```
+
+因为：
+
+```text
+pinv(D * A) = pinv(A) * D^{-1}
+```
+
+所以：
+
+```text
+pinv(D * A) * K_norm * e
+=
+pinv(A) * D^{-1} * K_norm * e
+```
+
+也就是：
+
+```text
+s_norm_controller = s_physical_controller
+```
+
+只要：
+
+```text
+K_phys = D^{-1} K_norm
+```
+
+这就是你要找的规矩。
+
+---
+
+换句话说，旧 PX4 的 rate P：
+
+```text
+v = K_norm * (omega_sp - omega)
+```
+
+表面上像是“角速度误差乘增益”，但它的输出单位不是 `rad/s^2`，而是归一化虚拟控制量。真正的物理角加速度等价为：
+
+```text
+alpha_cmd = D^{-1} * K_norm * (omega_sp - omega)
+```
+
+所以如果你现在的新控制器解释为：
+
+```text
+alpha_cmd = K_alpha * (omega_sp - omega)
+```
+
+那么为了和旧 PX4 归一化控制等价，应该取：
+
+```text
+K_alpha = D^{-1} * K_norm
+```
+
+而不是：
+
+```text
+K_alpha = K_norm
+```
+
+如果你直接把原来的 `K_norm` 数值拿来当 `K_alpha`，那就等于把旧的归一化输出错误解释成 `rad/s^2`，控制会弱很多。
+
+---
+
+你前面那组数值里，如果用物理矩阵 `B_rad`，并且最终输出还要除以最大舵角 `ulim` 变成归一化执行器命令，那么应该先定义：
+
+```text
+A = B_rad * ulim
+```
+
+然后基于 `A` 做单位化：
+
+```matlab
+mix_raw = pinv(A);
+
+for j = 1:3
+    scale(j) = mean(abs(mix_raw(abs(mix_raw(:,j)) > eps_col, j)));
+end
+
+D = diag(scale);
+B_norm = D * A;
+```
+
+此时：
+
+```text
+D^{-1}
+```
+
+就是“1 个归一化控制量等价于多少物理角加速度”。
+
+根据你前面那组数值，大概是：
+
+```text
+D^{-1} ≈ diag([62.6, 56.8, 571.7])
+```
+
+这是“同一个新物理 B 自己归一化”的结果。
+
+如果你要严格对接原来的 PX4 `B_norm_px4`，因为 yaw 分配方向不完全一样，yaw 会变成前面算的约：
+
+```text
+[62.6, 56.8, 417.5]
+```
+
+但概念上不变：**旧归一化控制量乘上 `D^{-1}`，才是物理角加速度。**
+
+---
+
+你说“如果控制不变，换了 B 之后，只要先做单位化再分配，几乎不影响”，这个判断要加一个限定。
+
+如果新旧 `B` 只是整体物理量纲变了，比如：
+
+```text
+A_new = Lambda * A_old
+```
+
+其中 `Lambda` 是三轴方向上的缩放，那么单位化会把这个缩放吸收掉：
+
+```text
+D_new * A_new ≈ D_old * A_old
+```
+
+这种情况下，同样的 `K_norm`、同样的误差，会产生几乎一样的归一化执行器输出 `s`。所以控制增益基本不用改。
+
+但如果新 `B` 不只是三轴缩放，而是执行器分配方向也变了，例如 yaw 原来更多靠电机，现在更多靠 elevon，或者各通道相对效能变了，那么单位化只能保证“量级”接近，不能保证每个执行器输出完全一样。
+
+严格等价条件是：
+
+```text
+pinv(B_norm_new) * K_new = pinv(B_norm_old) * K_old
+```
+
+如果只允许每个轴改一个标量增益，那么还要求新旧每一轴的伪逆列方向基本平行。也就是：
+
+```text
+pinv(B_norm_new)(:,j) ≈ c_j * pinv(B_norm_old)(:,j)
+```
+
+若这个条件不满足，单纯改 rate gain 不能让 8 个执行器输出完全相同，只能让整体幅值接近。
+
+---
+
+所以要分三种情况看。
+
+第一种：你保持 PX4 风格，不改控制器物理含义。
+
+```text
+v = K_norm * e_omega
+s = pinv(B_norm) * v
+```
+
+其中：
+
+```text
+B_norm = D * A
+```
+
+这时 `K_norm` 可以沿用旧量级。单位化矩阵 `D` 吸收了物理 B 的量纲。控制器输出仍然是归一化虚拟控制量，不是角加速度。
+
+第二种：你改成物理角加速度控制器。
+
+```text
+alpha_cmd = K_alpha * e_omega
+s = pinv(A) * alpha_cmd
+```
+
+这时必须用：
+
+```text
+K_alpha = D^{-1} * K_norm
+```
+
+所以增益会变成几十到几百倍。这不是控制变强，而是单位从“归一化控制量”变成了 `rad/s^2`。
+
+第三种：你有物理角加速度 `alpha_cmd`，但仍然想用归一化矩阵 `B_norm` 分配。
+
+那也可以，但必须先把物理角加速度转成归一化虚拟控制量：
+
+```text
+v = D * alpha_cmd
+s = pinv(B_norm) * v
+```
+
+因为：
+
+```text
+pinv(D * A) * D * alpha_cmd
+=
+pinv(A) * alpha_cmd
+```
+
+所以这和直接用物理矩阵分配是等价的。
+
+错误写法是：
+
+```text
+s = pinv(B_norm) * alpha_cmd
+```
+
+这个会把物理角加速度 `alpha_cmd` 错当成归一化控制量 `v`，单位就混了。
+
+---
+
+因此，最清楚的规则是：
+
+```text
+物理矩阵 A：输入必须是 alpha_cmd，单位 rad/s^2。
+
+归一化矩阵 B_norm = D*A：输入必须是 v = D*alpha_cmd，是无量纲虚拟控制量。
+
+旧 PX4 rate 输出：v，不是 alpha_cmd。
+
+新物理 rate 输出：alpha_cmd，不是 v。
+
+二者关系：v = D*alpha_cmd，alpha_cmd = D^{-1}*v。
+```
+
+你的“期望角速度输入”这一级没有问题。真正变化的是 rate loop 的输出解释：
+
+```text
+旧：
+omega_sp -> e_omega -> v
+
+新：
+omega_sp -> e_omega -> alpha_cmd
+```
+
+只要你承认新输出是 `alpha_cmd`，那么新 rate P 增益的物理单位就是：
+
+```text
+1/s
+```
+
+因为：
+
+```text
+alpha_cmd [rad/s^2] = K_alpha [1/s] * e_omega [rad/s]
+```
+
+这对应一个理想的一阶角速度误差动力学：
+
+```text
+omega_dot = K_alpha * (omega_sp - omega)
+```
+
+所以 `K_alpha` 越大，角速度跟踪越快。PX4 的旧 `K_norm` 不是这个物理意义；它要乘 `D^{-1}` 后才对应物理上的 rate-loop 加速度增益。
+
+---
+
+一句话总结：
+
+**PX4 的归一化输出 `v` 是物理角加速度 `alpha` 经过 `D` 缩放后的坐标：`v = D alpha`。如果新控制器输出解释为角加速度，就必须用 `alpha = D^{-1} v` 把旧增益换成物理增益；如果你继续先单位化 B 再分配，那么控制器输出就仍然应该解释为归一化虚拟控制量，而不是角加速度。**

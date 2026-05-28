@@ -1,0 +1,164 @@
+PX4单位控制器设计哲学：
+
+物理关系：v = B * u
+比如u是rad, v是角加速度或者力矩。
+
+需要设计 v = k * e 
+
+求 u = B^+ v = B^+ * k * e 
+
+B量纲变化，比如B每行乘增益变大，K需要越大。为防止对不同的B时重新调参数k, 
+
+先单位化u= U * u_norm
+
+v = B * u = B * U * u_norm = B_u * u_norm
+
+u_norm = B_u^+ v = B_u^+ * k * e
+
+同时将B_u^+按列单位化(定义好规则)
+
+B_u^+ / D_u = B_u^+ * D_u^-1 = (D_u* B_u)^+ = B_norm^+ 
+
+即
+D_u * B_u = B_norm
+
+由单位化的定义，有
+B_u^+ / D_u = B^+ / D
+因为量纲变化和U带来的都是对角阵，单位化后消失。因此
+D_u * B_u = B_norm = D * B
+D_u * U = D
+
+并且对任意B，不同量纲的矩阵为B1，它总是和B同结构，有
+D1_u * B1_u =  B1_norm = B_norm = D_u * B_u
+量纲信息和幅值约束信息综合在D_u或者D1_u中。
+
+
+u_norm = B_u^+ * k * e = B_norm^+ * D_u * k * e
+
+定义k_norm = D_u * k, 即等价于对B_norm做分配
+
+k_norm 量级稳定。因为对于一个系统，设计反馈
+
+u_norm = B_norm^+ * k_norm * e
+
+同样的误差e下，u_norm几乎由系统动态行唯一确定，因此k_norm范围确定。原本k中受量纲影响的
+部分已经被D_u吸收，这样抵消了B的量纲的影响，统一对B_norm进行分配，将控制器设计为v_norm = k_norm * e
+
+
+但控制器从归一化的v_norm设计哲学转为某物理量纲的控制器：
+v = k * e 
+然后如果直接伪逆法：
+u = B^+ * v = B^+ * k * e 
+要想实现原单位控制器的动态效果，即u_norm = B_norm^+ * k_norm * e，则
+u = U * u_norm
+  = U * B_norm^+ * k_norm * e
+  = U * B^+ * D^-1 * k_norm * e
+去掉B和e，即
+k = U * D^-1 * k_norm = D_u^-1 * k_norm
+
+此时
+v = k * e = B * u = D^-1 * B_norm * U * u_norm = D^-1 * U * B_norm * u_norm 
+  = D^-1 * U * v_norm = D^-1 * U * k_norm * e
+以及
+D * v / U =  B_norm * u_norm = v_norm
+
+D * v / U即为对v的单位化。是根据B，u的单位化得到的。
+
+
+一、PX4的内置PID控制器:
+对用户给定B（不一定已经单位化）, 内置控制控制策略给出了v_norm，其inv分配等价于
+u_norm = B^+ / D * v_norm 
+这一点很重要，直接等价于
+       = (D * B)^-1 * v_norm = B_norm^+ * v_norm = B_norm^+ * k_norm * e
+
+即等价于先对B做单位化得到B_norm再做伪逆，然后PID控制器即单位化的控制器，其输出就已经是v_norm。
+
+若此时转控制器，B转为量纲B_new，则
+u_norm = B^+ / D * v_norm = B_new^+ / D_new * v_norm = B_norm^+ * v_norm
+因为
+D * B = D_new * B_new = B_norm
+输出不变，控制器增益也不变。单位化的控制分配，使得系统对B不敏感，控制器输出始终认为是已经单位化的，则控制增益不变。
+
+
+
+
+
+二、INDI控制器：
+动态模型的一阶泰勒：
+\dot{ω}=\dot{ω}_0+BΔu
+
+令v_c=\dot{ω}_0+BΔu，有
+
+u = u_0 + B^+ * (v_c - \dot{ω}_0)
+或
+Δu = B^+ * (v_c-\dot{ω}_0)
+
+v_c需要解释为角加速度量纲，B要求是B*u为角加速度的物理量纲。
+
+我们回到v = B * u或者Δv = B * Δu，按照上述定义单位化B和u(或者Δu)，等式变成
+
+D * v / U = D * B * u / U = B_norm * u_norm
+D * Δv / U = D * B * Δu / U = B_norm * u_norm
+
+任何控制器输出v或者Δv，需要v_norm=y*D/U或Δv*D/U单位化。而PX4则是已经设计了v_norm = k_norm * e
+
+单位化之后，我们可以进行单位化的控制分配。这里假设|umin|=|umax|，对于一般情形，只需要同样的等式演化。
+
+即任意B, u, 做
+B -> B_norm 
+u -> u_norm
+然后通过物理模型找到v_norm，再进行单位化分配。统一了所有尺度。
+
+三、单位化
+
+
+
+1. B单位化
+
+先求B^+, 取不为零列均值D_i，构造D=diag{D_i}，则
+B_norm = D * B
+
+2. u的单位化：
+
+1.1. 若u可正可负，则umin<u<umax，有
+utrim= (umax-umin)/2
+ucenter= (umax+umin)/2
+
+1.1.1 若ucenter!=0,则
+u_norm=(u - utrim)/ucenter
+有
+-1/ < (u - utrim)/ucenter < 1
+
+原来v = B * u变为
+D * v = D * B * u = B_norm * (u_norm * ucenter + utrim)
+此时v的单位化变为
+(D * v - B_norm * utrim) / ucenter = B_norm * u_norm 
+
+1.1.2 若ucenter=0
+umax = -umin，,则
+u_norm = u / |umax|
+-1/ < u / |umax| < 1
+
+1.2. 只能取正/负
+
+1.2.1 假设 0 < u < umax
+u_norm = u / umax
+0 < u / umax < 1
+
+1.2.2 假设 umin < u < 0  
+u_norm = u / | umin |
+-1 < u / | umin | < 0
+
+注意这里的umin,umax都是物理意义的值，是提前定义好的。
+
+3. 控制律的单位化
+
+假设已经是单位化控制器，直接有v_norm。若根据物理意义设计的控制律，如INDI，控制器输出Δv是角速度量纲。
+需要回到其量纲意义下的等式Δv = B * Δu，先将B和Δu单位化，然后带入Δv = B * Δu，得
+Δv = f(B_norm * Δu_norm)
+有f^-1(Δv) = B_norm * Δu_norm = Δv_norm
+Δv的单位化就是使上述等式成立的f^-1.
+
+总结：任何控制器，按照v=B*u=k*e设计，先对B，u进行单位化，然后只需要对控制器输出v做单位化，则转化为单位控制分配问题。
+我们统一建模控制分配模型v_norm = B_norm * u_norm
+

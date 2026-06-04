@@ -1,0 +1,209 @@
+%% Print minimal control-allocation benchmark result
+% 只打印三类信息：
+%   1. 每个 B case 的基本信息；
+%   2. 每个算法的时间、residual、fail/fallback 计数；
+%   3. 算法之间的 u 和 B*u 差异。
+
+%% 读取结果
+% 这个文件既可以被 main_control_allocation_benchmark.m 用 run() 调用，
+% 也可以单独运行。
+%   - 如果 main 已经在工作区里放好了 results/flightData，就直接打印；
+%   - 如果单独运行，就像 plot 文件一样自动加载最新的结果 .mat。
+tool_dir = fileparts(mfilename('fullpath'));
+
+if exist('results', 'var') ~= 1 || exist('flightData', 'var') ~= 1
+    if ~exist('RESULT_MAT', 'var')
+        RESULT_MAT = "";
+    else
+        RESULT_MAT = string(RESULT_MAT);
+    end
+
+    if ~exist('RESULT_DIR', 'var') || strlength(string(RESULT_DIR)) == 0
+        RESULT_DIR = fullfile(tool_dir, 'results');
+    end
+
+    if strlength(RESULT_MAT) == 0
+        RESULT_MAT = select_latest_result_mat(RESULT_DIR);
+    end
+
+    if ~isfile(RESULT_MAT)
+        error('找不到结果文件: %s。请先运行 main_control_allocation_benchmark。', RESULT_MAT);
+    end
+
+    S = load(RESULT_MAT);
+    results = S.results;
+    flightData = S.flightData;
+
+    if isfield(S, 'meta')
+        meta = S.meta;
+    else
+        meta = struct();
+    end
+
+    fprintf('\nLoaded result file:\n  %s\n', RESULT_MAT);
+end
+
+axis_names = ["Mx", "My", "Mz", "Fx", "Fy", "Fz"];
+
+fprintf('\n============================================================\n');
+fprintf('Control allocation benchmark\n');
+fprintf('Model   : %s\n', flightData.model);
+fprintf('Samples : %d\n', size(flightData.control_sp, 1));
+
+if exist('meta', 'var') == 1 && isfield(meta, 'benchmark_elapsed_s')
+    fprintf('Wall    : %.4f s\n', meta.benchmark_elapsed_s);
+end
+
+if exist('meta', 'var') == 1 && isfield(meta, 'SIMPLEX_BACKEND')
+    fprintf('Simplex : %s\n', meta.SIMPLEX_BACKEND);
+end
+
+if exist('meta', 'var') == 1 && isfield(meta, 'WARMUP_SAMPLE_COUNT')
+    fprintf('Warmup  : %d samples, not counted per method\n', meta.WARMUP_SAMPLE_COUNT);
+end
+
+if isfield(flightData, 'window')
+    fprintf('Window  : %d/%d samples, %.3f to %.3f s\n', ...
+        flightData.window.selected_sample_count, ...
+        flightData.window.full_sample_count, ...
+        flightData.window.t_start_rel_s, ...
+        flightData.window.t_end_rel_s);
+end
+
+if exist('meta', 'var') == 1 && isfield(meta, 'px4_reference_note')
+    fprintf('PX4 ref : actuator output interpolated to command samples\n');
+end
+
+fprintf('============================================================\n');
+
+%% 1. 每个 B / 每个算法
+fprintf('\n[Per B / per algorithm]\n');
+
+for case_idx = 1:numel(results)
+    r = results(case_idx);
+    active_axes = axis_names(r.rows);
+
+    fprintf('\nCase %d: %s\n', case_idx, r.name);
+    fprintf('  B           : %dx%d\n', size(r.B, 1), size(r.B, 2));
+    fprintf('  active axes : %s\n', join_or_none(active_axes));
+    fprintf('  samples     : %d\n', size(r.control_sp, 1));
+
+    fprintf('\n');
+    fprintf('  method          total(s)  avg_alloc(us)  restore(us)  rms(y-Bu)   max(y-Bu)   fail  fb\n');
+    fprintf('  --------------  --------  -------------  -----------  ----------  ----------  ----  ---\n');
+
+    for alg_idx = 1:numel(r.alg)
+        a = r.alg(alg_idx);
+
+        fprintf('  %-14s  %8.4f  %13.2f  %11.2f  %10.4g  %10.4g  %4d  %3d\n', ...
+            a.name, a.elapsed_s, a.avg_us_per_sample, ...
+            1e6 * a.restore_s / max(size(r.control_sp, 1), 1), ...
+            a.rmse_residual, a.max_abs_residual, a.fail_count, a.fallback_count);
+    end
+
+    has_px4_ref = any(arrayfun(@(a) isfinite(a.rmse_vs_px4), r.alg));
+
+    if has_px4_ref
+        fprintf('\n');
+        fprintf('  PX4 actuator output reference, interpolated to command samples:\n');
+        fprintf('  method          rms(u-u_px4)  max(u-u_px4)\n');
+        fprintf('  --------------  ------------  ------------\n');
+
+        for alg_idx = 1:numel(r.alg)
+            a = r.alg(alg_idx);
+
+            if isfinite(a.rmse_vs_px4)
+                fprintf('  %-14s  %12.4g  %12.4g\n', ...
+                    a.name, a.rmse_vs_px4, a.max_abs_vs_px4);
+            end
+        end
+    end
+end
+
+%% 2. 同一个 B，不同算法
+fprintf('\n[Same B, different algorithms]\n');
+
+for case_idx = 1:numel(results)
+    r = results(case_idx);
+
+    if numel(r.alg) < 2
+        continue;
+    end
+
+    fprintf('\nCase: %s\n', r.name);
+    fprintf('  method A        method B        rms(du)     max(du)     rms(dBu)    max(dBu)\n');
+    fprintf('  --------------  --------------  ----------  ----------  ----------  ----------\n');
+
+    for i = 1:(numel(r.alg) - 1)
+        for j = (i + 1):numel(r.alg)
+            a = r.alg(i);
+            b = r.alg(j);
+            [u_rmse, u_max] = finite_rmse_max(a.u - b.u);
+            [y_rmse, y_max] = finite_rmse_max(a.y_achieved - b.y_achieved);
+
+            fprintf('  %-14s  %-14s  %10.4g  %10.4g  %10.4g  %10.4g\n', ...
+                a.name, b.name, u_rmse, u_max, y_rmse, y_max);
+        end
+    end
+end
+
+%% 3. 同一个算法，不同 B
+fprintf('\n[Same algorithm, different B]\n');
+
+if numel(results) >= 2
+    method_names = string({results(1).alg.name});
+
+    for method_idx = 1:numel(method_names)
+        fprintf('\nAlgorithm: %s\n', method_names(method_idx));
+        fprintf('  case A              case B              rms(dBu)    max(dBu)\n');
+        fprintf('  ------------------  ------------------  ----------  ----------\n');
+
+        for i = 1:(numel(results) - 1)
+            for j = (i + 1):numel(results)
+                a = results(i).alg(method_idx);
+                b = results(j).alg(method_idx);
+                N = min(size(a.y_achieved, 1), size(b.y_achieved, 1));
+                [y_rmse, y_max] = finite_rmse_max(a.y_achieved(1:N, :) - b.y_achieved(1:N, :));
+
+                fprintf('  %-18s  %-18s  %10.4g  %10.4g\n', ...
+                    results(i).name, results(j).name, y_rmse, y_max);
+            end
+        end
+    end
+else
+    fprintf('  only one B case enabled\n');
+end
+
+fprintf('\nDone.\n');
+
+function text = join_or_none(values)
+if isempty(values)
+    text = 'none';
+else
+    text = char(join(values, ' '));
+end
+end
+
+function [rmse_v, max_v] = finite_rmse_max(x)
+v = x(isfinite(x));
+
+if isempty(v)
+    rmse_v = nan;
+    max_v = nan;
+else
+    rmse_v = sqrt(mean(v.^2));
+    max_v = max(abs(v));
+end
+end
+
+function result_mat = select_latest_result_mat(result_dir)
+% 自动选择最新结果文件，方便单独运行 print 脚本。
+files = dir(fullfile(result_dir, '*_allocation_compare_results.mat'));
+
+if isempty(files)
+    error('目录里没有 *_allocation_compare_results.mat: %s', result_dir);
+end
+
+[~, newest_idx] = max([files.datenum]);
+result_mat = string(fullfile(files(newest_idx).folder, files(newest_idx).name));
+end

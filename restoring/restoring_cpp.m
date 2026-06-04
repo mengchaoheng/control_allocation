@@ -16,10 +16,27 @@ uMax_new=uMax-u;
 
 a=-2;%a<0 => K>0  or  a>0 => K<0. so assume that K>0
 v_aug= [zeros(k,1); a];
-
+%===================================
 % Original version:
 %   u_null=pinv(B_aug)*v_aug;
 %
+% % R=rank(B_aug) = k
+% % by all(abs(null(B)'*u)) < eps or norm(null(B)'*u)<100*eps or rank([B_aug v_aug]) ~= rank(B_aug)
+% % for cpp is difficult to calc null(B) but we can calc
+% % norm(B*u_null)>0.00001 where u_null=pinv(B_aug)*v_aug;
+% if(norm(B*u_null)>tol) % a=0
+%     % null(B)
+%     % null(B)'
+%     % null(null(B)')
+%     % v_0=B*null(null(B)');
+%     % B*u_null
+%     % v_0
+%     % null(B)'*u
+%     u_rest=u;
+%     return;
+% end
+%===================================
+% New version:
 % Maintained MATLAB version for C++ implementation.  We first verified in
 % MATLAB that, for our full-row-rank B, this projection form is equivalent to
 % the original restoring variants.  Then the C++ restoring() implementation
@@ -30,7 +47,7 @@ v_aug= [zeros(k,1); a];
 %   u_pseudo = B' * ((B*B') \ (B*u));
 %   u_null_component = u - u_pseudo;
 % This is equivalent to N*(N'*u) when N is an orthonormal basis of null(B).
-u_pseudo = B' * ((B*B') \ (B*u));
+u_pseudo = B' * ((B*B') \ (B*u)); % N = I-pinv(B)*B
 u_null_component = u - u_pseudo;
 u_null_component_norm_squared = u_null_component' * u_null_component;
 if(u_null_component_norm_squared < tol^2)
@@ -38,26 +55,9 @@ if(u_null_component_norm_squared < tol^2)
     return;
 end
 u_null = a * u_null_component / u_null_component_norm_squared;
-
-% R=rank(B_aug) = k
-% by all(abs(null(B)'*u)) < eps or norm(null(B)'*u)<100*eps or rank([B_aug v_aug]) ~= rank(B_aug)
-% for cpp is difficult to calc null(B) but we can calc
-% norm(B*u_null)>0.00001 where u_null=pinv(B_aug)*v_aug;
-if(norm(B*u_null)>tol) % a=0
-    % null(B)
-    % null(B)'
-    % null(null(B)')
-    % v_0=B*null(null(B)');
-    % B*u_null
-    % v_0
-    % null(B)'*u
-    u_rest=u;
-    return;
-end
+%===================================
 
 
-% B*u_null
-% B_aug*u_null
 K_opt=-a/(u_null'*u_null); %
 
 % u_Pseudo = u+K_opt*u_null % = pinv(B)*mdes

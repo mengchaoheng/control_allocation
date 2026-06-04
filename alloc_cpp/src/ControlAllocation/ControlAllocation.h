@@ -386,6 +386,31 @@ inline void setdiff(int setA[], int sizeA, int setB[], int sizeB, int result[]) 
     }
 }
 
+template<int ControlSize>
+inline void build_dp_scaled_row_order(int iy, int row_order[ControlSize])
+{
+    if (iy < 0 || iy >= ControlSize) {
+        iy = 0;
+    }
+
+    row_order[0] = iy;
+    int dst = 1;
+    for (int row = 0; row < ControlSize; ++row) {
+        if (row != iy) {
+            row_order[dst++] = row;
+        }
+    }
+
+    // Match MATLAB DPscaled_LPCA.m:
+    //   ydt(2:3) = ydt([3 2]);
+    //   Bt([2 3], :) = Bt([3 2], :);
+    if (ControlSize > 2) {
+        const int tmp = row_order[1];
+        row_order[1] = row_order[2];
+        row_order[2] = tmp;
+    }
+}
+
 // Define the structure of the linear programming problem
 template<int M, int N>
 struct LinearProgrammingProblem {
@@ -1153,9 +1178,15 @@ public:
         }
         //================================== DPscaled_LPCA_problem ================================
         DPscaled_LPCA_problem.itlim = 100;
-        float yd[3]={0.1,0.2,-0.1}; // random value for inital.
+        float yd[ControlSize]; // random non-zero value for initial problem sizing.
+        for (int i = 0; i < ControlSize; ++i) {
+            yd[i] = 0.1f * static_cast<float>(i + 1);
+        }
+        if (ControlSize > 2) {
+            yd[2] = -0.1f;
+        }
         // update A b c h every time
-        float my=yd[0]; // Store the maximum absolute value
+        float my=fabs(yd[0]); // Store the maximum absolute value
         int iy=0; // Store the index of the maximum absolute value
         for (int i = 0; i < ControlSize; ++i) {
             float absValue = fabs(yd[i]); // Calculate the absolute value of the i-th element in 'yd'
@@ -1164,39 +1195,16 @@ public:
                 iy = i;
             }
         }
-        // copy firstly !!!
         float Bt[ControlSize][EffectorSize];
         float ydt[ControlSize];
-
+        int row_order[ControlSize];
+        build_dp_scaled_row_order<ControlSize>(iy, row_order);
         for(int i=0;i<ControlSize;++i){
+            const int src = row_order[i];
+            ydt[i]=yd[src];
             for (int j = 0; j <EffectorSize; ++j) {
-                Bt[i][j] = this->aircraft.controlEffectMatrix[i][j];
+                Bt[i][j] = this->aircraft.controlEffectMatrix[src][j];
             }
-        }
-        for(int i=0;i<ControlSize;++i){
-            ydt[i]=yd[i];
-        }
-
-        // move
-        for(int j=0;j<EffectorSize;++j){
-            Bt[0][j] = this->aircraft.controlEffectMatrix[iy][j];
-            for (int i = iy; i >0; i--) {
-                Bt[i][j] = this->aircraft.controlEffectMatrix[i-1][j];
-            }
-        }
-        ydt[0] = yd[iy];
-        for (int j = iy; j >0; j--) {
-            ydt[j] = yd[j-1];
-        }
-        // swap 2 3 row of ydt
-        float ydt2=ydt[1];
-        ydt[1]=ydt[2];
-        ydt[2]=ydt2;
-        // swap 2 3 col of Bt
-        for(int i=0;i<EffectorSize;++i){
-            float Bt2=Bt[1][i];
-            Bt[1][i]=Bt[2][i];
-            Bt[2][i]=Bt2;
         }
         // M = [ydt(2:ControlSize) -ydt(1)*eye(ControlSize-1)];
         float M[ControlSize-1][ControlSize];
@@ -1289,17 +1297,12 @@ public:
             Pre_DPscaled_LPCA_problem.h[i+DPscaled_LPCA_problem.n] = 2*fabs(DPscaled_LPCA_problem.b[i]);
         }
         //   for restoring
-        B_aug.setZero();
         B.setZero();
         for (int i = 0; i < ControlSize; ++i) {
             for (int j = 0; j < EffectorSize; ++j) {
-                B_aug(i,j) = this->aircraft.controlEffectMatrix[i][j];
                 B(i,j) = this->aircraft.controlEffectMatrix[i][j];
             }
         }
-        v_aug.setZero();
-        v_aug(ControlSize)=a_constant;
-        u_null.setZero();
     }
     // Set Algorithm Parameter Function
     // Destructor
@@ -1623,40 +1626,21 @@ public:
                 iy = i;
             }
         }
-        // copy firstly !!!
         float Bt[ControlSize][EffectorSize];
         float ydt[ControlSize];
 
         for(int i=0;i<ControlSize;++i){
-            for (int j = 0; j <EffectorSize; ++j) {
-                Bt[i][j] = this->aircraft.controlEffectMatrix[i][j];
-            }
-        }
-        for(int i=0;i<ControlSize;++i){
-            ydt[i]=input[i];
             this->generalizedMoment[i] = input[i]; // just record.
         }
 
-        // move
-        for(int j=0;j<EffectorSize;++j){
-            Bt[0][j] = this->aircraft.controlEffectMatrix[iy][j];
-            for (int i = iy; i >0; i--) {
-                Bt[i][j] = this->aircraft.controlEffectMatrix[i-1][j];
+        int row_order[ControlSize];
+        build_dp_scaled_row_order<ControlSize>(iy, row_order);
+        for(int i=0;i<ControlSize;++i){
+            const int src = row_order[i];
+            ydt[i]=input[src];
+            for (int j = 0; j <EffectorSize; ++j) {
+                Bt[i][j] = this->aircraft.controlEffectMatrix[src][j];
             }
-        }
-        ydt[0] = input[iy];
-        for (int j = iy; j >0; j--) {
-            ydt[j] = input[j-1];
-        }
-        // swap 2 3 row of ydt
-        float ydt2=ydt[1];
-        ydt[1]=ydt[2];
-        ydt[2]=ydt2;
-        // swap 2 3 col of Bt
-        for(int i=0;i<EffectorSize;++i){
-            float Bt2=Bt[1][i];
-            Bt[1][i]=Bt[2][i];
-            Bt[2][i]=Bt2;
         }
         // M = [ydt(2:ControlSize) -ydt(1)*eye(ControlSize-1)];
         float M[ControlSize-1][ControlSize];
@@ -1764,8 +1748,10 @@ public:
             // use result_init data
             // matlab: indv = inB1<=(k+1); xout(inB1(indv)) = y1(indv); % in matlab the index from 1 to k, but cpp is 0 to k-1
             for(int i=0;i<ControlSize-1;++i){
-                xout[result_init.inB[i]]=result_init.y0[i];
-
+                if(result_init.inB[i] < EffectorSize)
+                {
+                    xout[result_init.inB[i]]=result_init.y0[i];
+                }
             }
             // xout(~e1(1:k+1)) = -xout(~e1(1:k+1))+h(~e1(1:k+1));
             for(int i=0;i<EffectorSize;++i){
@@ -2005,13 +1991,15 @@ public:
     }
     void restoring(float u[EffectorSize], float u_rest[EffectorSize]){
         const float restoring_tol = 1e-5f;
-        // B*u_null should be zero theoretically.  With float arithmetic the
-        // projection residual can sit just above restoring_tol for SHC09, so
-        // keep this guard one order looser.  It only decides whether to reject
-        // the restoring step; it is not the allocation accuracy target.
-        const float restoring_residual_tol = 10.0f * restoring_tol;
         Vector<float, EffectorSize> u_current(u);
-        if(u_current.norm()<restoring_tol){
+        bool all_small = true;
+        for(int i=0;i<EffectorSize;++i){
+            if(fabs(u[i]) >= restoring_tol){
+                all_small = false;
+                break;
+            }
+        }
+        if(all_small){
             for(int i=0;i<EffectorSize;++i){
                 u_rest[i]=u[i];
             }
@@ -2046,27 +2034,11 @@ public:
             }
             return;
         }
+        Vector<float, EffectorSize> u_null;
         for(int i=0;i<EffectorSize;++i){
             u_null(i)=a_constant * null_component(i) / null_component_norm_squared;
         }
 
-        // % R=rank(B_aug) = k
-        // % by all(abs(null(B)'*u)) < eps or norm(null(B)'*u)<100*eps or rank([B_aug v_aug]) ~= rank(B_aug)
-        // % for cpp is difficult to calc null(B) but we can calc
-        // % norm(B*u_null)>0.00001
-        matrix::Vector<float, ControlSize> tmp= B*u_null;
-        if(tmp.norm() > restoring_residual_tol){ // a=0
-            for(int i=0;i<EffectorSize;++i){
-                u_rest[i]=u[i];
-            }
-            return;
-        }
-        if(u_null.norm_squared() < restoring_tol * restoring_tol){
-            for(int i=0;i<EffectorSize;++i){
-                u_rest[i]=u[i];
-            }
-            return;
-        }
         float K_opt=-a_constant/u_null.norm_squared();
         //% update limits
         float uMax_new[EffectorSize]; // Control vector upper limit variables
@@ -2129,16 +2101,12 @@ public:
         }
         // for DPscaled_LPCA is update every time
         //   for restoring
-        B_aug.setZero();
         B.setZero();
         for (int i = 0; i < ControlSize; ++i) {
             for (int j = 0; j < EffectorSize; ++j) {
-                B_aug(i,j) = this->aircraft.controlEffectMatrix[i][j];
                 B(i,j) = this->aircraft.controlEffectMatrix[i][j];
             }
         }
-        v_aug.setZero();
-        v_aug(ControlSize)=a_constant;
 
         // std::cout << "is updated" << std::endl;
         isupdate = false;
@@ -2152,10 +2120,7 @@ public:
     LinearProgrammingProblem<ControlSize-1, EffectorSize + (ControlSize-1)> Pre_DPscaled_LPCA_problem;// Pre-set initial by aircraft data
     float upper_lam=1; // 2024-10-18 upper_lam=1
     // for restoring
-    matrix::Matrix<float, ControlSize+1, EffectorSize> B_aug;
-    matrix::Vector<float, ControlSize+1> v_aug;
-    matrix::Vector<float, EffectorSize> u_null;
-    float a_constant=-2; //arbitrary a<0 (if null(B)'*u = 0, rank([B_aug v_aug]) ~= rank(B_aug), it have to be a=0)
+    float a_constant=-2; // arbitrary a<0; matches restoring_cpp.m step direction.
     matrix::Matrix<float, ControlSize, EffectorSize> B;
     bool isupdate{false}; //if update aircraft data, then set isupdate = true.
 

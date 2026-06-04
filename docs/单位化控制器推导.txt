@@ -1,0 +1,481 @@
+PX4单位控制器设计哲学：
+
+物理关系：v = B * u
+比如u是rad, v是角加速度或者力矩。
+
+需要设计 v = k * e 
+
+求 u = B^+ v = B^+ * k * e 
+
+B量纲变化，比如B每行乘增益变大，K需要越大。为防止对不同的B时重新调参数k, 
+
+先单位化u= U * u_norm
+
+v = B * u = B * U * u_norm = B_u * u_norm
+
+u_norm = B_u^+ v = B_u^+ * k * e
+
+同时将B_u^+按列单位化(定义好规则)
+
+B_u^+ / D_u = B_u^+ * D_u^-1 = (D_u* B_u)^+ = B_norm^+ 
+
+即
+D_u * B_u = B_norm
+
+由单位化的定义，有
+B_u^+ / D_u = B^+ / D
+因为量纲变化和U带来的都是对角阵，单位化后消失。因此
+D_u * B_u = B_norm = D * B
+D_u * U = D
+
+并且对任意B，不同量纲的矩阵为B1，它总是和B同结构，有
+D1_u * B1_u =  B1_norm = B_norm = D_u * B_u
+量纲信息和幅值约束信息综合在D_u或者D1_u中。
+
+
+u_norm = B_u^+ * k * e = B_norm^+ * D_u * k * e
+
+定义k_norm = D_u * k, 即等价于对B_norm做分配
+
+k_norm 量级稳定。因为对于一个系统，设计反馈
+
+u_norm = B_norm^+ * k_norm * e
+
+同样的误差e下，u_norm几乎由系统动态行唯一确定，因此k_norm范围确定。原本k中受量纲影响的
+部分已经被D_u吸收，这样抵消了B的量纲的影响，统一对B_norm进行分配，将控制器设计为v_norm = k_norm * e
+
+
+但控制器从归一化的v_norm设计哲学转为某物理量纲的控制器：
+v = k * e 
+然后如果直接伪逆法：
+u = B^+ * v = B^+ * k * e 
+要想实现原单位控制器的动态效果，即u_norm = B_norm^+ * k_norm * e，则
+u = U * u_norm
+  = U * B_norm^+ * k_norm * e
+  = U * B^+ * D^-1 * k_norm * e
+去掉B和e，即
+k = U * D^-1 * k_norm = D_u^-1 * k_norm
+
+此时
+v = k * e = B * u = D^-1 * B_norm * U * u_norm = D^-1 * U * B_norm * u_norm 
+  = D^-1 * U * v_norm = D^-1 * U * k_norm * e
+以及
+D * v / U =  B_norm * u_norm = v_norm
+
+D * v / U即为对v的单位化。是根据B，u的单位化得到的。
+
+
+一、PX4的内置PID控制器:
+注意：实际缩放规则有多种选择，不一定是这里的方法，也可以控制是否缩放。
+
+对用户给定B（不一定已经单位化）, 隐含内置控制控制策略给出了v_norm，其inv分配等价于
+u_norm = B^+ / D * v_norm 
+这一点很重要，直接等价于
+       = (D * B)^-1 * v_norm = B_norm^+ * v_norm = B_norm^+ * k_norm * e
+
+即等价于先对B做单位化得到B_norm再做伪逆，然后PID控制器即单位化的控制器，其输出就已经是v_norm。
+
+若此时转控制器，B转为量纲B_new，则
+u_norm = B^+ / D * v_norm = B_new^+ / D_new * v_norm = B_norm^+ * v_norm
+因为
+D * B = D_new * B_new = B_norm
+输出不变，控制器增益也不变。单位化的控制分配，使得系统对B不敏感，控制器输出始终认为是已经单位化的，则控制增益不变。
+
+
+原来也不是完全的单位化控制v = B * U * u_norm，即不缩放u_norm = B^+ * v，单位化输出为
+u_norm = B^+ / U * v = B_norm^+ * D / U * k * e 
+若转到物理量纲v_new = B_new * u_new，利用
+D * B = D_new * B_new = B_norm
+u_new = B_new^+ * v_new =  B_norm^+ * D_new * k_new * e  
+若希望动态表现接近 
+u_new = u_norm 
+则
+D_new * k_new = D / U * k
+即
+k_new = inv(D_new) * D / U * k 
+时动态表现接近。k_indi= inv(D_indi) * D_px4 * [0.4;0.4;0.3] / ulim
+
+
+二、INDI控制器：
+动态模型的一阶泰勒：
+\dot{ω}=\dot{ω}_0+BΔu
+
+令v_c=\dot{ω}_0+BΔu，有
+
+u = u_0 + B^+ * (v_c - \dot{ω}_0)
+或
+Δu = B^+ * (v_c-\dot{ω}_0)
+
+v_c需要解释为角加速度量纲，B要求是B*u为角加速度的物理量纲。
+
+我们回到v = B * u或者Δv = B * Δu，按照上述定义单位化B和u(或者Δu)，等式变成
+
+D * v / U = D * B * u / U = B_norm * u_norm
+D * Δv / U = D * B * Δu / U = B_norm * u_norm
+
+任何控制器输出v或者Δv，需要v_norm=y*D/U或Δv*D/U单位化。而PX4则是已经设计了v_norm = k_norm * e
+
+单位化之后，我们可以进行单位化的控制分配。这里假设|umin|=|umax|，对于一般情形，只需要同样的等式演化。
+
+即任意B, u, 做
+B -> B_norm 
+u -> u_norm
+然后通过物理模型找到v_norm，再进行单位化分配。统一了所有尺度。
+
+三、单位化
+
+
+
+1. B单位化
+
+先求B^+, 取不为零列均值D_i，构造D=diag{D_i}，则
+B_norm = D * B
+
+还有其他构造方法，可自定义。
+
+2. u的单位化：
+
+1.1. 若u可正可负，则umin<u<umax，有
+ulim= (umax-umin)/2
+utrim= (umax+umin)/2
+
+1.1.1 若utrim!=0,则
+u_norm=(u - utrim)/ulim
+有
+-1/ < (u - utrim)/ulim < 1
+
+v = B * u
+  = B * (u_norm * ulim + utrim)
+
+v - B * utrim = B * ulim * u_norm
+
+
+定义Δv=v-v_0, Δu=u-u_0，下标0表示线性化点
+Δu_norm = u_norm - u_0_norm =  (u - u_0)/ulim
+没有utrim项
+
+Δv = B * Δu
+   = B * ulim * Δu_norm    
+   = B * ulim *（u_norm - u_0_norm）
+Δu_norm 仍然是归一化的
+
+若u_0_norm=0，则u_0= utrim，上式完全变为类似线性版本v - B * utrim = B * ulim * u_norm
+即
+Δv = v-v_0 = v-v(u_0) = v - v(utrim) = B * ulim * u_norm  
+ 
+1.1.2 若utrim =0，即
+umax = -umin，,则
+u_norm = u / |umax|
+-1/ < u / |umax| < 1
+
+1.2. 只能取正/负
+
+1.2.1 假设 0 < u < umax
+u_norm = u / umax
+0 < u / umax < 1
+
+1.2.2 假设 umin < u < 0  
+u_norm = u / | umin |
+-1 < u / | umin | < 0
+
+注意这里的umin,umax都是物理意义的值，是提前定义好的。
+
+3. 控制律的单位化
+
+假设已经是单位化控制器，直接有v_norm。若根据物理意义设计的控制律，如INDI，控制器输出Δv是角速度量纲。
+需要回到其量纲意义下的等式Δv = B * Δu，先将B和Δu单位化，然后带入Δv = B * Δu，得
+Δv = f(B_norm * Δu_norm)
+有f^-1(Δv) = B_norm * Δu_norm = Δv_norm
+Δv的单位化就是使上述等式成立的f^-1.
+
+总结：任何控制器，按照v=B*u=k*e设计，先对B，u进行单位化，然后只需要对控制器输出v做单位化，则转化为单位控制分配问题。
+我们统一建模控制分配模型v_norm = B_norm * u_norm
+
+
+
+4.px4原版存在trim u0 和pwm_max pwm_min pwm_center的滥用，并且pwm_center的设置引入了非线性映射，即左右两侧舵效不一样
+这和u0处线性化分配的哲学有悖。
+
+实际中我们只需要找到umax,umin对应的PWM，归一化的u_norm则一一对应pwm。因为舵总是均匀的。此时u=0的PWM_CENT是人为定义的。缺点是此时的u_norm !=0.
+如果用物理量 u，且物理中立点是 u=0：
+u_norm = (u - utrim) / ulim
+utrim = (umax + umin) / 2
+ulim  = (umax - umin) / 2
+如果把 u 直接当 PWM：
+u = PWM
+utrim = PWM_TRIM = (PWM_MAX + PWM_MIN)/2
+ulim  = PWM_LIM  = (PWM_MAX - PWM_MIN)/2
+所以
+u_norm = (PWM - PWM_TRIM) / PWM_LIM
+分配的中立点
+u_cent = (PWM_CENT - PWM_TRIM) / PWM_LIM  = (0 - utrim) / ulim
+u_norm - u_cent = u / ulim  
+
+对于这种单位化，映射关系为PWM-PWM_trim/PWM_lim = (u - utrim)/ulim=u_norm。对u=0的点使用
+u_cent=-utrim/ulim=-（PWM_cent-PWM_trim/PWM_lim  ，只需要ulim即可知道utrim。或干脆使用u_cent，和隐含使用ulim到B中。
+定义u_norm=(u - utrim)/ulim= (PWM - PWM_trim)/PWM_lim
+则分配问题使用
+v=Bu
+
+v - B * ulim * utrim/ulim = B * ulim * u_norm
+
+u_norm = pinv(B * ulim) * (v - B * ulim * utrim/ulim) 
+注意   != pinv(B * ulim) * v - utrim/ulim 
+      != pinv(B * ulim) * v + u_cent
+
+B * ulim * utrim/ulim = B * ulim * u_cent  
+
+v = B * ulim * (u_norm - u_cent) （但是这种理解，(u_norm - u_cent)不是规范化-1～+1的值）
+
+如果PWM_CENT直接计算u_cent，就对应原版的trim值，那分配需要改限幅。
+
+有多种理解
+或者
+Δv = B * Δu 
+Δu = u - u0 
+Δu_norm = u_norm - u0_norm, 注意u0_norm = (u0 - utrim)/ulim !=u_cent, 因为不一定u0!=0
+Δv = B * ulim * Δu_norm  （Δv不再需要utrim，但需要v(u0)）
+
+另一种增量理解
+将v=Bu用u_cent作为展开点：
+v - v(0) = B * ulim * (u_norm - u_cent)
+
+
+进行分配，这时u u_norm的映射关系是隐含的，分配器只需要知道ulim和B（单位化分配甚至不需要真实值），分配结果自然得到-1～+1的u_norm
+
+将u_norm映射到pwm，对应一个反单位化过程(umin umax用pwm代替)。
+需要知道 4 个东西，就能按这个定义分配：
+1. umin, umax 或者PWM_cent(但是仍然单映射)
+2. PWM_MIN, PWM_MAX
+3. B
+4. 目标 v_cmd 是否是“绝对量”还是“相对某个平衡点的增量”
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+双线性的意义就是：让 `u=0` 精确落在舵面的机械/气动中立 PWM，而不是默认落在 `(PWM_MIN + PWM_MAX)/2`。
+
+对舵面，PX4 的语义是：
+
+```text
+u = -1  -> 负最大舵偏
+u =  0  -> 中立舵偏
+u = +1  -> 正最大舵偏
+```
+
+如果你设置了：
+
+```text
+PWM_MIN  = 1000
+PWM_CENT = 1520
+PWM_MAX  = 2000
+```
+
+那 PX4 就不能用一条直线从 `-1` 到 `+1` 映射了，否则 `u=0` 会落在 `1500`，不是你的中立 `1520`。所以它分两段：
+
+```text
+u < 0:
+PWM = PWM_MIN  + (u + 1) * (PWM_CENT - PWM_MIN)
+
+u >= 0:
+PWM = PWM_CENT + u * (PWM_MAX - PWM_CENT)
+```
+
+也就是：
+
+```text
+-1 -> 1000
+ 0 -> 1520
++1 -> 2000
+```
+
+为什么正负倍率不同？因为 `PWM_CENT - PWM_MIN` 和 `PWM_MAX - PWM_CENT` 不一定相等。PX4 允许你校准成：
+
+```text
+负向舵偏需要 520 us
+正向舵偏需要 480 us
+```
+
+这通常是为了补偿舵机中位、连杆、舵角限位、安装偏差不对称。
+
+关键点是：allocator 输出的 `u` 不是 PWM，也不严格保证 “每 0.1 u 等于固定多少微秒”。它只是归一化执行器命令。PWM 层负责把：
+
+```text
+归一化命令 u
+```
+
+映射成：
+
+```text
+真实输出 PWM
+```
+
+所以如果你的 B 矩阵里假设舵面是对称线性的，例如：
+
+```text
+u = -1 对应 -最大舵角
+u =  0 对应 0 度
+u = +1 对应 +最大舵角
+```
+
+那你应该让 `PWM_CENT` 对准真实 0 度，让 `PWM_MIN/PWM_MAX` 对准真实负/正最大舵角。此时即使 PWM 微秒斜率不同，物理舵角也可能是对称的。
+
+如果你的舵机确实是严格对称的，直接设：
+
+```text
+PWM_CENT = (PWM_MIN + PWM_MAX)/2
+```
+
+或者不设 `PWM_CENT`，那就退化成普通线性映射。
+
+PX4 的双线性映射解决的是另一个需求：让 allocator 输出 0 时就直接是舵面中立：
+
+u_px4 = 0 -> PWM_CENT
+同时还保证：
+
+u_px4 = -1 -> PWM_MIN
+u_px4 = +1 -> PWM_MAX
+如果 PWM_CENT != (PWM_MIN + PWM_MAX)/2，一条直线不可能同时满足这三个点。证明很简单，假设线性：
+
+PWM = a*u + b
+要求：
+
+u = 0  -> b = PWM_CENT
+u = -1 -> PWM_CENT - a = PWM_MIN
+u = +1 -> PWM_CENT + a = PWM_MAX
+这要求：
+
+PWM_CENT - PWM_MIN = PWM_MAX - PWM_CENT
+也就是 PWM_CENT 必须正好在中点。否则只能分两段，所以 PX4 用双线性。
+
+
+
+
+
+你大体是对的，但有两处符号/概念要改。正确版本如下。
+
+**单映射定义**
+如果把原始执行器量 `u` 直接当 PWM：
+
+```text
+u_norm = (PWM - PWM_TRIM) / PWM_LIM
+
+PWM_TRIM = (PWM_MAX + PWM_MIN)/2
+PWM_LIM  = (PWM_MAX - PWM_MIN)/2
+```
+
+中立点不是 `u_norm=0`，而是：
+
+```text
+u0_norm = (PWM_CENT - PWM_TRIM) / PWM_LIM
+```
+
+如果你用物理量 `u`，且物理中立点是 `u0=0`：
+
+```text
+u_norm = (u - utrim) / ulim
+u0_norm = (0 - utrim) / ulim = -utrim/ulim
+```
+
+并且它应当等价于：
+
+```text
+u0_norm = (PWM_CENT - PWM_TRIM) / PWM_LIM
+```
+
+不是负的那个。
+
+**分配模型**
+围绕中立点做增量分配：
+
+```text
+Δu_norm = u_norm - u0_norm
+Δu = Ulim * Δu_norm
+Bn = B * Ulim
+Δv = Bn * Δu_norm
+```
+
+所以：
+
+```text
+Δu_norm = pinv(Bn) * Δv_cmd
+u_norm = u0_norm + Δu_norm
+u_norm = clamp(u_norm, -1, 1)
+PWM = PWM_TRIM + PWM_LIM * u_norm
+```
+
+这里 `Δv_cmd` 是相对中立点/线性化点需要增加的力或力矩。如果控制器给的是绝对目标，则：
+
+```text
+Δv = v_cmd - v0
+```
+
+其中：
+
+```text
+v0 = f(u0)
+```
+
+通常舵面中立点可近似 `v0=0`。
+
+你写的这句要改：
+
+```text
+v - B * ulim * utrim/ulim = B * ulim * u_norm
+```
+
+更准确是：
+
+```text
+v = B*utrim + B*Ulim*u_norm
+v - B*utrim = B*Ulim*u_norm
+```
+
+或者围绕中立点：
+
+```text
+v - v0 = B*Ulim*(u_norm - u0_norm)
+```
+
+这两个是同一件事，但不要把 `B*Ulim*u0_norm` 写成 `B*utrim`；如果中立点是 `u0=0`，则：
+
+```text
+u0_norm = -Ulim^-1 * utrim
+B*Ulim*u0_norm = -B*utrim
+```
+
+**最后总结**
+你只用单映射时，需要：
+
+```text
+1. PWM_MIN, PWM_MAX
+2. PWM_CENT
+3. B
+4. v_cmd 是绝对量还是增量量
+5. B 是对原始 u/PWM 的导数，还是已经对 u_norm 的导数
+```
+
+如果 `B` 是对原始 `u` 或 PWM 的导数：
+
+```text
+Bn = B * Ulim
+```
+
+如果 `B` 已经是对 `u_norm` 的导数：
+
+```text
+Bn = B
+```
+
+你的核心思路是对的：**单映射下，PWM_CENT 不是映射中心，而是分配里的非零中立点 `u0_norm`。**
+ 

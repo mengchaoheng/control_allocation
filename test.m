@@ -3,7 +3,20 @@ close all;
 clc;
 addpath(genpath(pwd))
 
-%% setup aircraft and load input data
+%% test.m architecture
+% 保持扁平：前半段脚本只做编排，后半段本地函数按职责分组。
+% 推荐阅读/修改顺序：
+%   1) 读取输入并设置测试参数
+%   2) 构建并选择 aircraft cases
+%   3) 运行 MATLAB allocators
+%   4) 按需加载 C++ 输出
+%   5) 打印报告并保存绘图数据
+%
+% 本地函数顺序：
+%   aircraft case 构造 -> 选择/开关 -> 仿真/allocator 分发
+%   -> allocator 工具 -> C++ 输出桥接 -> 报告/绘图辅助
+
+%% Load input data
 % Original derivation notes kept here intentionally. They are useful when
 % switching B definitions or comparing direct inverse style allocators.
 %
@@ -155,6 +168,7 @@ save('test_results.mat', 'results', 'result4', 'result6', 'command_px4', 'len_co
      'reports_to_run', 'allocator_sample_print_count', 'use_restoring');
 plot_test_results('test_results.mat');
 
+%% 本地函数：aircraft case 构造
 function aircraft = make_aircraft_4()
     % Four-effector ducted-fan model.  This form keeps the geometry and
     % inertia parameters visible; it is numerically equal to alloc_cpp/test/main.cpp.
@@ -253,6 +267,56 @@ function aircraft = make_aircraft_6()
     aircraft.umax = ones(6, 1) * ulim;
 end
 
+function aircraft = make_shw09_vtol_mc_full8()
+    model = make_shw09_vtol_mc_model();
+
+    aircraft.name = '15008_SHW09_vtol_full8';
+    aircraft.cpp_tag = '';
+    aircraft.B = model.B;
+    aircraft.umin = model.umin;
+    aircraft.umax = model.umax;
+    aircraft.plot_num_outputs = 8;
+    aircraft.plot_active_idx = 1:8;
+end
+
+function aircraft = make_shw09_vtol_mc_reduced6()
+    model = make_shw09_vtol_mc_model();
+    [B_reduced, umin_reduced, umax_reduced, active_idx] = active_reachable_view_model(model.B, model.umin, model.umax);
+
+    aircraft.name = '15008_SHW09_vtol_reduced6';
+    aircraft.cpp_tag = '';
+    aircraft.B = B_reduced;
+    aircraft.umin = umin_reduced;
+    aircraft.umax = umax_reduced;
+    aircraft.plot_num_outputs = 8;
+    aircraft.plot_active_idx = active_idx;
+end
+
+function model = make_shw09_vtol_mc_model()
+    I_x = 0.050636;
+    I_y = 0.042954;
+    I_z = 0.012668;
+    L_1 = 0.3;
+    L_2 = 0.073699;
+    k = 4.2;
+    d = 60*pi/180;
+    ulim = 0.6981;
+
+    B = zeros(3, 8);
+    B(1,1:6) = [-L_1, -cos(d)*L_1, cos(d)*L_1, L_1, cos(d)*L_1, -cos(d)*L_1] * k / I_x;
+    B(2,1:6) = [0, sin(d)*L_1, sin(d)*L_1, 0, -sin(d)*L_1, -sin(d)*L_1] * k / I_y;
+    B(3,1:6) = ones(1,6) * L_2 * k / I_z;
+
+    umin = ones(8,1) * -ulim;
+    umax = ones(8,1) *  ulim;
+    umin(7:8) = 0;
+    umax(7:8) = 0;
+
+    model.B = B;
+    model.umin = umin;
+    model.umax = umax;
+end
+
 function aircraft = make_aircraft_from_matrix(name, B, umin, umax, cpp_tag)
     if nargin < 5
         cpp_tag = '';
@@ -264,6 +328,7 @@ function aircraft = make_aircraft_from_matrix(name, B, umin, umax, cpp_tag)
     aircraft.umax = umax;
 end
 
+%% 本地函数：选择与开关
 function catalog = get_allocation_method_catalog()
     % Method name catalog. Keep this list in one place so the user-facing
     % selection above can be 'all', numeric indices, or names.
@@ -401,68 +466,7 @@ function enabled = has_report(reports_to_run, report_name)
     enabled = any(strcmpi(reports_to_run, 'all')) || any(strcmpi(reports_to_run, report_name));
 end
 
-function print_aircraft_case_model(aircraft)
-    fprintf('\n=== %s model ===\n', aircraft.name);
-    fprintf('B =\n');
-    disp(aircraft.B);
-    fprintf('umin = [');
-    fprintf(' %.6f', aircraft.umin);
-    fprintf(' ]^T\n');
-    fprintf('umax = [');
-    fprintf(' %.6f', aircraft.umax);
-    fprintf(' ]^T\n');
-end
-
-function aircraft = make_shw09_vtol_mc_full8()
-    model = make_shw09_vtol_mc_model();
-
-    aircraft.name = '15008_SHW09_vtol_full8';
-    aircraft.cpp_tag = '';
-    aircraft.B = model.B;
-    aircraft.umin = model.umin;
-    aircraft.umax = model.umax;
-    aircraft.plot_num_outputs = 8;
-    aircraft.plot_active_idx = 1:8;
-end
-
-function aircraft = make_shw09_vtol_mc_reduced6()
-    model = make_shw09_vtol_mc_model();
-    [B_reduced, umin_reduced, umax_reduced, active_idx] = active_reachable_view_model(model.B, model.umin, model.umax);
-
-    aircraft.name = '15008_SHW09_vtol_reduced6';
-    aircraft.cpp_tag = '';
-    aircraft.B = B_reduced;
-    aircraft.umin = umin_reduced;
-    aircraft.umax = umax_reduced;
-    aircraft.plot_num_outputs = 8;
-    aircraft.plot_active_idx = active_idx;
-end
-
-function model = make_shw09_vtol_mc_model()
-    I_x = 0.050636;
-    I_y = 0.042954;
-    I_z = 0.012668;
-    L_1 = 0.3;
-    L_2 = 0.073699;
-    k = 4.2;
-    d = 60*pi/180;
-    ulim = 0.6981;
-
-    B = zeros(3, 8);
-    B(1,1:6) = [-L_1, -cos(d)*L_1, cos(d)*L_1, L_1, cos(d)*L_1, -cos(d)*L_1] * k / I_x;
-    B(2,1:6) = [0, sin(d)*L_1, sin(d)*L_1, 0, -sin(d)*L_1, -sin(d)*L_1] * k / I_y;
-    B(3,1:6) = ones(1,6) * L_2 * k / I_z;
-
-    umin = ones(8,1) * -ulim;
-    umax = ones(8,1) *  ulim;
-    umin(7:8) = 0;
-    umax(7:8) = 0;
-
-    model.B = B;
-    model.umin = umin;
-    model.umax = umax;
-end
-
+%% 本地函数：仿真与 allocator 分发
 function result = simulate_flight_process(aircraft, v, tie_opts, allocation_methods_to_run, use_restoring)
     if nargin < 4 || isempty(allocation_methods_to_run)
         allocation_methods_to_run = {'pca_dir', 'pca_dpscaled', 'pca_prio'};
@@ -712,6 +716,7 @@ function [u_raw, u, ok, err_msg] = run_allocator_method(method, y, B, umin, umax
     end
 end
 
+%% 本地函数：allocator 通用工具
 function IN_MAT = make_lpwrap_in_mat(B, y, umin, umax, lp_method)
     [~, m] = size(B);
     active_effectors = ones(1, m);
@@ -748,6 +753,7 @@ function tf = should_apply_restoring(use_restoring)
     end
 end
 
+%% 本地函数：C++ 输出桥接
 function ensure_cpp_outputs()
     cpp_output_dir = fullfile('results', 'cpp_outputs');
     cpp_output_files = [
@@ -857,6 +863,19 @@ function result = attach_cpp_allocator_output(result, method, u_raw, u)
     result.alloc.(method).ok = all(isfinite(u), 1);
     result.alloc.(method).err_msg = strings(1, size(u, 2));
     result.alloc.(method).err_msg(~result.alloc.(method).ok) = "non-finite C++ output";
+end
+
+%% 本地函数：报告输出
+function print_aircraft_case_model(aircraft)
+    fprintf('\n=== %s model ===\n', aircraft.name);
+    fprintf('B =\n');
+    disp(aircraft.B);
+    fprintf('umin = [');
+    fprintf(' %.6f', aircraft.umin);
+    fprintf(' ]^T\n');
+    fprintf('umax = [');
+    fprintf(' %.6f', aircraft.umax);
+    fprintf(' ]^T\n');
 end
 
 function report_case(result, command_px4, len_command_px4, t)
@@ -1109,6 +1128,7 @@ function report_case_comparisons(results, case_comparison_pairs, methods_to_run,
     end
 end
 
+%% 本地函数：对比与绘图辅助
 function idx = find_result_index_by_name(results, name)
     idx = -1;
     for i = 1:numel(results)

@@ -3,7 +3,7 @@ clear; clc;
 I_x = 0.050636;
 I_y = 0.042954;
 I_z = 0.012668;
-L_1 = 0.2399;
+L_1 = 0.2398;
 L_2 = 0.0664;
 L_3 = 0.3145;
 Omega_max=1555;%
@@ -57,6 +57,9 @@ k_fw_tau=dF_d_delta_fw_cs/V_fw_e^2; % 巡航 0.0072
 k_wing = dF_d_delta_wing;  % k_wing= k_e * V^2_a
 k_cs = dF_d_delta_h_cs; % k_cs=k_tau*V^2_e,  悬停 dF_d_delta_h_cs 或者巡航 dF_d_delta_fw_cs
 
+dF_d_delta_fw_cs/dF_d_delta_h_cs 
+
+
 d = 60*pi/180;
 ulim = 0.6981;  
 
@@ -70,24 +73,10 @@ B(3,1:6) = ones(1,6) * L_2 * k_cs / I_z;
 B(3,7) =  k_wing * L_3 / I_z; % 论文中 k_wing= k_e * V^2_a, 这里隐去风速
 B(3,8) = -k_wing * L_3 / I_z;
 
-mix_raw = pinv(B);          % MATLAB 近似 PX4 geninv；这个 B 下通常足够接近
-scale = ones(size(B,1),1);  % SHW09 这里按各控制轴列计算
-
-eps_col = 1e-6;
-for j = 1:size(B,1)
-    col = mix_raw(:,j);
-    nz = abs(col) > eps_col;
-
-    if any(nz)
-        scale(j) = mean(abs(col(nz)));
-    else
-        scale(j) = 1;
-    end
-end
-
-D = diag(scale);
-B_norm = D * B;
-
+% 对应 PX4 内置 PseudoInverse/SequentialDesaturation 的实际单位化过程：
+% updateControlAllocationMatrixScale() + normalizeControlAllocationMatrix()。
+[D, B_norm, mix_norm, scale, mix_raw] = px4_normalize_B(B, true)
+ 
 % PX4 control_allocator 打印出来的 SHW09 悬停分配矩阵。
 % 控制量顺序: y = [Mx; My; Mz]
 % 执行器顺序: u = [servo0 servo1 servo2 servo3 servo4 servo5 elevon0 elevon1]'
@@ -96,23 +85,11 @@ B_px4 = [
     0         0.43390   0.43390   0        -0.43390  -0.43390   0        0
     0.20700   0.20700   0.20700   0.20700   0.20700   0.20700   0.50000 -0.50000
 ];
+% 旧 B_px4 也按 PX4 内置 RPY normalization 算尺度，便于和当前物理 B 对齐。
+[D_px4, B_norm_px4, mix_norm_px4, scale_px4, mix_raw_px4] = px4_normalize_B(B_px4, true)
+ 
 
-mix_raw_px4 = pinv(B_px4);
-scale_px4 = ones(size(B_px4,1),1);
-
-for j = 1:size(B_px4,1)
-    col = mix_raw_px4(:,j);
-    nz = abs(col) > eps_col;
-
-    if any(nz)
-        scale_px4(j) = mean(abs(col(nz)));
-    else
-        scale_px4(j) = 1;
-    end
-end
-
-D_px4 = diag(scale_px4);
-B_norm_px4 = D_px4 * B_px4;
+ 
 
 disp('=== B ===');
 disp('B =');
@@ -138,5 +115,11 @@ disp(scale_px4.');
 
 disp('B_norm_px4 = D_px4 * B_px4 =');
 disp(B_norm_px4);
- 
-k_indi= inv(D) * D_px4 * [0.5;0.5;0.4]/ulim
+% U = (1/umax) * E单位矩阵 
+% D * B = D_px4 * B_px4,
+% INDI 控制器增益
+% k = D^-1 * k_px4 / U，即
+k_px4 =  [0.2;0.2;0.2];
+k_indi= inv(D) * k_px4 * ulim
+% 内置分配非单位化的情形，还需要* inv(D_px4)
+k_indi = inv(D) * inv(D_px4) * k_px4 * ulim

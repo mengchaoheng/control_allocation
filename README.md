@@ -23,11 +23,13 @@ cd [control_allocation] path
 git submodule update --init --recursive
 ```
 ### For matlab usage:
-1. Run `plot_fly_log_states.m` to get the `handle_fly_log/flight.mat` file.
+1. Run `main_control_allocation_benchmark.m` for the current PX4 ULog offline benchmark. Set `LOG_DIR`, `LOG_FILE`, `PYULOG_BIN_DIR`, `B_CASES`, `METHODS_TO_RUN`, `RUN_CPP_ALLOCATOR`, and plot/print switches at the top of the file.
 
-2. Run `Generate_input_data.m` t get input data `input.csv`.
+2. `parse_control_allocation_flight_data.m` reads the log and saves `*_command_data.mat`. It keeps the original PX4 topic names, builds `v_sp_t = [torque; force]`, and reads `u_px4`.
 
-3. Run `test.m` or `test_xxx.m` file to test the allocator and plot some figure.
+3. After running the main script, `print_control_allocation_comparison.m` and `plot_control_allocation_results.m` can also be run alone. They automatically load the latest `*_allocation_compare_results.mat`.
+
+4. For the older input-file workflow, run `Generate_input_data.m` to get `input.mat` / `input.csv`, then run `test.m` or a `test_*.m` script.
 
 ToDo: fix the bug of `LP_lib/linear-programming-using-MATLAB`.
 
@@ -97,15 +99,16 @@ It is not the right u but optimal is right.
   - aircraft-control-allocation-book-simulation
   - qcat
 - `function_lib`: some matlab function used in the project.
-- `handle_fly_log`: some ulg files of px4.
-  - `xx_xx_xx.ulg`：flight log data.
 - `LP_allocator`: LP-based control allocator obtained by modifying the existing control allocation library. Some files come from the project of converting matlab to C language, just for comparison.
 - `LP_lib`: some open source LP solver lib.
 - `PCA`: prioritized control allocation (PCA) algorithm, test on matlab.
 - `QP_allocator`: QP-based control allocator obtained by modifying the existing control allocation library ([QCAT](https://github.com/mengchaoheng/qcat) ).
 - `reformula_LP`: The control allocation problem is reformulated into the standard form of the LP problem, and then a control allocator is designed based on the open source LP library, just for comparison.
-- `Generate_input_data.m`: use flight data and some unit vector to generate the input data for test allocator. 
-- `plot_fly_log_states.m`: use the ulg files of px4 to get flight data.
+- `main_control_allocation_benchmark.m`: parse a PX4 ULog, set B cases, run selected MATLAB/C++ allocators, print results, and plot comparison figures.
+- `parse_control_allocation_flight_data.m`: read PX4 ULog topics and save command/allocation data for the benchmark.
+- `print_control_allocation_comparison.m`: print allocation error, actuator command, and runtime comparison from a saved benchmark result.
+- `plot_control_allocation_results.m`: plot allocation commands, achieved `v`, allocation error, and statistics from a saved benchmark result.
+- `Generate_input_data.m`: use flight data and unit vectors to generate `input.mat` / `input.csv` for the older test workflow.
 - `test.m`: test the allocator.
-- `test_xxx.m`: some test for other purpose.
+- `test_*.m`: extra tests for specific cases.
 - `ac.slx` and `twin.slx`: simulink test.

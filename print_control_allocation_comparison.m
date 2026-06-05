@@ -51,30 +51,10 @@ axis_names = ["Mx", "My", "Mz", "Fx", "Fy", "Fz"];
 fprintf('\n============================================================\n');
 fprintf('Control allocation benchmark\n');
 fprintf('Model   : %s\n', flightData.model);
-fprintf('Samples : %d\n', size(flightData.control_sp, 1));
+fprintf('Samples : %d\n', size(flightData.v_sp, 1));
 
 if exist('meta', 'var') == 1 && isfield(meta, 'benchmark_elapsed_s')
     fprintf('Wall    : %.4f s\n', meta.benchmark_elapsed_s);
-end
-
-if exist('meta', 'var') == 1 && isfield(meta, 'WARMUP_SAMPLE_COUNT')
-    fprintf('Warmup  : %d samples, not counted per method\n', meta.WARMUP_SAMPLE_COUNT);
-end
-
-if isfield(flightData, 'window')
-    fprintf('Window  : %d/%d samples, %.3f to %.3f s\n', ...
-        flightData.window.selected_sample_count, ...
-        flightData.window.full_sample_count, ...
-        flightData.window.t_start_rel_s, ...
-        flightData.window.t_end_rel_s);
-end
-
-if exist('meta', 'var') == 1 && isfield(meta, 'inv_reference_note')
-    fprintf('INV ref : offline inv recomputed on each current B case\n');
-end
-
-if exist('meta', 'var') == 1 && (isfield(meta, 'reference_note') || isfield(meta, 'px4_reference_note'))
-    fprintf('PX4 ref : actuator output used only when columns exactly match current B\n');
 end
 
 fprintf('============================================================\n');
@@ -89,7 +69,7 @@ for case_idx = 1:numel(results)
     fprintf('\nCase %d: %s\n', case_idx, r.name);
     fprintf('  B           : %dx%d\n', size(r.B, 1), size(r.B, 2));
     fprintf('  active axes : %s\n', join_or_none(active_axes));
-    fprintf('  samples     : %d\n', size(r.control_sp, 1));
+    fprintf('  samples     : %d\n', size(r.v_sp, 1));
     fprintf('  inv ref     : %s\n', string_or_none(get_field_or(r, 'inv_reference_name', "")));
 
     if isfield(r, 'cpp_process_wall_s') && isfinite(r.cpp_process_wall_s)
@@ -97,7 +77,7 @@ for case_idx = 1:numel(results)
     end
 
     fprintf('\n');
-    fprintf('  method              total(s)  avg_alloc(us)  restore(us)  rms(y-Bu)   max(y-Bu)   fail  fb\n');
+    fprintf('  method              total(s)  avg_alloc(us)  restore(us)  rms(v-Bu)   max(v-Bu)   fail  fb\n');
     fprintf('  ------------------  --------  -------------  -----------  ----------  ----------  ----  ---\n');
 
     for alg_idx = 1:numel(r.alg)
@@ -105,7 +85,7 @@ for case_idx = 1:numel(results)
 
         fprintf('  %-18s  %8.4f  %13.2f  %11.2f  %10.4g  %10.4g  %4d  %3d\n', ...
             a.name, a.elapsed_s, a.avg_us_per_sample, ...
-            1e6 * a.restore_s / max(size(r.control_sp, 1), 1), ...
+            1e6 * a.restore_s / max(size(r.v_sp, 1), 1), ...
             a.rmse_residual, a.max_abs_residual, a.fail_count, a.fallback_count);
     end
 
@@ -168,10 +148,10 @@ for case_idx = 1:numel(results)
             a = r.alg(i);
             b = r.alg(j);
             [u_rmse, u_max] = finite_rmse_max(a.u - b.u);
-            [y_rmse, y_max] = finite_rmse_max(a.y_achieved - b.y_achieved);
+            [v_rmse, v_max] = finite_rmse_max(a.v_achieved - b.v_achieved);
 
             fprintf('  %-18s  %-18s  %10.4g  %10.4g  %10.4g  %10.4g\n', ...
-                a.name, b.name, u_rmse, u_max, y_rmse, y_max);
+                a.name, b.name, u_rmse, u_max, v_rmse, v_max);
         end
     end
 end
@@ -191,11 +171,11 @@ if numel(results) >= 2
             for j = (i + 1):numel(results)
                 a = results(i).alg(method_idx);
                 b = results(j).alg(method_idx);
-                N = min(size(a.y_achieved, 1), size(b.y_achieved, 1));
-                [y_rmse, y_max] = finite_rmse_max(a.y_achieved(1:N, :) - b.y_achieved(1:N, :));
+                N = min(size(a.v_achieved, 1), size(b.v_achieved, 1));
+                [v_rmse, v_max] = finite_rmse_max(a.v_achieved(1:N, :) - b.v_achieved(1:N, :));
 
                 fprintf('  %-18s  %-18s  %10.4g  %10.4g\n', ...
-                    results(i).name, results(j).name, y_rmse, y_max);
+                    results(i).name, results(j).name, v_rmse, v_max);
             end
         end
     end

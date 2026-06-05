@@ -10,7 +10,6 @@
 #include <stdexcept>
 #include <string>
 #include <sys/stat.h>
-#include <sys/types.h>
 #include <vector>
 
 #include "ControlAllocation.h"
@@ -20,55 +19,43 @@ namespace {
 using Rows = std::vector<std::vector<double>>;
 
 struct InstanceInput {
-    Rows B;
-    Rows Y;
+    Rows B;                 // 6 x m, rows [Mx My Mz Fx Fy Fz]
+    Rows v_sp;              // N x 6
     std::vector<double> umin;
     std::vector<double> umax;
     std::vector<int> active_rows;
 };
 
-struct SeriesResult {
-    Rows u;
-    Rows raw;
-    Rows y_achieved;
-    Rows errout;
-    Rows rho;
+struct InstanceResult {
+    Rows u;                 // N x m
+    Rows v_achieved;        // N x 6
     double allocator_s{0.0};
     double restore_s{0.0};
     int fail_count{0};
     int fallback_count{0};
 };
 
-std::string join_path(const std::string &a, const std::string &b)
+struct MethodResult {
+    Rows u;                 // N x total actuator count
+    Rows v_achieved;        // N x 6
+    Rows residual;          // v_sp - v_achieved
+    double total_s{0.0};
+    double allocator_s{0.0};
+    double restore_s{0.0};
+    int fail_count{0};
+    int fallback_count{0};
+};
+
+std::string path_join(const std::string &dir, const std::string &name)
 {
-    if (a.empty()) {
-        return b;
-    }
-
-    if (a.back() == '/') {
-        return a + b;
-    }
-
-    return a + "/" + b;
-}
-
-void ensure_dir(const std::string &path)
-{
-    mkdir(path.c_str(), 0755);
-}
-
-bool file_exists(const std::string &path)
-{
-    std::ifstream file(path);
-    return file.good();
+    return dir.empty() || dir.back() == '/' ? dir + name : dir + "/" + name;
 }
 
 Rows read_csv(const std::string &path)
 {
     std::ifstream file(path);
-
     if (!file.is_open()) {
-        throw std::runtime_error("Cannot open CSV: " + path);
+        throw std::runtime_error("cannot open " + path);
     }
 
     Rows rows;
@@ -79,11 +66,11 @@ Rows read_csv(const std::string &path)
             continue;
         }
 
-        std::istringstream line_stream(line);
-        std::string value;
         std::vector<double> row;
+        std::stringstream ss(line);
+        std::string value;
 
-        while (std::getline(line_stream, value, ',')) {
+        while (std::getline(ss, value, ',')) {
             if (!value.empty()) {
                 row.push_back(std::stod(value));
             }
@@ -94,34 +81,26 @@ Rows read_csv(const std::string &path)
         }
     }
 
-    if (rows.empty()) {
-        throw std::runtime_error("Empty CSV: " + path);
-    }
-
     return rows;
 }
 
-std::vector<double> read_row_vector(const std::string &path)
+std::vector<double> read_row(const std::string &path)
 {
     Rows rows = read_csv(path);
-
     if (rows.size() != 1) {
-        throw std::runtime_error("Expected one-row vector: " + path);
+        throw std::runtime_error("expected one-row vector: " + path);
     }
-
     return rows[0];
 }
 
 void write_csv(const std::string &path, const Rows &rows)
 {
     std::ofstream file(path);
-
     if (!file.is_open()) {
-        throw std::runtime_error("Cannot write CSV: " + path);
+        throw std::runtime_error("cannot write " + path);
     }
 
     file << std::setprecision(17);
-
     for (const auto &row : rows) {
         for (size_t i = 0; i < row.size(); ++i) {
             file << row[i] << (i + 1 < row.size() ? "," : "\n");
@@ -129,81 +108,56 @@ void write_csv(const std::string &path, const Rows &rows)
     }
 }
 
-void write_lines(const std::string &path, const std::vector<std::string> &lines)
+int ncol(const Rows &A)
 {
-    std::ofstream file(path);
-
-    if (!file.is_open()) {
-        throw std::runtime_error("Cannot write text file: " + path);
-    }
-
-    for (const auto &line : lines) {
-        file << line << "\n";
-    }
+    return A.empty() ? 0 : static_cast<int>(A[0].size());
 }
 
-int num_cols(const Rows &rows)
-{
-    return rows.empty() ? 0 : static_cast<int>(rows[0].size());
-}
-
-std::vector<int> active_rows_from_B(const Rows &B)
+std::vector<int> active_rows(const Rows &B)
 {
     std::vector<int> rows;
 
     for (int r = 0; r < static_cast<int>(B.size()); ++r) {
-        bool active = false;
-
         for (double value : B[r]) {
             if (std::fabs(value) > 1.0e-9) {
-                active = true;
+                rows.push_back(r);
                 break;
             }
-        }
-
-        if (active) {
-            rows.push_back(r);
         }
     }
 
     return rows;
 }
 
-Rows extract_active_B(const InstanceInput &inst)
+Rows active_B(const InstanceInput &inst)
 {
-    Rows B_eff;
-    B_eff.reserve(inst.active_rows.size());
-
-    for (int row : inst.active_rows) {
-        B_eff.push_back(inst.B[row]);
+    Rows B;
+    for (int r : inst.active_rows) {
+        B.push_back(inst.B[r]);
     }
-
-    return B_eff;
+    return B;
 }
 
-std::vector<double> extract_active_y(const InstanceInput &inst, int sample)
+std::vector<double> active_v(const InstanceInput &inst, int sample)
 {
-    std::vector<double> y;
-    y.reserve(inst.active_rows.size());
-
-    for (int row : inst.active_rows) {
-        y.push_back(inst.Y[sample][row]);
+    std::vector<double> v;
+    for (int r : inst.active_rows) {
+        v.push_back(inst.v_sp[sample][r]);
     }
-
-    return y;
+    return v;
 }
 
-std::vector<double> mat_vec(const Rows &A, const std::vector<double> &x)
+std::vector<double> B_times_u(const Rows &B, const std::vector<double> &u)
 {
-    std::vector<double> y(A.size(), 0.0);
+    std::vector<double> v(B.size(), 0.0);
 
-    for (size_t r = 0; r < A.size(); ++r) {
-        for (size_t c = 0; c < A[r].size(); ++c) {
-            y[r] += A[r][c] * x[c];
+    for (size_t r = 0; r < B.size(); ++r) {
+        for (size_t c = 0; c < B[r].size(); ++c) {
+            v[r] += B[r][c] * u[c];
         }
     }
 
-    return y;
+    return v;
 }
 
 std::vector<double> clamp_u(std::vector<double> u,
@@ -213,32 +167,28 @@ std::vector<double> clamp_u(std::vector<double> u,
     for (size_t i = 0; i < u.size(); ++i) {
         u[i] = std::min(std::max(u[i], umin[i]), umax[i]);
     }
-
     return u;
 }
 
 std::vector<double> pinv_alloc(const Rows &B,
-                               const std::vector<double> &y,
+                               const std::vector<double> &v,
                                const std::vector<double> &umin,
                                const std::vector<double> &umax)
 {
     const int k = static_cast<int>(B.size());
-    const int m = num_cols(B);
-
+    const int m = ncol(B);
     Eigen::MatrixXf B_eig(k, m);
-    Eigen::VectorXf y_eig(k);
+    Eigen::VectorXf v_eig(k);
 
     for (int r = 0; r < k; ++r) {
-        y_eig(r) = static_cast<float>(y[r]);
-
+        v_eig(r) = static_cast<float>(v[r]);
         for (int c = 0; c < m; ++c) {
             B_eig(r, c) = static_cast<float>(B[r][c]);
         }
     }
 
     Eigen::JacobiSVD<Eigen::MatrixXf> svd(B_eig, Eigen::ComputeThinU | Eigen::ComputeThinV);
-    Eigen::VectorXf u_eig = svd.solve(y_eig);
-
+    Eigen::VectorXf u_eig = svd.solve(v_eig);
     std::vector<double> u(m, 0.0);
 
     for (int i = 0; i < m; ++i) {
@@ -249,18 +199,15 @@ std::vector<double> pinv_alloc(const Rows &B,
 }
 
 template<int K, int M>
-SeriesResult run_lpca_template(const InstanceInput &inst,
-                               const std::string &method,
-                               bool use_restoring)
+InstanceResult run_lpca_instance(const InstanceInput &inst,
+                                 const std::string &method,
+                                 bool use_restoring)
 {
-    Rows B_eff = extract_active_B(inst);
-    const int N = static_cast<int>(inst.Y.size());
-    SeriesResult result;
+    Rows B_eff = active_B(inst);
+    const int N = static_cast<int>(inst.v_sp.size());
+    InstanceResult result;
     result.u.assign(N, std::vector<double>(M, 0.0));
-    result.raw.assign(N, std::vector<double>(M, 0.0));
-    result.y_achieved.assign(N, std::vector<double>(6, 0.0));
-    result.errout.assign(N, std::vector<double>(1, 0.0));
-    result.rho.assign(N, std::vector<double>(1, 0.0));
+    result.v_achieved.assign(N, std::vector<double>(6, 0.0));
 
     float B_array[K][M];
     float umin_array[M];
@@ -281,27 +228,23 @@ SeriesResult run_lpca_template(const InstanceInput &inst,
     DP_LP_ControlAllocator<K, M> allocator(aircraft);
 
     for (int sample = 0; sample < N; ++sample) {
-        float y[K];
+        float v[K];
         float raw[M];
         float u[M];
         int err = 0;
         float rho = 0.0f;
-        std::vector<double> y_eff = extract_active_y(inst, sample);
+        std::vector<double> v_eff = active_v(inst, sample);
 
         for (int r = 0; r < K; ++r) {
-            y[r] = static_cast<float>(y_eff[r]);
+            v[r] = static_cast<float>(v_eff[r]);
         }
 
         const auto alloc_start = std::chrono::high_resolution_clock::now();
-
         if (method == "pca_dir") {
-            allocator.DP_LPCA(y, raw, err, rho);
-        } else if (method == "pca_dpscaled") {
-            allocator.DPscaled_LPCA(y, raw, err, rho);
+            allocator.DP_LPCA(v, raw, err, rho);
         } else {
-            throw std::runtime_error("Unsupported C++ method: " + method);
+            allocator.DPscaled_LPCA(v, raw, err, rho);
         }
-
         const auto alloc_end = std::chrono::high_resolution_clock::now();
 
         if (use_restoring) {
@@ -317,229 +260,154 @@ SeriesResult run_lpca_template(const InstanceInput &inst,
 
         result.allocator_s += std::chrono::duration<double>(alloc_end - alloc_start).count();
 
-        std::vector<double> u_row(M, 0.0);
-
         for (int i = 0; i < M; ++i) {
-            result.raw[sample][i] = raw[i];
-            u_row[i] = std::min(std::max(static_cast<double>(u[i]), inst.umin[i]), inst.umax[i]);
+            result.u[sample][i] = std::min(std::max(static_cast<double>(u[i]), inst.umin[i]), inst.umax[i]);
         }
 
-        for (int i = 0; i < M; ++i) {
-            result.u[sample][i] = u_row[i];
-        }
-
-        result.y_achieved[sample] = mat_vec(inst.B, u_row);
-        result.errout[sample][0] = static_cast<double>(err);
-        result.rho[sample][0] = static_cast<double>(rho);
-
-        if (err != 0) {
-            result.fail_count += 1;
-        }
+        result.v_achieved[sample] = B_times_u(inst.B, result.u[sample]);
+        result.fail_count += err != 0;
     }
 
     return result;
 }
 
-SeriesResult run_pinv_series(const InstanceInput &inst)
+InstanceResult run_pinv_instance(const InstanceInput &inst)
 {
-    const int N = static_cast<int>(inst.Y.size());
-    const int m = num_cols(inst.B);
-    SeriesResult result;
+    const int N = static_cast<int>(inst.v_sp.size());
+    const int m = ncol(inst.B);
+    Rows B_eff = active_B(inst);
+    InstanceResult result;
     result.u.assign(N, std::vector<double>(m, 0.0));
-    result.raw.assign(N, std::vector<double>(m, 0.0));
-    result.y_achieved.assign(N, std::vector<double>(6, 0.0));
-    result.errout.assign(N, std::vector<double>(1, 0.0));
-    result.rho.assign(N, std::vector<double>(1, 0.0));
+    result.v_achieved.assign(N, std::vector<double>(6, 0.0));
     result.fallback_count = N;
 
-    Rows B_eff = extract_active_B(inst);
-
     for (int sample = 0; sample < N; ++sample) {
-        std::vector<double> y_eff = extract_active_y(inst, sample);
+        std::vector<double> v_eff = active_v(inst, sample);
         const auto start = std::chrono::high_resolution_clock::now();
-        std::vector<double> u = pinv_alloc(B_eff, y_eff, inst.umin, inst.umax);
+        result.u[sample] = pinv_alloc(B_eff, v_eff, inst.umin, inst.umax);
         const auto finish = std::chrono::high_resolution_clock::now();
         result.allocator_s += std::chrono::duration<double>(finish - start).count();
-
-        result.u[sample] = u;
-        result.raw[sample] = u;
-        result.y_achieved[sample] = mat_vec(inst.B, u);
+        result.v_achieved[sample] = B_times_u(inst.B, result.u[sample]);
     }
 
     return result;
 }
 
-SeriesResult run_instance_series(const InstanceInput &inst,
-                                 const std::string &method,
-                                 bool use_restoring)
+InstanceResult run_instance(const InstanceInput &inst,
+                            const std::string &method,
+                            bool use_restoring)
 {
     const int k = static_cast<int>(inst.active_rows.size());
-    const int m = num_cols(inst.B);
+    const int m = ncol(inst.B);
 
     if (k <= 1 || m <= k) {
-        return run_pinv_series(inst);
+        return run_pinv_instance(inst);
     }
 
-    if (k == 3 && m == 4) {
-        return run_lpca_template<3, 4>(inst, method, use_restoring);
-    }
+    if (k == 3 && m == 4) return run_lpca_instance<3, 4>(inst, method, use_restoring);
+    if (k == 3 && m == 6) return run_lpca_instance<3, 6>(inst, method, use_restoring);
+    if (k == 3 && m == 8) return run_lpca_instance<3, 8>(inst, method, use_restoring);
+    if (k == 4 && m == 5) return run_lpca_instance<4, 5>(inst, method, use_restoring);
+    if (k == 4 && m == 7) return run_lpca_instance<4, 7>(inst, method, use_restoring);
 
-    if (k == 3 && m == 6) {
-        return run_lpca_template<3, 6>(inst, method, use_restoring);
-    }
-
-    if (k == 3 && m == 8) {
-        return run_lpca_template<3, 8>(inst, method, use_restoring);
-    }
-
-    if (k == 4 && m == 5) {
-        return run_lpca_template<4, 5>(inst, method, use_restoring);
-    }
-
-    if (k == 4 && m == 7) {
-        return run_lpca_template<4, 7>(inst, method, use_restoring);
-    }
-
-    SeriesResult result = run_pinv_series(inst);
-    result.fallback_count = static_cast<int>(inst.Y.size());
-    return result;
+    return run_pinv_instance(inst);
 }
 
-std::vector<InstanceInput> read_instances(const std::string &input_dir)
+std::vector<InstanceInput> read_inputs(const std::string &input_dir)
 {
-    Rows meta = read_csv(join_path(input_dir, "case_meta.csv"));
-
-    if (meta[0].size() < 3) {
-        throw std::runtime_error("case_meta.csv must contain [N,total_u_dim,num_instances,use_restoring]");
-    }
-
+    Rows meta = read_csv(path_join(input_dir, "case_meta.csv"));
     const int num_instances = static_cast<int>(std::lround(meta[0][2]));
     std::vector<InstanceInput> instances;
-    instances.reserve(num_instances);
 
     for (int i = 0; i < num_instances; ++i) {
-        const std::string prefix = join_path(input_dir, "inst_" + std::to_string(i));
+        const std::string prefix = path_join(input_dir, "inst_" + std::to_string(i));
         InstanceInput inst;
         inst.B = read_csv(prefix + "_B.csv");
-        inst.Y = read_csv(prefix + "_Y.csv");
-        inst.umin = read_row_vector(prefix + "_umin.csv");
-        inst.umax = read_row_vector(prefix + "_umax.csv");
-        inst.active_rows = active_rows_from_B(inst.B);
-
-        if (inst.B.size() != 6) {
-            throw std::runtime_error(prefix + "_B.csv must be 6 x m");
-        }
-
-        if (num_cols(inst.B) != static_cast<int>(inst.umin.size())
-            || num_cols(inst.B) != static_cast<int>(inst.umax.size())) {
-            throw std::runtime_error(prefix + " B/limit dimension mismatch");
-        }
-
+        inst.v_sp = read_csv(prefix + "_Y.csv");
+        inst.umin = read_row(prefix + "_umin.csv");
+        inst.umax = read_row(prefix + "_umax.csv");
+        inst.active_rows = active_rows(inst.B);
         instances.push_back(inst);
     }
 
     return instances;
 }
 
-Rows sum_command(const std::vector<InstanceInput> &instances)
+Rows combined_v_sp(const std::vector<InstanceInput> &instances)
 {
-    const int N = static_cast<int>(instances[0].Y.size());
-    Rows y(N, std::vector<double>(6, 0.0));
+    const int N = static_cast<int>(instances[0].v_sp.size());
+    Rows v_sp(N, std::vector<double>(6, 0.0));
 
     for (const auto &inst : instances) {
         for (int sample = 0; sample < N; ++sample) {
             for (int axis = 0; axis < 6; ++axis) {
-                y[sample][axis] += inst.Y[sample][axis];
+                v_sp[sample][axis] += inst.v_sp[sample][axis];
             }
         }
     }
 
-    return y;
+    return v_sp;
 }
 
-Rows subtract_rows(const Rows &a, const Rows &b)
+MethodResult run_method(const std::vector<InstanceInput> &instances,
+                        const std::string &method,
+                        bool use_restoring)
 {
-    Rows out = a;
-
-    for (size_t r = 0; r < out.size(); ++r) {
-        for (size_t c = 0; c < out[r].size(); ++c) {
-            out[r][c] -= b[r][c];
-        }
-    }
-
-    return out;
-}
-
-void append_instance_output(Rows &u_all,
-                            Rows &y_achieved,
-                            int col0,
-                            const SeriesResult &inst_result)
-{
-    for (size_t sample = 0; sample < u_all.size(); ++sample) {
-        for (size_t c = 0; c < inst_result.u[sample].size(); ++c) {
-            u_all[sample][col0 + static_cast<int>(c)] = inst_result.u[sample][c];
-        }
-
-        for (int axis = 0; axis < 6; ++axis) {
-            y_achieved[sample][axis] += inst_result.y_achieved[sample][axis];
-        }
-    }
-}
-
-void run_method(const std::vector<InstanceInput> &instances,
-                const std::string &method,
-                bool use_restoring,
-                const std::string &output_dir)
-{
-    const int N = static_cast<int>(instances[0].Y.size());
+    const int N = static_cast<int>(instances[0].v_sp.size());
     int total_u_dim = 0;
-
     for (const auto &inst : instances) {
-        total_u_dim += num_cols(inst.B);
+        total_u_dim += ncol(inst.B);
     }
 
-    Rows u_all(N, std::vector<double>(total_u_dim, 0.0));
-    Rows y_achieved(N, std::vector<double>(6, 0.0));
-    Rows y_command = sum_command(instances);
-
-    double allocator_s = 0.0;
-    double restore_s = 0.0;
-    int fail_count = 0;
-    int fallback_count = 0;
+    MethodResult result;
+    result.u.assign(N, std::vector<double>(total_u_dim, 0.0));
+    result.v_achieved.assign(N, std::vector<double>(6, 0.0));
+    const Rows v_sp = combined_v_sp(instances);
     int col0 = 0;
 
     const auto total_start = std::chrono::high_resolution_clock::now();
-
     for (const auto &inst : instances) {
-        SeriesResult inst_result = run_instance_series(inst, method, use_restoring);
-        append_instance_output(u_all, y_achieved, col0, inst_result);
-        col0 += num_cols(inst.B);
-        allocator_s += inst_result.allocator_s;
-        restore_s += inst_result.restore_s;
-        fail_count += inst_result.fail_count;
-        fallback_count += inst_result.fallback_count;
-    }
+        InstanceResult inst_result = run_instance(inst, method, use_restoring);
 
+        for (int sample = 0; sample < N; ++sample) {
+            for (int c = 0; c < ncol(inst.B); ++c) {
+                result.u[sample][col0 + c] = inst_result.u[sample][c];
+            }
+            for (int axis = 0; axis < 6; ++axis) {
+                result.v_achieved[sample][axis] += inst_result.v_achieved[sample][axis];
+            }
+        }
+
+        col0 += ncol(inst.B);
+        result.allocator_s += inst_result.allocator_s;
+        result.restore_s += inst_result.restore_s;
+        result.fail_count += inst_result.fail_count;
+        result.fallback_count += inst_result.fallback_count;
+    }
     const auto total_end = std::chrono::high_resolution_clock::now();
-    const double total_s = std::chrono::duration<double>(total_end - total_start).count();
-    Rows residual = subtract_rows(y_command, y_achieved);
-    Rows timing = {{total_s, allocator_s, restore_s,
-                    static_cast<double>(fail_count), static_cast<double>(fallback_count)}};
 
-    write_csv(join_path(output_dir, method + "_u.csv"), u_all);
-    write_csv(join_path(output_dir, method + "_y_achieved.csv"), y_achieved);
-    write_csv(join_path(output_dir, method + "_residual.csv"), residual);
-    write_csv(join_path(output_dir, method + "_timing.csv"), timing);
-
-    // Per-instance diagnostics.  These keep the primary LP failure output
-    // visible instead of hiding it behind a fallback.
-    for (size_t i = 0; i < instances.size(); ++i) {
-        SeriesResult inst_result = run_instance_series(instances[i], method, use_restoring);
-        const std::string prefix = method + "_inst_" + std::to_string(i);
-        write_csv(join_path(output_dir, prefix + "_raw.csv"), inst_result.raw);
-        write_csv(join_path(output_dir, prefix + "_err.csv"), inst_result.errout);
-        write_csv(join_path(output_dir, prefix + "_rho.csv"), inst_result.rho);
+    result.total_s = std::chrono::duration<double>(total_end - total_start).count();
+    result.residual = v_sp;
+    for (int sample = 0; sample < N; ++sample) {
+        for (int axis = 0; axis < 6; ++axis) {
+            result.residual[sample][axis] -= result.v_achieved[sample][axis];
+        }
     }
+
+    return result;
+}
+
+void write_method_result(const std::string &output_dir,
+                         const std::string &method,
+                         const MethodResult &result)
+{
+    write_csv(path_join(output_dir, method + "_u.csv"), result.u);
+    write_csv(path_join(output_dir, method + "_v_achieved.csv"), result.v_achieved);
+    write_csv(path_join(output_dir, method + "_residual.csv"), result.residual);
+    write_csv(path_join(output_dir, method + "_timing.csv"),
+              {{result.total_s, result.allocator_s, result.restore_s,
+                static_cast<double>(result.fail_count),
+                static_cast<double>(result.fallback_count)}});
 }
 
 } // namespace
@@ -547,26 +415,23 @@ void run_method(const std::vector<InstanceInput> &instances,
 int main(int argc, char **argv)
 {
     try {
-        if (argc < 3) {
+        if (argc != 3) {
             std::cerr << "usage: ca_offline_benchmark <input_dir> <output_dir>\n";
             return 2;
         }
 
         const std::string input_dir = argv[1];
         const std::string output_dir = argv[2];
-        Rows meta = read_csv(join_path(input_dir, "case_meta.csv"));
+        mkdir(output_dir.c_str(), 0755);
+
+        Rows meta = read_csv(path_join(input_dir, "case_meta.csv"));
         const bool use_restoring = meta[0].size() >= 4 && std::lround(meta[0][3]) != 0;
+        const std::vector<InstanceInput> instances = read_inputs(input_dir);
 
-        ensure_dir(output_dir);
-        std::vector<InstanceInput> instances = read_instances(input_dir);
-        const std::vector<std::string> methods = {"pca_dir", "pca_dpscaled"};
+        write_method_result(output_dir, "pca_dir", run_method(instances, "pca_dir", use_restoring));
+        write_method_result(output_dir, "pca_dpscaled", run_method(instances, "pca_dpscaled", use_restoring));
 
-        for (const auto &method : methods) {
-            run_method(instances, method, use_restoring, output_dir);
-        }
-
-        write_lines(join_path(output_dir, "methods.txt"), methods);
-        std::cout << "Wrote C++ offline allocation result to " << output_dir << "\n";
+        std::cout << "Wrote C++ allocation CSVs to " << output_dir << "\n";
         return 0;
 
     } catch (const std::exception &e) {

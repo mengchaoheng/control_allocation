@@ -8,13 +8,13 @@
 %
 % 图的含义：
 %   1. control_tracking:
-%      同一段真实飞行指令 y(t)，不同算法分配后得到的 B*u(t)。
-%      如果 B*u 跟 y 贴合，说明这组 B 和算法能满足该日志里的控制指令。
-%      y 固定是 PX4 allocator 内部 control_sp 坐标；parser 直接从
+%      同一段真实飞行指令 v_sp(t)，不同算法分配后得到的 B*u(t)。
+%      如果 B*u 跟 v_sp 贴合，说明这组 B 和算法能满足该日志里的控制指令。
+%      v_sp 固定顺序为 [Mx My Mz Fx Fy Fz]，由日志里的
 %      vehicle_torque_setpoint + vehicle_thrust_setpoint 构造。
 %
-%   2. residual_y_minus_Bu:
-%      residual = y - B*u。
+%   2. residual_v_minus_Bu:
+%      residual = v_sp - B*u。
 %      这是控制分配误差的主图，直接回答“算法分配出来以后还差多少”。
 %
 %   3. actuator_outputs:
@@ -38,11 +38,11 @@ else
     RESULT_MAT = string(RESULT_MAT);
 end
 
-% METHOD_FILTER 为空时画所有算法；否则只画这里列出的算法名。
-% 例子：
-%   METHOD_FILTER = ["PSEUDO_INVERSE", "DP_LPCA", "OFFLINE_WLS"];
-if ~exist('METHOD_FILTER', 'var')
-    METHOD_FILTER = strings(0, 1);
+% METHODS_TO_PLOT 由 main 传进来：
+%   METHODS_TO_PLOT = [METHODS_TO_RUN, CPP_ALLOCATOR_TO_PLOT]
+% 空时画结果文件里已有的全部方法。
+if ~exist('METHODS_TO_PLOT', 'var')
+    METHODS_TO_PLOT = strings(0, 1);
 end
 
 % 执行器最多画 16 列，对应 PX4 ActuatorEffectiveness::NUM_ACTUATORS。
@@ -90,6 +90,10 @@ else
     meta = struct();
 end
 
+if isempty(METHODS_TO_PLOT) && isfield(meta, 'METHODS_TO_PLOT')
+    METHODS_TO_PLOT = meta.METHODS_TO_PLOT;
+end
+
 [~, result_stem] = fileparts(char(RESULT_MAT));
 figure_stem = regexprep(result_stem, '_allocation_compare_results$', '');
 
@@ -132,7 +136,7 @@ for b_idx = 1:numel(results)
         continue;
     end
 
-    method_idx = select_method_indices(case_result.alg, METHOD_FILTER);
+    method_idx = select_method_indices(case_result.alg, METHODS_TO_PLOT);
 
     if isempty(method_idx)
         fprintf('Skip B case %s: no method selected.\n', case_result.name);
@@ -158,7 +162,7 @@ for b_idx = 1:numel(results)
 
     fig = plot_residual_comparison(case_result, method_idx, active_axes, t_rel, SHOW_FIGURES);
     saved_files = [saved_files; save_current_figure(fig, case_output_dir, ...
-        case_name + "_residual_y_minus_Bu", SAVE_PNG, SAVE_FIG)]; %#ok<AGROW>
+        case_name + "_residual_v_minus_Bu", SAVE_PNG, SAVE_FIG)]; %#ok<AGROW>
 
     fig = plot_actuator_outputs(case_result, flightData, method_idx, t_rel, ...
         MAX_ACTUATORS_TO_PLOT, SHOW_FIGURES);
@@ -170,7 +174,7 @@ for b_idx = 1:numel(results)
         case_name + "_summary", SAVE_PNG, SAVE_FIG)]; %#ok<AGROW>
 end
 
-comparison_figs = plot_same_algorithm_different_B_outputs(results, METHOD_FILTER, ...
+comparison_figs = plot_same_algorithm_different_B_outputs(results, METHODS_TO_PLOT, ...
     MAX_ACTUATORS_TO_PLOT, SHOW_FIGURES);
 
 if ~isempty(comparison_figs)
@@ -206,15 +210,16 @@ end
 result_mat = string(fullfile(files(newest_idx).folder, files(newest_idx).name));
 end
 
-function method_idx = select_method_indices(alg, method_filter)
+function method_idx = select_method_indices(alg, methods_to_plot)
 % 根据算法名筛选要画的算法。
-% method_filter 为空时，保留所有已经有名字的算法结果。
 names = string({alg.name});
-method_idx = find(strlength(names) > 0);
+methods_to_plot = string(methods_to_plot);
+methods_to_plot = methods_to_plot(:).';
 
-if ~isempty(method_filter)
-    keep = ismember(names(method_idx), method_filter);
-    method_idx = method_idx(keep);
+if isempty(methods_to_plot)
+    method_idx = find(strlength(names) > 0);
+else
+    method_idx = find(ismember(names, methods_to_plot));
 end
 end
 
@@ -236,17 +241,17 @@ end
 
 function active_axes = find_active_axes(case_result, method_idx)
 % 自动找有效控制轴。
-% PX4 控制分配固定是 6 轴：roll/pitch/yaw/thrust_x/thrust_y/thrust_z。
+% v = B*u 固定 6 轴：[Mx My Mz Fx Fy Fz]。
 % 对 df4/SHC09 这类 surface allocation，通常只有前 3 个 torque 轴有量。
 n_axes = 6;
 axis_has_signal = false(1, n_axes);
 
 for i = method_idx(:)'
     alg = case_result.alg(i);
-    y_cmd = command_series(case_result, alg);
-    y_achieved = fixed_width(alg.y_achieved, n_axes);
+    v_sp = fixed_width(case_result.v_sp, n_axes);
+    v_achieved = fixed_width(alg.v_achieved, n_axes);
     residual = fixed_width(alg.residual, n_axes);
-    data = abs(y_cmd) + abs(y_achieved) + abs(residual);
+    data = abs(v_sp) + abs(v_achieved) + abs(residual);
     axis_has_signal = axis_has_signal | any(isfinite(data) & data > 1e-9, 1);
 end
 
@@ -257,26 +262,13 @@ if isempty(active_axes)
 end
 end
 
-function y_cmd = command_series(case_result, alg)
-% main 保存的 control_sp 就是本次分配输入。
-n_samples = size(alg.y_achieved, 1);
-n_axes = 6;
-
-if isfield(case_result, 'control_sp') && ~isempty(case_result.control_sp) ...
-        && size(case_result.control_sp, 1) == n_samples
-    y_cmd = fixed_width(case_result.control_sp, n_axes);
-else
-    y_cmd = fixed_width(alg.y_achieved, n_axes) + fixed_width(alg.residual, n_axes);
-end
-end
-
 function fig = plot_control_tracking(case_result, method_idx, active_axes, t_rel, show_figures)
-% 画 y 和 B*u 的时间曲线。
+% 画 v_sp 和 B*u 的时间曲线。
 % 黑色虚线是同一条真实飞行指令；彩色实线是不同算法的实际分配效果。
 fig = new_figure(show_figures, sprintf('%s control tracking', case_result.name));
 layout = tiledlayout(numel(active_axes), 1, 'TileSpacing', 'compact', 'Padding', 'compact');
-unit_text = 'control_sp';
-title(layout, sprintf('%s: y command vs B*u (%s)', case_result.name, unit_text), 'Interpreter', 'none');
+unit_text = 'v_sp';
+title(layout, sprintf('%s: v_sp vs B*u (%s)', case_result.name, unit_text), 'Interpreter', 'none');
 colors = lines(numel(method_idx));
 labels = axis_labels();
 
@@ -286,14 +278,13 @@ for tile_idx = 1:numel(active_axes)
     hold on;
     grid on;
 
-    first_alg = case_result.alg(method_idx(1));
-    y_cmd = command_series(case_result, first_alg);
-    plot(t_rel, y_cmd(:, axis_id), 'k--', 'LineWidth', 1.2, 'DisplayName', 'command y');
+    v_sp = fixed_width(case_result.v_sp, 6);
+    plot(t_rel, v_sp(:, axis_id), 'k--', 'LineWidth', 1.2, 'DisplayName', 'v_sp');
 
     for k = 1:numel(method_idx)
         alg = case_result.alg(method_idx(k));
-        y_achieved = fixed_width(alg.y_achieved, 6);
-        plot(t_rel, y_achieved(:, axis_id), 'LineWidth', 1.0, ...
+        v_achieved = fixed_width(alg.v_achieved, 6);
+        plot(t_rel, v_achieved(:, axis_id), 'LineWidth', 1.0, ...
             'Color', colors(k, :), 'DisplayName', alg.name);
     end
 
@@ -310,12 +301,12 @@ end
 end
 
 function fig = plot_residual_comparison(case_result, method_idx, active_axes, t_rel, show_figures)
-% 画 residual = y - B*u。
+% 画 residual = v_sp - B*u。
 % 这个图是算法可行性和饱和情况最直接的观测。
 fig = new_figure(show_figures, sprintf('%s residual', case_result.name));
 layout = tiledlayout(numel(active_axes), 1, 'TileSpacing', 'compact', 'Padding', 'compact');
-unit_text = 'control_sp';
-title(layout, sprintf('%s: residual = y - B*u (%s)', case_result.name, unit_text), 'Interpreter', 'none');
+unit_text = 'v_sp';
+title(layout, sprintf('%s: residual = v_sp - B*u (%s)', case_result.name, unit_text), 'Interpreter', 'none');
 colors = lines(numel(method_idx));
 labels = axis_labels();
 
@@ -324,7 +315,6 @@ for tile_idx = 1:numel(active_axes)
     nexttile;
     hold on;
     grid on;
-    yline(0, 'k:', 'HandleVisibility', 'off');
 
     for k = 1:numel(method_idx)
         alg = case_result.alg(method_idx(k));
@@ -405,7 +395,7 @@ u_rmse_inv = nan(size(method_idx));
 u_max_inv = nan(size(method_idx));
 fail_count = nan(size(method_idx));
 fallback_count = nan(size(method_idx));
-sample_count = max(size(case_result.control_sp, 1), 1);
+sample_count = max(size(case_result.v_sp, 1), 1);
 
 for k = 1:numel(method_idx)
     alg = case_result.alg(method_idx(k));
@@ -427,14 +417,14 @@ end
 
 fig = new_figure(show_figures, sprintf('%s summary', case_result.name));
 layout = tiledlayout(3, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
-unit_text = 'control_sp';
+unit_text = 'v_sp';
 title(layout, sprintf('%s: summary metrics (%s)', case_result.name, unit_text), 'Interpreter', 'none');
 
 plot_metric_bar(names, avg_us, 'avg_alloc(us)', 'us / sample');
 plot_metric_bar(names, restore_us, 'restore(us)', 'us / sample');
-plot_metric_bar(names, residual_mean_abs, 'mean |y-Bu|', sprintf('mean abs [%s]', unit_text));
-plot_metric_bar(names, residual_rms, 'rms(y-Bu)', sprintf('rms [%s]', unit_text));
-plot_metric_bar(names, residual_max, 'max |y-Bu|', sprintf('max abs [%s]', unit_text));
+plot_metric_bar(names, residual_mean_abs, 'mean |v-Bu|', sprintf('mean abs [%s]', unit_text));
+plot_metric_bar(names, residual_rms, 'rms(v-Bu)', sprintf('rms [%s]', unit_text));
+plot_metric_bar(names, residual_max, 'max |v-Bu|', sprintf('max abs [%s]', unit_text));
 plot_metric_bar(names, u_rmse_inv, 'rms(u-u_inv)', 'rms');
 plot_metric_bar(names, u_max_inv, 'max |u-u_inv|', 'max abs');
 plot_metric_bar(names, fail_count, 'fail', 'samples');
@@ -463,7 +453,7 @@ set(gca, 'XTick', 1:numel(names), ...
     'TickLabelInterpreter', 'none');
 end
 
-function figures = plot_same_algorithm_different_B_outputs(results, method_filter, max_actuators, show_figures)
+function figures = plot_same_algorithm_different_B_outputs(results, methods_to_plot, max_actuators, show_figures)
 % 同一个算法，不同 B case 的 u 输出叠图。用于比较“换 B 以后同一算法怎么分配”。
 figures = struct('fig', {}, 'stem', {});
 
@@ -477,8 +467,10 @@ for case_idx = 2:numel(results)
     common_names = intersect(common_names, string({results(case_idx).alg.name}), 'stable');
 end
 
-if ~isempty(method_filter)
-    common_names = common_names(ismember(common_names, method_filter));
+methods_to_plot = string(methods_to_plot);
+methods_to_plot = methods_to_plot(:).';
+if ~isempty(methods_to_plot)
+    common_names = common_names(ismember(common_names, methods_to_plot));
 end
 
 for method_idx = 1:numel(common_names)
@@ -563,8 +555,8 @@ end
 end
 
 function labels = axis_labels()
-% PX4 ControlAxis 顺序。
-labels = ["roll"; "pitch"; "yaw"; "thrust_x"; "thrust_y"; "thrust_z"];
+% v = B*u 的 6 维顺序。
+labels = ["Mx"; "My"; "Mz"; "Fx"; "Fy"; "Fz"];
 end
 
 function fig = new_figure(show_figures, fig_name)

@@ -19,12 +19,14 @@
 %
 %   3. actuator_outputs:
 %      每个执行器的归一化输出 u。
-%      这个图用来观察不同算法在冗余执行器空间里怎么分配，以及和 PX4 日志输出差多少。
+%      这个图用来观察不同算法在冗余执行器空间里怎么分配。
+%      只有 u_px4 列数和当前 B 完全一致时，才叠加 PX4 日志输出。
 %
 %   4. summary:
 %      和 print_control_allocation_comparison.m 的列保持同一套口径。
-%      时间分成 total(s)、avg_alloc(us/sample)、restore(us/sample)；
-%      误差分成 rms/max；PX4 对比、fail/fallback 也直接画出来。
+%      时间只看 allocator 平均耗时和 restoring 平均耗时，不画总运行时间；
+%      分配误差画 mean/rms/max；离线 inv 参考画 rms/max；
+%      fail/fallback 也直接画出来，方便定位算法异常点。
 close all;
 %% 用户可改配置
 % RESULT_MAT 为空时，自动选择 RESULT_DIR 目录下最新的结果文件。
@@ -346,7 +348,8 @@ end
 function fig = plot_actuator_outputs(case_result, flightData, method_idx, t_rel, max_actuators, show_figures)
 % 画执行器输出 u。
 % u 是分配器归一化执行器空间里的 actuator_delta。
-% 如果结果里能找到 PX4 日志输出，就用黑色虚线叠加为基准。
+% 如果 PX4 日志输出的 actuator 列数和当前 B 完全一致，就用黑色虚线叠加为附加参考。
+% 列数不一致通常表示日志机型/actuator 定义不同，此时只画离线算法结果。
 first_alg = case_result.alg(method_idx(1));
 u_dim = min([size(first_alg.u, 2), max_actuators]);
 tile_rows = ceil(sqrt(u_dim));
@@ -390,41 +393,50 @@ end
 
 function fig = plot_summary_metrics(case_result, method_idx, show_figures)
 % 汇总图的数值口径和 print_control_allocation_comparison.m 保持一致。
-% 这样图里的柱子可以直接对照打印表，不再混用“total time”和“allocator time”。
+% 这里不画 total elapsed time，因为它包含 MATLAB 绘图/函数调度/CSV 等非算法开销。
+% 真正用于比较分配算法运行时间的是 avg_alloc(us/sample) 和 restore(us/sample)。
 names = string({case_result.alg(method_idx).name});
-total_s = nan(size(method_idx));
 avg_us = nan(size(method_idx));
 restore_us = nan(size(method_idx));
+residual_mean_abs = nan(size(method_idx));
 residual_rms = nan(size(method_idx));
 residual_max = nan(size(method_idx));
-u_rmse_px4 = nan(size(method_idx));
+u_rmse_inv = nan(size(method_idx));
+u_max_inv = nan(size(method_idx));
 fail_count = nan(size(method_idx));
 fallback_count = nan(size(method_idx));
 sample_count = max(size(case_result.control_sp, 1), 1);
 
 for k = 1:numel(method_idx)
     alg = case_result.alg(method_idx(k));
-    total_s(k) = alg.elapsed_s;
     avg_us(k) = alg.avg_us_per_sample;
     restore_us(k) = 1e6 * alg.restore_s / sample_count;
+    residual_values = alg.residual(isfinite(alg.residual));
+
+    if ~isempty(residual_values)
+        residual_mean_abs(k) = mean(abs(residual_values));
+    end
+
     residual_rms(k) = alg.rmse_residual;
     residual_max(k) = alg.max_abs_residual;
-    u_rmse_px4(k) = alg.rmse_vs_px4;
+    u_rmse_inv(k) = alg.rmse_vs_inv;
+    u_max_inv(k) = alg.max_abs_vs_inv;
     fail_count(k) = alg.fail_count;
     fallback_count(k) = alg.fallback_count;
 end
 
 fig = new_figure(show_figures, sprintf('%s summary', case_result.name));
-layout = tiledlayout(2, 4, 'TileSpacing', 'compact', 'Padding', 'compact');
+layout = tiledlayout(3, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
 unit_text = 'control_sp';
-title(layout, sprintf('%s: summary, same metrics as print (%s)', case_result.name, unit_text), 'Interpreter', 'none');
+title(layout, sprintf('%s: summary metrics (%s)', case_result.name, unit_text), 'Interpreter', 'none');
 
-plot_metric_bar(names, total_s, 'total(s)', 's');
 plot_metric_bar(names, avg_us, 'avg_alloc(us)', 'us / sample');
 plot_metric_bar(names, restore_us, 'restore(us)', 'us / sample');
+plot_metric_bar(names, residual_mean_abs, 'mean |y-Bu|', sprintf('mean abs [%s]', unit_text));
 plot_metric_bar(names, residual_rms, 'rms(y-Bu)', sprintf('rms [%s]', unit_text));
-plot_metric_bar(names, residual_max, 'max(y-Bu)', sprintf('max abs [%s]', unit_text));
-plot_metric_bar(names, u_rmse_px4, 'rms(u-u_px4)', 'rms');
+plot_metric_bar(names, residual_max, 'max |y-Bu|', sprintf('max abs [%s]', unit_text));
+plot_metric_bar(names, u_rmse_inv, 'rms(u-u_inv)', 'rms');
+plot_metric_bar(names, u_max_inv, 'max |u-u_inv|', 'max abs');
 plot_metric_bar(names, fail_count, 'fail', 'samples');
 plot_metric_bar(names, fallback_count, 'fallback', 'samples');
 end
@@ -524,10 +536,12 @@ end
 
 function [u_ref, u_ref_name] = actuator_reference(case_result, flightData, u_dim)
 % 找 PX4 在线执行器输出。parser 已经插值到 command 时间轴。
+% 必须要求列数和当前 B 完全一致；否则 actuator 顺序/定义不一定对应。
 u_ref = [];
 u_ref_name = "";
 
-if isfield(flightData, 'u_px4') && ~isempty(flightData.u_px4) ...
+if ~isempty(flightData.u_px4) ...
+        && size(flightData.u_px4, 2) == size(case_result.B, 2) ...
         && size(flightData.u_px4, 2) >= u_dim
     u_ref = flightData.u_px4(:, 1:u_dim);
     u_ref_name = "u_px4";

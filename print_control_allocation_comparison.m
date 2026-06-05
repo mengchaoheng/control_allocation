@@ -3,6 +3,9 @@
 %   1. 每个 B case 的基本信息；
 %   2. 每个算法的时间、residual、fail/fallback 计数；
 %   3. 算法之间的 u 和 B*u 差异。
+%
+% 主参考是每个当前 B case 离线重算的 inv。PX4 日志 actuator 输出只有在列数
+% 和当前 B 完全一致时才打印，避免把不同机型/不同 actuator 定义拿来硬比。
 
 %% 读取结果
 % 这个文件既可以被 main_control_allocation_benchmark.m 用 run() 调用，
@@ -70,8 +73,16 @@ if isfield(flightData, 'window')
         flightData.window.t_end_rel_s);
 end
 
+if exist('meta', 'var') == 1 && isfield(meta, 'inv_reference_note')
+    fprintf('INV ref : offline inv recomputed on each current B case\n');
+end
+
 if exist('meta', 'var') == 1 && isfield(meta, 'px4_reference_note')
-    fprintf('PX4 ref : actuator output interpolated to command samples\n');
+    fprintf('PX4 ref : used only when u_px4 columns exactly match current B\n');
+end
+
+if exist('meta', 'var') == 1 && isfield(meta, 'px4_ca_info') && isfield(meta.px4_ca_info, 'summary')
+    fprintf('PX4 CA  : %s\n', meta.px4_ca_info.summary);
 end
 
 fprintf('============================================================\n');
@@ -87,18 +98,35 @@ for case_idx = 1:numel(results)
     fprintf('  B           : %dx%d\n', size(r.B, 1), size(r.B, 2));
     fprintf('  active axes : %s\n', join_or_none(active_axes));
     fprintf('  samples     : %d\n', size(r.control_sp, 1));
+    fprintf('  inv ref     : %s\n', string_or_none(get_field_or(r, 'inv_reference_name', "")));
+
+    if isfield(r, 'cpp_process_wall_s') && isfinite(r.cpp_process_wall_s)
+        fprintf('  C++ wall    : %.4f s, process start + CSV I/O + C++ loops\n', r.cpp_process_wall_s);
+    end
 
     fprintf('\n');
-    fprintf('  method          total(s)  avg_alloc(us)  restore(us)  rms(y-Bu)   max(y-Bu)   fail  fb\n');
-    fprintf('  --------------  --------  -------------  -----------  ----------  ----------  ----  ---\n');
+    fprintf('  method              total(s)  avg_alloc(us)  restore(us)  rms(y-Bu)   max(y-Bu)   fail  fb\n');
+    fprintf('  ------------------  --------  -------------  -----------  ----------  ----------  ----  ---\n');
 
     for alg_idx = 1:numel(r.alg)
         a = r.alg(alg_idx);
 
-        fprintf('  %-14s  %8.4f  %13.2f  %11.2f  %10.4g  %10.4g  %4d  %3d\n', ...
+        fprintf('  %-18s  %8.4f  %13.2f  %11.2f  %10.4g  %10.4g  %4d  %3d\n', ...
             a.name, a.elapsed_s, a.avg_us_per_sample, ...
             1e6 * a.restore_s / max(size(r.control_sp, 1), 1), ...
             a.rmse_residual, a.max_abs_residual, a.fail_count, a.fallback_count);
+    end
+
+    fprintf('\n');
+    fprintf('  Offline inv reference on the same B:\n');
+    fprintf('  method              rms(u-u_inv)  max(u-u_inv)\n');
+    fprintf('  ------------------  ------------  ------------\n');
+
+    for alg_idx = 1:numel(r.alg)
+        a = r.alg(alg_idx);
+
+        fprintf('  %-18s  %12.4g  %12.4g\n', ...
+            a.name, a.rmse_vs_inv, a.max_abs_vs_inv);
     end
 
     has_px4_ref = any(arrayfun(@(a) isfinite(a.rmse_vs_px4), r.alg));
@@ -106,16 +134,24 @@ for case_idx = 1:numel(results)
     if has_px4_ref
         fprintf('\n');
         fprintf('  PX4 actuator output reference, interpolated to command samples:\n');
-        fprintf('  method          rms(u-u_px4)  max(u-u_px4)\n');
-        fprintf('  --------------  ------------  ------------\n');
+        fprintf('  method              rms(u-u_px4)  max(u-u_px4)\n');
+        fprintf('  ------------------  ------------  ------------\n');
 
         for alg_idx = 1:numel(r.alg)
             a = r.alg(alg_idx);
 
             if isfinite(a.rmse_vs_px4)
-                fprintf('  %-14s  %12.4g  %12.4g\n', ...
+                fprintf('  %-18s  %12.4g  %12.4g\n', ...
                     a.name, a.rmse_vs_px4, a.max_abs_vs_px4);
             end
+        end
+    else
+        px4_dim = px4_output_dim(flightData);
+
+        if px4_dim > 0
+            fprintf('\n');
+            fprintf('  PX4 actuator output skipped: log u_px4 has %d column(s), current B has %d actuator(s).\n', ...
+                px4_dim, size(r.B, 2));
         end
     end
 end
@@ -131,8 +167,8 @@ for case_idx = 1:numel(results)
     end
 
     fprintf('\nCase: %s\n', r.name);
-    fprintf('  method A        method B        rms(du)     max(du)     rms(dBu)    max(dBu)\n');
-    fprintf('  --------------  --------------  ----------  ----------  ----------  ----------\n');
+    fprintf('  method A            method B            rms(du)     max(du)     rms(dBu)    max(dBu)\n');
+    fprintf('  ------------------  ------------------  ----------  ----------  ----------  ----------\n');
 
     for i = 1:(numel(r.alg) - 1)
         for j = (i + 1):numel(r.alg)
@@ -141,7 +177,7 @@ for case_idx = 1:numel(results)
             [u_rmse, u_max] = finite_rmse_max(a.u - b.u);
             [y_rmse, y_max] = finite_rmse_max(a.y_achieved - b.y_achieved);
 
-            fprintf('  %-14s  %-14s  %10.4g  %10.4g  %10.4g  %10.4g\n', ...
+            fprintf('  %-18s  %-18s  %10.4g  %10.4g  %10.4g  %10.4g\n', ...
                 a.name, b.name, u_rmse, u_max, y_rmse, y_max);
         end
     end
@@ -193,6 +229,32 @@ if isempty(v)
 else
     rmse_v = sqrt(mean(v.^2));
     max_v = max(abs(v));
+end
+end
+
+function value = get_field_or(s, name, default_value)
+if isfield(s, name)
+    value = s.(name);
+else
+    value = default_value;
+end
+end
+
+function text = string_or_none(value)
+text = string(value);
+
+if strlength(text) == 0
+    text = "none";
+end
+
+text = char(text);
+end
+
+function dim = px4_output_dim(flightData)
+dim = 0;
+
+if ~isempty(flightData.u_px4)
+    dim = size(flightData.u_px4, 2);
 end
 end
 

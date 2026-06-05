@@ -11,6 +11,12 @@
 %        找非零行 rows；
 %        之后算法只取 y(rows) 和 B(rows,:)。
 %   4. 对每个 B case、每个算法、每个样本、每个实例分配，最后拼成一个 u。
+%
+% 结果比较口径：
+%   - 主基准固定为“当前 B 上离线重算的 inv”。这样即使日志机型和这里手写 B
+%     不同，也仍然有同维度、同 B 的 u 基准。
+%   - PX4 日志 actuator 输出 u_px4 只在执行器列数和当前 B 完全一致时作为附加参考。
+%     维数不同表示 actuator 定义不同，此时只使用日志输入 y，不比较日志输出 u_px4。
 
 clc;clear all; close all;
 
@@ -95,7 +101,6 @@ case_cfg.umax = {1,  ones(4, 1)};
 case_cfg.normalize_rpy = [true true];
 B_CASES{end+1} = case_cfg;
 
-% 单实例 B 示例：
 case_cfg = struct();
 case_cfg.name = "df4_single";
 case_cfg.B = [B0 B1];
@@ -104,8 +109,46 @@ case_cfg.umax = [1;  ones(4, 1)];
 case_cfg.normalize_rpy = true;
 B_CASES{end+1} = case_cfg;
 
+% SHC09 split 示例：
+%   instance 0: motor，主要产生 Fz；
+%   instance 1: 六个舵面，产生 Mx/My/Mz。
+B0 = [
+      0
+      0
+      0
+      0
+      0
+    -6.5
+];
+
+shc09_I = [0.0438 0.0436 0.005006];
+shc09_l1 = 0.267;
+shc09_l2 = 0.066;
+shc09_k_moment = 1.0;
+shc09_d = 60*pi/180;
+B1_moment = make_ducted_fan_moment_B("hex6", shc09_I, shc09_l1, shc09_l2, shc09_k_moment, shc09_d);
+B1 = [B1_moment; zeros(3, size(B1_moment, 2))];
+
+case_cfg = struct();
+case_cfg.name = "shc09_split";
+case_cfg.B = {B0, B1};
+case_cfg.umin = {0, -ones(6, 1)};
+case_cfg.umax = {1,  ones(6, 1)};
+case_cfg.normalize_rpy = [true true];
+B_CASES{end+1} = case_cfg;
+
+% 单实例 B 示例：
+case_cfg = struct();
+case_cfg.name = "shc09_single";
+case_cfg.B = [B0 B1];
+case_cfg.umin = [0; -ones(6, 1)];
+case_cfg.umax = [1;  ones(6, 1)];
+case_cfg.normalize_rpy = true;
+B_CASES{end+1} = case_cfg;
+
 % B case 选择：'all' = 全部；数字 = B_CASES 序号；字符串/cell = case_cfg.name。
-B_CASE_SELECTION = 'all';
+% 默认同时跑 df4 和 SHC09 的 split/single，避免只在一个 B 上验证算法。
+B_CASE_SELECTION = {'df4_split', 'df4_single', 'shc09_split', 'shc09_single'};
 
 % 常用力矩 B 构造模板：
 %   df6:
@@ -128,11 +171,16 @@ B_CASE_SELECTION = 'all';
 METHOD_CATALOG = {'inv', 'pca_dir', 'pca_dpscaled', 'pca_prio', 'wls'};
 METHOD_SELECTION = {'inv', 'pca_dir', 'pca_dpscaled', 'wls'};
 RESTORING_SELECTION = "restored";    % "raw" / "restored" / "both"
-SIMPLEX_BACKEND = "original";         % "original" 更快；"tiebreak" 用于和当前 C++ guarded tie-break 对齐。
+SIMPLEX_BACKEND = "original";         % "original" / "tiebreak"。 MATLAB 原版是根基；"tiebreak" 只用于检查 C++ 确定性 pivot，不作为新基准。
 WARMUP_SAMPLE_COUNT = 100;            % MATLAB JIT warmup，不计入算法耗时；设 0 可看冷启动时间。
 FALLBACK_METHOD = "inv";
 ENABLE_FALLBACK = true;
 ENFORCE_U_LIMITS = true;
+
+% 可选：同时调用 alloc_cpp/test/ca_offline_benchmark.cpp 生成 C++ allocator 结果。
+% C++ 程序吃同一个 B_case 和同一个日志输入，输出 cpp_pca_dir/cpp_pca_dpscaled。
+RUN_CPP_ALLOCATOR = true;
+CPP_ALLOCATOR_EXE = fullfile(tool_dir, 'alloc_cpp', 'build', 'ca_offline_benchmark');
 
 % 单位化只处理 B，不改日志输入 y。
 USE_UNIT_ALLOCATION = true;
@@ -163,6 +211,7 @@ end
 
 S = load(COMMAND_MAT, 'flightData');
 flightData = select_window(S.flightData, WINDOW_MODE, TEST_SAMPLE_WINDOW, TEST_TIME_WINDOW_S);
+px4_ca_info = read_px4_ca_info(LOG_PATH);
 log_Y = read_log_inputs(flightData);
 
 %% 5. 预处理 B，然后进入分配循环
@@ -183,6 +232,7 @@ fprintf('  command mat : %s\n', COMMAND_MAT);
 fprintf('  log input   : %d instance(s), %d sample(s)\n', numel(log_Y), size(log_Y{1}, 1));
 fprintf('  methods     : %s\n', strjoin(string(methods_to_run), ', '));
 fprintf('  restoring   : %s\n', RESTORING_SELECTION);
+fprintf('  px4 CA      : %s\n', px4_ca_info.summary);
 fprintf('  simplex     : %s\n', SIMPLEX_BACKEND);
 fprintf('  warmup      : %d sample(s), not counted in per-method timing\n', WARMUP_SAMPLE_COUNT);
 
@@ -202,6 +252,7 @@ for case_idx = 1:numel(B_CASES)
 
     alg_cell = cell(1, numel(jobs));
     total_u_dim = numel(B_case.umin);
+    cpp_process_wall_s = nan;
 
     for job_idx = 1:numel(jobs)
         job = jobs(job_idx);
@@ -300,6 +351,8 @@ for case_idx = 1:numel(B_CASES)
             'avg_restore_us_per_sample', 1e6 * restore_time / max(N, 1), ...
             'rmse_residual', sqrt(mean(residual_values.^2)), ...
             'max_abs_residual', max(abs(residual_values)), ...
+            'rmse_vs_inv', nan, ...
+            'max_abs_vs_inv', nan, ...
             'rmse_vs_px4', rmse_vs_px4, ...
             'max_abs_vs_px4', max_abs_vs_px4, ...
             'fail_count', fail_count, ...
@@ -310,15 +363,30 @@ for case_idx = 1:numel(B_CASES)
             alg_cell{job_idx}.rmse_residual, fallback_count, fail_count);
     end
 
+    if RUN_CPP_ALLOCATOR
+        [cpp_alg, cpp_process_wall_s] = run_cpp_allocator_case(B_case, Y_cell, y_command, flightData, ...
+            RESULT_DIR, CPP_ALLOCATOR_EXE, methods_to_run, jobs, case_idx);
+
+        if ~isempty(cpp_alg)
+            cpp_alg_cell = num2cell(cpp_alg);
+            alg_cell = [alg_cell cpp_alg_cell]; %#ok<AGROW>
+        end
+    end
+
+    [alg_array, u_inv_ref, inv_reference_name] = attach_offline_inv_reference([alg_cell{:}]);
+
     results_cell{case_idx} = struct( ...
         'name', B_case.name, ...
         'B', B_case.B, ...
         'umin', B_case.umin, ...
         'umax', B_case.umax, ...
         'rows', B_case.rows, ...
+        'cpp_process_wall_s', cpp_process_wall_s, ...
         't', time_vector(flightData, N), ...
         'control_sp', y_command, ...
-        'alg', [alg_cell{:}]);
+        'u_inv_ref', u_inv_ref, ...
+        'inv_reference_name', inv_reference_name, ...
+        'alg', alg_array);
 end
 
 results = [results_cell{:}];
@@ -339,8 +407,12 @@ meta.SIMPLEX_BACKEND = SIMPLEX_BACKEND;
 meta.WARMUP_SAMPLE_COUNT = WARMUP_SAMPLE_COUNT;
 meta.USE_UNIT_ALLOCATION = USE_UNIT_ALLOCATION;
 meta.DEFAULT_NORMALIZE_RPY = DEFAULT_NORMALIZE_RPY;
+meta.RUN_CPP_ALLOCATOR = RUN_CPP_ALLOCATOR;
+meta.CPP_ALLOCATOR_EXE = CPP_ALLOCATOR_EXE;
 meta.benchmark_elapsed_s = benchmark_elapsed_s;
-meta.px4_reference_note = 'u_px4 is actuator_motors+actuator_servos interpolated onto command samples.';
+meta.px4_ca_info = px4_ca_info;
+meta.inv_reference_note = 'Primary reference is offline inv recomputed on each current B case.';
+meta.px4_reference_note = 'u_px4 is used only when actuator output column count exactly matches current B.';
 
 save(RESULT_MAT, 'results', 'flightData', 'meta', 'COMMAND_MAT', 'LOG_PATH', '-v7.3');
 
@@ -844,6 +916,190 @@ end
 u = clamp_u(u, umin, umax);
 end
 
+%% C++ offline allocator bridge
+function [cpp_alg, cpp_process_wall_s] = run_cpp_allocator_case(B_case, Y_cell, y_command, flightData, ...
+    result_dir, cpp_exe, methods_to_run, jobs, case_idx)
+% 把当前 MATLAB main 中已经准备好的 B/Y 交给 alloc_cpp/test/ca_offline_benchmark.cpp。
+% C++ 输出会被读回成和 MATLAB allocator 一样的 alg 结构，因此 print/plot 不需要特殊分支。
+cpp_alg = struct([]);
+cpp_process_wall_s = nan;
+cpp_methods = intersect(string(methods_to_run), ["pca_dir", "pca_dpscaled"], 'stable');
+
+if isempty(cpp_methods)
+    return;
+end
+
+if ~isfile(cpp_exe)
+    warning(['C++ allocator executable not found:\n  %s\n', ...
+        'Build it once in alloc_cpp/build, then rerun main.'], cpp_exe);
+    return;
+end
+
+N = size(y_command, 1);
+case_stem = sprintf('%02d_%s', case_idx, safe_file_name(B_case.name));
+cpp_input_dir = fullfile(result_dir, 'cpp_inputs', case_stem);
+cpp_output_dir = fullfile(result_dir, 'cpp_outputs', case_stem);
+
+if ~isfolder(cpp_input_dir)
+    mkdir(cpp_input_dir);
+end
+
+if ~isfolder(cpp_output_dir)
+    mkdir(cpp_output_dir);
+end
+
+cpp_use_restoring = any([jobs.use_restoring]);
+write_cpp_case_inputs(cpp_input_dir, B_case, Y_cell, N, cpp_use_restoring);
+
+cmd = sprintf('"%s" "%s" "%s"', cpp_exe, cpp_input_dir, cpp_output_dir);
+cpp_process_tic = tic;
+[status, cmdout] = system(cmd);
+cpp_process_wall_s = toc(cpp_process_tic);
+
+if status ~= 0
+    warning('C++ allocator failed:\n%s', cmdout);
+    return;
+end
+
+fprintf('\nC++ allocator bridge:\n');
+fprintf('  executable : %s\n', cpp_exe);
+fprintf('  input dir  : %s\n', cpp_input_dir);
+fprintf('  output dir : %s\n', cpp_output_dir);
+fprintf('  process wall: %.4fs (includes process start + CSV I/O)\n', cpp_process_wall_s);
+
+cpp_alg_cell = cell(1, numel(cpp_methods));
+
+for i = 1:numel(cpp_methods)
+    method = char(cpp_methods(i));
+    cpp_alg_cell{i} = read_cpp_algorithm_result(cpp_output_dir, method, ...
+        y_command, flightData, N, cpp_use_restoring);
+
+    fprintf('  %-14s total=%6.4fs avg_alloc=%7.2fus residual_rms=%9.4g fb=%d fail=%d\n', ...
+        cpp_alg_cell{i}.name, cpp_alg_cell{i}.elapsed_s, ...
+        cpp_alg_cell{i}.avg_us_per_sample, cpp_alg_cell{i}.rmse_residual, ...
+        cpp_alg_cell{i}.fallback_count, cpp_alg_cell{i}.fail_count);
+end
+
+cpp_alg = [cpp_alg_cell{:}];
+end
+
+function write_cpp_case_inputs(input_dir, B_case, Y_cell, N, use_restoring)
+% C++ 侧只需要每个 allocation instance 的 B、输入 Y、限幅。
+% 文件名保持机械化，便于别的测试程序复用：
+%   inst_0_B.csv / inst_0_Y.csv / inst_0_umin.csv / inst_0_umax.csv
+case_meta = [N, numel(B_case.umin), numel(B_case.inst), double(use_restoring)];
+writematrix(case_meta, fullfile(input_dir, 'case_meta.csv'));
+
+for inst_idx = 1:numel(B_case.inst)
+    inst = B_case.inst(inst_idx);
+    prefix = fullfile(input_dir, sprintf('inst_%d', inst_idx - 1));
+    writematrix(inst.B, [prefix '_B.csv']);
+    writematrix(Y_cell{inst_idx}(1:N, :), [prefix '_Y.csv']);
+    writematrix(inst.umin(:)', [prefix '_umin.csv']);
+    writematrix(inst.umax(:)', [prefix '_umax.csv']);
+end
+end
+
+function alg = read_cpp_algorithm_result(output_dir, method, y_command, flightData, N, use_restoring)
+% C++ 输出 CSV 后，MATLAB 只负责读回来并计算同样的统计量。
+u = readmatrix(fullfile(output_dir, [method '_u.csv']));
+y_achieved = readmatrix(fullfile(output_dir, [method '_y_achieved.csv']));
+residual = readmatrix(fullfile(output_dir, [method '_residual.csv']));
+timing = readmatrix(fullfile(output_dir, [method '_timing.csv']));
+
+u = fixed_rows(u, N);
+y_achieved = fixed_rows(y_achieved, N);
+residual = fixed_rows(residual, N);
+residual_values = residual(isfinite(residual));
+[rmse_vs_px4, max_abs_vs_px4] = compare_with_px4_output(u, flightData);
+
+if use_restoring
+    restoring_mode = 'restored';
+else
+    restoring_mode = 'raw';
+end
+
+alg = struct( ...
+    'name', ['cpp_' method], ...
+    'method', ['cpp_' method], ...
+    'restoring_mode', restoring_mode, ...
+    'u', u, ...
+    'y_achieved', y_achieved, ...
+    'residual', residual, ...
+    'elapsed_s', timing(1), ...
+    'allocator_s', timing(2), ...
+    'restore_s', timing(3), ...
+    'avg_us_per_sample', 1e6 * timing(2) / max(N, 1), ...
+    'avg_restore_us_per_sample', 1e6 * timing(3) / max(N, 1), ...
+    'rmse_residual', sqrt(mean(residual_values.^2)), ...
+    'max_abs_residual', max(abs(residual_values)), ...
+    'rmse_vs_inv', nan, ...
+    'max_abs_vs_inv', nan, ...
+    'rmse_vs_px4', rmse_vs_px4, ...
+    'max_abs_vs_px4', max_abs_vs_px4, ...
+    'fail_count', round(timing(4)), ...
+    'fallback_count', round(timing(5)));
+end
+
+function [alg_array, u_inv_ref, inv_reference_name] = attach_offline_inv_reference(alg_array)
+% 对每个 B case，主参考都用同一个 B 上离线重算出来的 inv。
+% 这样日志机型、日志 actuator 维数、当前手写 B 不一致时，仍然可以比较不同算法的 u。
+u_inv_ref = [];
+inv_reference_name = "";
+
+if isempty(alg_array)
+    return;
+end
+
+method_names = string({alg_array.method});
+restoring_modes = string({alg_array.restoring_mode});
+inv_candidates = find(method_names == "inv");
+
+if isempty(inv_candidates)
+    warning('No inv result found. u-u_inv reference metrics are disabled for this B case.');
+    return;
+end
+
+% 如果同时跑 raw/restored，优先用 restored inv，因为多数情况下最终分配结果是 restoring 后的 u。
+preferred = inv_candidates(restoring_modes(inv_candidates) == "restored");
+
+if isempty(preferred)
+    preferred = inv_candidates(1);
+else
+    preferred = preferred(1);
+end
+
+u_inv_ref = alg_array(preferred).u;
+inv_reference_name = string(alg_array(preferred).name);
+
+for i = 1:numel(alg_array)
+    [alg_array(i).rmse_vs_inv, alg_array(i).max_abs_vs_inv] = ...
+        compare_u_reference(alg_array(i).u, u_inv_ref);
+end
+end
+
+function X = fixed_rows(X, N)
+% readmatrix 读单列/单行 CSV 时形状可能退化；这里只保证样本行数一致。
+if size(X, 1) < N
+    X(end+1:N, :) = nan;
+elseif size(X, 1) > N
+    X = X(1:N, :);
+end
+end
+
+function name = safe_file_name(name)
+% 和 plot 文件保持同一个文件名规则。
+name = regexprep(char(name), '[^a-zA-Z0-9_\-]+', '_');
+name = regexprep(name, '_+', '_');
+name = strip(string(name), '_');
+
+if strlength(name) == 0
+    name = "case";
+end
+
+name = char(name);
+end
+
 %% Printing helpers used by main
 function print_case_header(case_idx, case_count, B_case, flightData, N)
 labels = axis_labels();
@@ -987,10 +1243,135 @@ function u = clamp_u(u, umin, umax)
 u = min(max(u(:), umin(:)), umax(:));
 end
 
+function info = read_px4_ca_info(log_path)
+% 从 ULog 参数区读取控制分配配置，只用于标记在线 PX4 参考的来源。
+info = struct();
+info.CA_METHOD = nan;
+info.CA_METHOD_NAME = "unknown";
+info.CA_AIRFRAME = nan;
+info.CA_AIRFRAME_NAME = "unknown";
+info.effective_method = "unknown";
+info.summary = "CA_METHOD unknown";
+
+ulog_params_path = find_ulog_params();
+if ulog_params_path == ""
+    return;
+end
+
+cmd = sprintf('"%s" "%s"', ulog_params_path, log_path);
+[status, out] = system(cmd);
+if status ~= 0
+    return;
+end
+
+info.CA_METHOD = read_param_value(out, "CA_METHOD");
+info.CA_AIRFRAME = read_param_value(out, "CA_AIRFRAME");
+info.CA_METHOD_NAME = allocation_method_name(info.CA_METHOD);
+info.CA_AIRFRAME_NAME = airframe_name(info.CA_AIRFRAME);
+
+if info.CA_METHOD == 2
+    if info.CA_AIRFRAME == 16
+        info.effective_method = "AUTO -> PSEUDO_INVERSE";
+    else
+        info.effective_method = "AUTO";
+    end
+else
+    info.effective_method = info.CA_METHOD_NAME;
+end
+
+info.summary = sprintf('CA_METHOD=%g (%s), CA_AIRFRAME=%g (%s), effective=%s', ...
+    info.CA_METHOD, info.CA_METHOD_NAME, ...
+    info.CA_AIRFRAME, info.CA_AIRFRAME_NAME, info.effective_method);
+end
+
+function path = find_ulog_params()
+[status, out] = system('command -v ulog_params');
+path = string(strtrim(out));
+if status == 0 && path ~= ""
+    return;
+end
+
+home_dir = getenv('HOME');
+candidates = [ ...
+    string(fullfile(home_dir, 'Library', 'Python', '3.9', 'bin', 'ulog_params')), ...
+    "/opt/homebrew/bin/ulog_params", ...
+    "/usr/local/bin/ulog_params"];
+
+path = "";
+for i = 1:numel(candidates)
+    if isfile(candidates(i))
+        path = candidates(i);
+        return;
+    end
+end
+end
+
+function value = read_param_value(text_block, param_name)
+value = nan;
+lines = splitlines(string(text_block));
+prefix = param_name + ",";
+
+for i = 1:numel(lines)
+    line = strtrim(lines(i));
+    if startsWith(line, prefix)
+        parts = split(line, ",");
+        if numel(parts) >= 2
+            value = str2double(parts(2));
+        end
+        return;
+    end
+end
+end
+
+function name = allocation_method_name(value)
+switch value
+    case 0
+        name = "Pseudo-inverse";
+    case 1
+        name = "Sequential desaturation";
+    case 2
+        name = "Automatic";
+    case 3
+        name = "INV";
+    case 4
+        name = "DP_LPCA";
+    case 5
+        name = "DPscaled_LPCA";
+    case 6
+        name = "PCA";
+    otherwise
+        name = "unknown";
+end
+end
+
+function name = airframe_name(value)
+switch value
+    case 16
+        name = "Ducted Fan";
+    case 17
+        name = "Ducted Fan Tailsitter VTOL";
+    otherwise
+        name = "unknown";
+end
+end
+
 function [rmse_u, max_u] = compare_with_px4_output(u, flightData)
 % 使用 parser 已经插值到 command sample 的 PX4 actuator 输出。
 u_ref = flightData.u_px4;
 
+% 这里必须要求列数完全相等。只截断/补齐会把“不同机型/不同 actuator 定义”的
+% 日志输出误当成同一个分配问题的参考。
+if isempty(u_ref) || size(u_ref, 2) ~= size(u, 2)
+    rmse_u = nan;
+    max_u = nan;
+    return;
+end
+
+[rmse_u, max_u] = compare_u_reference(u, u_ref);
+end
+
+function [rmse_u, max_u] = compare_u_reference(u, u_ref)
+% 同维度 u 参考比较工具。inv 参考和 PX4 日志参考都走这个函数。
 if isempty(u_ref) || size(u_ref, 2) ~= size(u, 2)
     rmse_u = nan;
     max_u = nan;

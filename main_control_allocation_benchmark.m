@@ -12,31 +12,20 @@
 % -------------------------------------------------------------------------
 % 主流程
 % -------------------------------------------------------------------------
-% 1. 读取/生成 COMMAND_MAT
-%    parse_control_allocation_flight_data.m 只保存原始日志 topic 表：
-%      vehicle_torque_setpoint_0, vehicle_thrust_setpoint_0,
-%      vehicle_torque_setpoint_1, vehicle_thrust_setpoint_1,
-%      actuator_motors_0, actuator_servos_0。
+% 1. 在本文件开头设置日志、B、算法、C++、绘图选项。
 %
-% 2. 用日志原名直接组合 v_sp
-%      vehicle_torque_setpoint_0.xyz -> v_sp_log_instance_0(1:3,:)
-%      vehicle_thrust_setpoint_0.xyz -> v_sp_log_instance_0(4:6,:)
-%    如果日志有 instance 1，也生成 v_sp_log_instance_1。
+% 2. 读取/生成 COMMAND_MAT
+%    parse_control_allocation_flight_data.m 负责从原始 PX4 topic 构造：
+%      v_sp_t                : vehicle_torque_setpoint_0 timestamp, seconds
+%      log_v_sp_instances{i} : 6 x N, [Mx My Mz Fx Fy Fz]
+%      u_px4                 : actuator_motors_0 + actuator_servos_0
 %
-% 3. 在本文件中直接设置 B、umin、umax
-%    单 instance：
-%      cfg.B = B; cfg.umin = umin; cfg.umax = umax;
-%    双 instance：
-%      cfg.B = {B_force, B_moment};
-%      cfg.umin = {umin_force, umin_moment};
-%      cfg.umax = {umax_force, umax_moment};
-%
-% 4. 按样本直接分配
+% 3. 按样本直接分配
 %      v_sp_i = allocator_instance_v_sp{inst_idx}(:, idx);
 %      u_i    = run_allocator(method, v_sp_i(rows), B(rows,:), umin, umax);
 %      v_out  = B*u_i;
 %
-% 5. 保存、打印、画图
+% 4. 保存、打印、画图
 %    结果保存到 RESULT_MAT，然后调用 print_control_allocation_comparison.m
 %    和 plot_control_allocation_results.m。
 %
@@ -63,21 +52,21 @@
 %
 % METHODS_TO_RUN:
 %   {'inv','pca_dir',...} : 只跑列出的算法。
-%   'all'                 : 跑 method_catalog() 中全部 MATLAB allocator。
-%   常用算法名：
-%     inv, pca_dir, pca_dpscaled, pca_prio,
-%     wls, wls_gen,
-%     lib_lpwrap_dir, lib_lpwrap_dpscaled,
-%     dir_linprog, dir_linprog_re, dir_linprog_re_bound,
-%     use_lp_lib, allocator_dir_lpwrap_4。
+%   ALL_METHODS            : 跑下面列出的全部 MATLAB allocator。
 %
 % USE_RESTORING:
 %   true  : allocator raw u 之后调用 restoring_cpp(B,u,umin,umax)。
 %   false : 只看 raw allocator 输出。
 %
 % NORMALIZE_B:
-%   true  : 用 px4_normalize_B() 把 B 转成 PX4 normalized effectiveness。
+%   true  : 先把执行器真实幅值并入列 B*diag(u_abs_max)，再用 px4_normalize_B()
+%           把 B 转成 PX4 normalized effectiveness。
 %   false : 直接用你写的原始 B。
+%
+% u_abs_max:
+%   每个 B case 里的执行器真实最大幅值。allocator 输出 u 仍是归一化值。
+%   电机 0..max：u_abs_max = max；舵面左右对称：u_abs_max = abs(max)。
+%   若不写，默认全 1。
 %
 % NORMALIZE_V_SP:
 %   true  : 对 v_sp 使用和 B 相同的 D 矩阵缩放。适合物理 B + 物理 v 一起测试。
@@ -111,6 +100,11 @@
 %
 % PLOT_SAVE_PNG / PLOT_SAVE_FIG / PLOT_SHOW_FIGURES:
 %   控制 plot 脚本保存 png、保存 fig、是否显示 MATLAB 图窗。
+%
+% PLOT_NORMALIZED:
+%   true  : 图里显示归一化的 u、v_sp、B*u、residual。
+%   false : 图里 u 乘回 u_abs_max；B*u 用 D 还原。
+%           v_sp 只有在 NORMALIZE_V_SP=true 时才用 D 还原。
 
 clc; clear; close all;
 
@@ -132,7 +126,36 @@ FIGURE_DIR = fullfile(RESULT_DIR, [log_stem '_figures']);
 PARSE_LOG = false;
 SAMPLE_RANGE = [];
 
+ALL_METHODS = { ...
+    'inv', ...
+    'pca_dir', ...
+    'pca_dpscaled', ...
+    'pca_prio', ...
+    'lib_lpwrap_db', ...
+    'lib_lpwrap_dbinf', ...
+    'lib_lpwrap_dir', ...
+    'lib_lpwrap_dpscaled', ...
+    'lib_lpwrap_mo', ...
+    'lib_lpwrap_sb', ...
+    'lib_lpwrap_par_db', ...
+    'lib_lpwrap_par_dbinf', ...
+    'lib_lpwrap_par_dir', ...
+    'lib_lpwrap_par_dpscaled', ...
+    'lib_lpwrap_par_mo', ...
+    'lib_lpwrap_par_sb', ...
+    'lib_lpwrap_incre', ...
+    'lib_cgiwrap', ...
+    'lib_dawrap', ...
+    'lib_vjawrap', ...
+    'wls', ...
+    'wls_gen', ...
+    'dir_linprog', ...
+    'dir_linprog_re', ...
+    'dir_linprog_re_bound', ...
+    'use_lp_lib', ...
+    'allocator_dir_lpwrap_4'};
 METHODS_TO_RUN = {'inv', 'pca_dir', 'pca_dpscaled', 'wls'};
+% METHODS_TO_RUN = ALL_METHODS;
 USE_RESTORING = true;
 NORMALIZE_B = true;
 NORMALIZE_V_SP = false;
@@ -143,10 +166,17 @@ RUN_PLOT_AFTER_COMPARE = true;
 PLOT_SAVE_PNG = true;
 PLOT_SAVE_FIG = false;
 PLOT_SHOW_FIGURES = usejava('desktop');
+PLOT_NORMALIZED = true;
 
 RUN_CPP_ALLOCATOR = true;
 CPP_ALLOCATOR_TO_PLOT = {'cpp_pca_dir', 'cpp_pca_dpscaled'};
 CPP_ALLOCATOR_EXE = fullfile(tool_dir, 'alloc_cpp', 'build', 'ca_offline_benchmark');
+
+B_CASES = {};
+% B_CASES{end+1} = make_df4_single_case();
+% B_CASES{end+1} = make_df4_split_case();
+B_CASES{end+1} = make_shc09_single_case();
+B_CASES{end+1} = make_shc09_split_case();
 
 %% 2. Load raw ULog topic tables
 if PARSE_LOG || ~isfile(COMMAND_MAT)
@@ -155,71 +185,7 @@ end
 
 load(COMMAND_MAT);
 
-%% 3. Build v_sp from original PX4 topic names
-% Reference time axis: PX4 ControlAllocator runs from instance 0 torque callback.
-v_sp_t = double(vehicle_torque_setpoint_0.timestamp(:)) * 1e-6;
-
-vehicle_torque_setpoint_0_xyz = [
-    vehicle_torque_setpoint_0.xyz_0_(:)';
-    vehicle_torque_setpoint_0.xyz_1_(:)';
-    vehicle_torque_setpoint_0.xyz_2_(:)'];
-
-vehicle_thrust_setpoint_0_t = double(vehicle_thrust_setpoint_0.timestamp(:)) * 1e-6;
-vehicle_thrust_setpoint_0_xyz_raw = [
-    vehicle_thrust_setpoint_0.xyz_0_(:), ...
-    vehicle_thrust_setpoint_0.xyz_1_(:), ...
-    vehicle_thrust_setpoint_0.xyz_2_(:)];
-vehicle_thrust_setpoint_0_xyz = interp1(vehicle_thrust_setpoint_0_t, ...
-    vehicle_thrust_setpoint_0_xyz_raw, v_sp_t, 'previous', 'extrap')';
-
-v_sp_log_instance_0 = [
-    vehicle_torque_setpoint_0_xyz;
-    vehicle_thrust_setpoint_0_xyz];
-
-log_v_sp_instances = {v_sp_log_instance_0};
-
-if exist('vehicle_torque_setpoint_1', 'var')
-    vehicle_torque_setpoint_1_t = double(vehicle_torque_setpoint_1.timestamp(:)) * 1e-6;
-    vehicle_torque_setpoint_1_xyz_raw = [
-        vehicle_torque_setpoint_1.xyz_0_(:), ...
-        vehicle_torque_setpoint_1.xyz_1_(:), ...
-        vehicle_torque_setpoint_1.xyz_2_(:)];
-    vehicle_torque_setpoint_1_xyz = interp1(vehicle_torque_setpoint_1_t, ...
-        vehicle_torque_setpoint_1_xyz_raw, v_sp_t, 'previous', 'extrap')';
-
-    if exist('vehicle_thrust_setpoint_1', 'var')
-        vehicle_thrust_setpoint_1_t = double(vehicle_thrust_setpoint_1.timestamp(:)) * 1e-6;
-        vehicle_thrust_setpoint_1_xyz_raw = [
-            vehicle_thrust_setpoint_1.xyz_0_(:), ...
-            vehicle_thrust_setpoint_1.xyz_1_(:), ...
-            vehicle_thrust_setpoint_1.xyz_2_(:)];
-        vehicle_thrust_setpoint_1_xyz = interp1(vehicle_thrust_setpoint_1_t, ...
-            vehicle_thrust_setpoint_1_xyz_raw, v_sp_t, 'previous', 'extrap')';
-    else
-        vehicle_thrust_setpoint_1_xyz = zeros(3, numel(v_sp_t));
-    end
-
-    v_sp_log_instance_1 = [
-        vehicle_torque_setpoint_1_xyz;
-        vehicle_thrust_setpoint_1_xyz];
-    log_v_sp_instances{end+1} = v_sp_log_instance_1;
-end
-
-u_px4 = [];
-if exist('actuator_motors_0', 'var')
-    actuator_motors_0_t = double(actuator_motors_0.timestamp(:)) * 1e-6;
-    actuator_motors_0_cols = startsWith(actuator_motors_0.Properties.VariableNames, 'control_');
-    actuator_motors_0_control = actuator_motors_0{:, actuator_motors_0_cols};
-    u_px4 = [u_px4, interp1(actuator_motors_0_t, actuator_motors_0_control, v_sp_t, 'previous', 'extrap')];
-end
-if exist('actuator_servos_0', 'var')
-    actuator_servos_0_t = double(actuator_servos_0.timestamp(:)) * 1e-6;
-    actuator_servos_0_cols = startsWith(actuator_servos_0.Properties.VariableNames, 'control_');
-    actuator_servos_0_control = actuator_servos_0{:, actuator_servos_0_cols};
-    u_px4 = [u_px4, interp1(actuator_servos_0_t, actuator_servos_0_control, v_sp_t, 'previous', 'extrap')];
-end
-u_px4 = u_px4(:, any(isfinite(u_px4), 1));
-
+%% 3. Select samples and run allocation
 if isempty(SAMPLE_RANGE)
     sample_idx = 1:numel(v_sp_t);
 else
@@ -237,19 +203,11 @@ flightData.model = char(MODEL_NAME);
 flightData.t = v_sp_t(:);
 flightData.v_sp = log_v_sp_instances{1}';
 flightData.u_px4 = u_px4;
-flightData.u_px4_source = 'actuator_motors_0 + actuator_servos_0';
+flightData.u_px4_source = u_px4_source;
 
-%% 4. Set B directly here
-B_CASES = {};
-% B_CASES{end+1} = make_df4_single_case();
-% B_CASES{end+1} = make_df4_split_case();
-B_CASES{end+1} = make_shc09_single_case();
-B_CASES{end+1} = make_shc09_split_case();
-
-%% 5. Run allocation
 benchmark_tic = tic;
 results = repmat(empty_case_result(), 1, numel(B_CASES));
-methods_to_run = resolve_methods(METHODS_TO_RUN);
+methods_to_run = cellfun(@(x) lower(char(x)), cellstr(METHODS_TO_RUN), 'UniformOutput', false);
 METHODS_TO_PLOT = [methods_to_run, cellstr(CPP_ALLOCATOR_TO_PLOT)];
 
 fprintf('\nControl allocation benchmark\n');
@@ -300,8 +258,10 @@ for case_idx = 1:numel(B_CASES)
     result = empty_case_result();
     result.name = cfg.name;
     result.B = join_B(allocator_instances);
+    result.D = join_D(allocator_instances);
     result.umin = vertcat(allocator_instances.umin);
     result.umax = vertcat(allocator_instances.umax);
+    result.u_abs_max = vertcat(allocator_instances.u_abs_max);
     result.rows = find(any(abs(result.B) > 1e-9, 2))';
     result.cpp_process_wall_s = cpp_process_wall_s;
     result.t = v_sp_t(:);
@@ -325,6 +285,7 @@ meta.METHODS_TO_PLOT = METHODS_TO_PLOT;
 meta.USE_RESTORING = USE_RESTORING;
 meta.NORMALIZE_B = NORMALIZE_B;
 meta.NORMALIZE_V_SP = NORMALIZE_V_SP;
+meta.PLOT_NORMALIZED = PLOT_NORMALIZED;
 meta.RUN_CPP_ALLOCATOR = RUN_CPP_ALLOCATOR;
 meta.CPP_ALLOCATOR_EXE = CPP_ALLOCATOR_EXE;
 meta.benchmark_elapsed_s = benchmark_elapsed_s;
@@ -349,41 +310,49 @@ end
 function cfg = make_df4_single_case()
 B_force = [0; 0; 0; 0; 0; -27.8];
 B_moment = make_ducted_fan_moment_B("cross4", [0.01149 0.01153 0.00487], 0.167, 0.069, 1.0);
+servo_max = 40 * pi / 180;
 
 cfg.name = 'df4_single';
 cfg.B = [B_force, [B_moment; zeros(3, 4)]];
 cfg.umin = [0; -ones(4, 1)];
 cfg.umax = [1;  ones(4, 1)];
+cfg.u_abs_max = [1; servo_max * ones(4, 1)];
 end
 
 function cfg = make_df4_split_case()
 B_force = [0; 0; 0; 0; 0; -27.8];
 B_moment = make_ducted_fan_moment_B("cross4", [0.01149 0.01153 0.00487], 0.167, 0.069, 1.0);
+servo_max = 40 * pi / 180;
 
 cfg.name = 'df4_split';
 cfg.B = {B_force, [B_moment; zeros(3, 4)]};
 cfg.umin = {0, -ones(4, 1)};
 cfg.umax = {1,  ones(4, 1)};
+cfg.u_abs_max = {1, servo_max * ones(4, 1)};
 end
 
 function cfg = make_shc09_single_case()
 B_force = [0; 0; 0; 0; 0; -6.5];
 B_moment = make_ducted_fan_moment_B("hex6", [0.0438 0.0436 0.005006], 0.267, 0.066, 1.0);
+servo_max = 40 * pi / 180;
 
 cfg.name = 'shc09_single';
 cfg.B = [B_force, [B_moment; zeros(3, 6)]];
 cfg.umin = [0; -ones(6, 1)];
 cfg.umax = [1;  ones(6, 1)];
+cfg.u_abs_max = [1; servo_max * ones(6, 1)];
 end
 
 function cfg = make_shc09_split_case()
 B_force = [0; 0; 0; 0; 0; -6.5];
 B_moment = make_ducted_fan_moment_B("hex6", [0.0438 0.0436 0.005006], 0.267, 0.066, 1.0);
+servo_max = 40 * pi / 180;
 
 cfg.name = 'shc09_split';
 cfg.B = {B_force, [B_moment; zeros(3, 6)]};
 cfg.umin = {0, -ones(6, 1)};
 cfg.umax = {1,  ones(6, 1)};
+cfg.u_abs_max = {1, servo_max * ones(6, 1)};
 end
 
 function B_moment = make_ducted_fan_moment_B(layout, inertia_diag, l1, l2, k_surface)
@@ -420,12 +389,24 @@ else
     umax_cell = {cfg.umax};
 end
 
+if isfield(cfg, 'u_abs_max')
+    if iscell(cfg.u_abs_max)
+        u_abs_max_cell = cfg.u_abs_max;
+    else
+        u_abs_max_cell = {cfg.u_abs_max};
+    end
+else
+    u_abs_max_cell = cell(size(B_cell));
+end
+
 allocator_instances = repmat(struct('B', [], 'B_alloc', [], 'D', [], 'rows', [], ...
-    'umin', [], 'umax', [], 'cols', []), 1, numel(B_cell));
+    'umin', [], 'umax', [], 'u_abs_max', [], 'cols', []), 1, numel(B_cell));
 next_col = 1;
 
 for i = 1:numel(B_cell)
     B_raw = force_6_rows(B_cell{i});
+    u_abs_max = resolve_u_abs_max(u_abs_max_cell{i}, size(B_raw, 2));
+    B_raw = B_raw * diag(u_abs_max);
 
     if normalize_B
         [D, B, ~, ~] = px4_normalize_B(B_raw, normalize_rpy);
@@ -445,7 +426,24 @@ for i = 1:numel(B_cell)
     allocator_instances(i).rows = rows;
     allocator_instances(i).umin = double(umin_cell{i}(:));
     allocator_instances(i).umax = double(umax_cell{i}(:));
+    allocator_instances(i).u_abs_max = u_abs_max;
     allocator_instances(i).cols = cols;
+end
+end
+
+function u_abs_max = resolve_u_abs_max(u_abs_max, actuator_count)
+if isempty(u_abs_max)
+    u_abs_max = ones(actuator_count, 1);
+else
+    u_abs_max = double(u_abs_max(:));
+end
+
+if isscalar(u_abs_max)
+    u_abs_max = repmat(u_abs_max, actuator_count, 1);
+end
+
+if numel(u_abs_max) ~= actuator_count
+    error('u_abs_max must be scalar or have %d entries.', actuator_count);
 end
 end
 
@@ -776,57 +774,6 @@ elseif size(X, 1) > N
 end
 end
 
-function methods = resolve_methods(selection)
-catalog = method_catalog();
-
-if ischar(selection) || isstring(selection)
-    selection = cellstr(selection);
-end
-
-if numel(selection) == 1 && strcmpi(selection{1}, 'all')
-    methods = catalog;
-else
-    methods = cellfun(@(x) lower(char(x)), selection, 'UniformOutput', false);
-end
-
-unknown = setdiff(methods, catalog);
-
-if ~isempty(unknown)
-    error('Unknown allocator method(s): %s', strjoin(unknown, ', '));
-end
-end
-
-function methods = method_catalog()
-methods = { ...
-    'inv', ...
-    'pca_dir', ...
-    'pca_dpscaled', ...
-    'pca_prio', ...
-    'lib_lpwrap_db', ...
-    'lib_lpwrap_dbinf', ...
-    'lib_lpwrap_dir', ...
-    'lib_lpwrap_dpscaled', ...
-    'lib_lpwrap_mo', ...
-    'lib_lpwrap_sb', ...
-    'lib_lpwrap_par_db', ...
-    'lib_lpwrap_par_dbinf', ...
-    'lib_lpwrap_par_dir', ...
-    'lib_lpwrap_par_dpscaled', ...
-    'lib_lpwrap_par_mo', ...
-    'lib_lpwrap_par_sb', ...
-    'lib_lpwrap_incre', ...
-    'lib_cgiwrap', ...
-    'lib_dawrap', ...
-    'lib_vjawrap', ...
-    'wls', ...
-    'wls_gen', ...
-    'dir_linprog', ...
-    'dir_linprog_re', ...
-    'dir_linprog_re_bound', ...
-    'use_lp_lib', ...
-    'allocator_dir_lpwrap_4'};
-end
-
 function IN_MAT = make_lpwrap_in_mat(B, v, umin, umax, lp_method)
 [~, m] = size(B);
 IN_MAT = [B v(:);
@@ -871,8 +818,8 @@ end
 end
 
 function result = empty_case_result()
-result = struct('name', '', 'B', [], 'umin', [], 'umax', [], 'rows', [], ...
-    'cpp_process_wall_s', nan, 't', [], 'v_sp', [], ...
+result = struct('name', '', 'B', [], 'D', [], 'umin', [], 'umax', [], 'rows', [], ...
+    'u_abs_max', [], 'cpp_process_wall_s', nan, 't', [], 'v_sp', [], ...
     'u_inv_ref', [], 'inv_reference_name', "", 'alg', empty_algorithm_result());
 end
 
@@ -892,6 +839,15 @@ B = zeros(6, sum(arrayfun(@(x) size(x.B, 2), allocator_instances)));
 
 for i = 1:numel(allocator_instances)
     B(:, allocator_instances(i).cols) = allocator_instances(i).B;
+end
+end
+
+function D = join_D(allocator_instances)
+D = eye(6);
+
+for i = 1:numel(allocator_instances)
+    rows = allocator_instances(i).rows;
+    D(rows, rows) = allocator_instances(i).D(rows, rows);
 end
 end
 

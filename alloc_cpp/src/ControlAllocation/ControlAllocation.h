@@ -10,29 +10,6 @@ using namespace matrix;
 #define FLT_MAX     __FLT_MAX__
 #endif
 
-struct SimplexTieBreakOptions {
-    // Keep this struct intentionally small.  The tiebreak solver follows the
-    // original bounded revised simplex and only changes how near-equal pivot
-    // candidates are selected.
-    float tie_rel_tol;
-    float tie_abs_tol;
-
-    SimplexTieBreakOptions()
-    {
-        tie_rel_tol = 1.0e-5f;
-        tie_abs_tol = 1.0e-6f;
-    }
-
-    static SimplexTieBreakOptions fromMachineEps(float eps)
-    {
-        // Kept for compatibility with older tests.  Machine epsilon no longer
-        // fans out into simplex feasibility/projection tolerances.
-        (void)eps;
-        SimplexTieBreakOptions opts;
-        return opts;
-    }
-};
-
 // Add the min_user function definition here
 template<typename Type, size_t M, size_t N>
 inline void min_user(const Matrix<Type, M, N> &x, Type &x_min, size_t &x_index)
@@ -51,38 +28,14 @@ inline void min_user(const Matrix<Type, M, N> &x, Type &x_min, size_t &x_index)
     }
 }
 
-inline float lp_tie_tolerance_from_scale(float scale, float tie_rel_tol, float tie_abs_tol)
-{
-    if (scale < 1.0f) {
-        scale = 1.0f;
-    }
-    return tie_abs_tol + tie_rel_tol * scale;
-}
-
 inline bool lp_is_finite(float value)
 {
     return value < INFINITY && value > -INFINITY;
 }
 
-template<typename Type, size_t M, size_t N>
-inline float lp_tie_tolerance(const Matrix<Type, M, N> &x, float tie_rel_tol, float tie_abs_tol)
-{
-    float scale = 1.0f;
-    for (size_t i = 0; i < M; ++i) {
-        for (size_t j = 0; j < N; ++j) {
-            const float value = fabs(static_cast<float>(x(i, j)));
-            if (lp_is_finite(value) && value > scale) {
-                scale = value;
-            }
-        }
-    }
-    return lp_tie_tolerance_from_scale(scale, tie_rel_tol, tie_abs_tol);
-}
-
 template<size_t K>
-inline void select_entering_tiebreak(const Matrix<float, 1, K> &rdt, const int inD[K],
-                                     float &minr, size_t &qind,
-                                     const SimplexTieBreakOptions &opts)
+inline void select_entering_original(const Matrix<float, 1, K> &rdt,
+                                     float &minr, size_t &qind)
 {
     minr = rdt(0, 0);
     qind = 0;
@@ -92,39 +45,24 @@ inline void select_entering_tiebreak(const Matrix<float, 1, K> &rdt, const int i
             qind = i;
         }
     }
-
-    const float raw_min = minr;
-    const float tol = lp_tie_tolerance(rdt, opts.tie_rel_tol, opts.tie_abs_tol);
-    int best_variable = inD[qind];
-    for (size_t i = 0; i < K; ++i) {
-        if (fabs(rdt(0, i) - raw_min) <= tol && inD[i] < best_variable) {
-            best_variable = inD[i];
-            qind = i;
-        }
-    }
-    minr = rdt(0, qind);
 }
 
 template<size_t K>
-inline bool select_bland_negative_tiebreak(const Matrix<float, 1, K> &rdt, const int inD[K],
+inline bool select_bland_negative_original(const Matrix<float, 1, K> &rdt,
                                            size_t &qind)
 {
-    bool found = false;
-    int best_variable = 0;
     for (size_t i = 0; i < K; ++i) {
-        if (rdt(0, i) < 0.0f && (!found || inD[i] < best_variable)) {
-            found = true;
-            best_variable = inD[i];
+        if (rdt(0, i) < 0.0f) {
             qind = i;
+            return true;
         }
     }
-    return found;
+    return false;
 }
 
 template<size_t M>
-inline void select_leaving_tiebreak(const Vector<float, M> &rat, const int inB[M],
-                                    float &minrat, size_t &p,
-                                    const SimplexTieBreakOptions &opts)
+inline void select_leaving_original(const Vector<float, M> &rat,
+                                    float &minrat, size_t &p)
 {
     minrat = rat(0);
     p = 0;
@@ -134,28 +72,14 @@ inline void select_leaving_tiebreak(const Vector<float, M> &rat, const int inB[M
             p = i;
         }
     }
-
-    // The leaving ratio is the feasibility step length.  Do not apply the
-    // loose reduced-cost tie tolerance here: choosing a larger "near-tie"
-    // ratio can step past another bound and violate 0 <= x <= h.  Only exact
-    // equal ratios are tie-broken by variable index.
-    int best_variable = inB[p];
-    for (size_t i = 0; i < M; ++i) {
-        if (rat(i) == minrat && inB[i] < best_variable) {
-            best_variable = inB[i];
-            p = i;
-        }
-    }
-
-    minrat = rat(p);
 }
 
 template<typename Type, size_t M>
 inline bool solveSquareLU(Matrix<Type, M, M> A, Vector<Type, M> b, Vector<Type, M> &x)
 {
     // Dense square solve using LU with partial row pivoting.  This is used
-    // only for A(:,inB)\b style basis solves; simplex pivot selection is
-    // handled separately by the tie-break helpers above.
+    // only for A(:,inB)\b style basis solves; simplex pivot selection follows
+    // MATLAB simplxuprevsol.m.
     int piv[M];
     for (size_t i = 0; i < M; ++i) {
         piv[i] = static_cast<int>(i);
@@ -351,10 +275,7 @@ struct LinearProgrammingProblem {
     float c[N];
     float h[N];
     bool e[N];
-    float tol=10*FLT_EPSILON; // important value, if control surface saturation, Use a larger value
-    // Runtime simplex parameters.  Only deterministic pivot tie windows live
-    // here; feasibility/optimality tests still use the original problem.tol.
-    SimplexTieBreakOptions simplex_opts;
+    float tol=1.0e-10f; // Match MATLAB simplxuprevsol.m tolerance.
     LinearProgrammingProblem() : m(M), n(N), itlim(0) {
         // Initialize array member variables to 0
         for (int i = 0; i < M; ++i) {
@@ -382,7 +303,6 @@ struct LinearProgrammingProblem {
             n = other.n;
             itlim = other.itlim;
             tol = other.tol;
-            simplex_opts = other.simplex_opts;
             // Copy array member variables
             for (int i = 0; i < M; ++i) {
                 inB[i] = other.inB[i];
@@ -410,7 +330,6 @@ struct LinearProgrammingProblem {
         n = other.n;
         itlim = other.itlim;
         tol = other.tol;
-        simplex_opts = other.simplex_opts;
         // Copy array member variables
         for (int i = 0; i < M; ++i) {
             inB[i] = other.inB[i];
@@ -467,21 +386,14 @@ struct LinearProgrammingResult {
 };
 
 
-// Bounded revised simplex with the minimum deterministic tie-break change.
+// Bounded revised simplex aligned with MATLAB simplxuprevsol.m.
 //
-// This follows the old 408fda5 BoundedRevisedSimplex path and the MATLAB
-// simplxuprevsol.m structure.  The only intentional behavior change is pivot
-// selection when candidates are nearly equal:
-//   - reduced-cost ties choose the smallest variable index in inD;
-//   - leaving-ratio ties choose the smallest current basic variable in inB.
-//
-// No near-bound projection, feasibility repair, or alternative optimality
-// tolerance is applied here.  Those behaviors belong in a separate experiment,
-// not in the default simplex path used to validate simple 3x4 cases.
+// It intentionally uses the same pivot choices as the book/MATLAB reference:
+// min(rdt), first negative reduced cost in the Bland branch, and min(rat).
+// No deterministic near-tie rule or feasibility repair is applied here.
 template<int M, int N>
-LinearProgrammingResult<M, N> simplxuprevsol_tiebreak(LinearProgrammingProblem<M, N> problem) {
+LinearProgrammingResult<M, N> simplxuprevsol(LinearProgrammingProblem<M, N> problem) {
     LinearProgrammingResult<M, N> result;
-    const SimplexTieBreakOptions &opts = problem.simplex_opts;
 
     const int n_m = N - M;
     int ind_all[N];
@@ -552,14 +464,10 @@ LinearProgrammingResult<M, N> simplxuprevsol_tiebreak(LinearProgrammingProblem<M
 
         float minr;
         size_t qind;
-        select_entering_tiebreak<n_m>(rdt, problem.inD, minr, qind, opts);
+        select_entering_original<n_m>(rdt, minr, qind);
 
-        // MATLAB double can safely use minr >= 0.  The target C++ solver runs
-        // in float, so reduced costs that are numerically zero can appear as
-        // tiny negative values and cause degenerate cycling.  Use the existing
-        // problem.tol as the single float zero threshold instead of adding a
-        // separate optimality-tolerance knob.
-        if (minr >= -problem.tol) {
+        // MATLAB simplxuprevsol.m uses minr >= 0 exactly.
+        if (minr >= 0.0f) {
             done = true;
             break;
         }
@@ -598,11 +506,11 @@ LinearProgrammingResult<M, N> simplxuprevsol_tiebreak(LinearProgrammingProblem<M
 
         float minrat;
         size_t p;
-        select_leaving_tiebreak<M>(rat, problem.inB, minrat, p, opts);
+        select_leaving_original<M>(rat, minrat, p);
 
         // Keep the original zero-step Bland branch and original tolerance.
         if (fabs(minrat) <= problem.tol) {
-            select_bland_negative_tiebreak<n_m>(rdt, problem.inD, qind);
+            select_bland_negative_original<n_m>(rdt, qind);
             qel = problem.inD[qind];
             for (int i = 0; i < M; ++i) {
                 A_qel(i) = problem.A[i][qel];
@@ -633,7 +541,7 @@ LinearProgrammingResult<M, N> simplxuprevsol_tiebreak(LinearProgrammingProblem<M
                     rat(i) = INFINITY;
                 }
             }
-            select_leaving_tiebreak<M>(rat, problem.inB, minrat, p, opts);
+            select_leaving_original<M>(rat, minrat, p);
         }
 
         // Pivot/update logic copied from the original path.
@@ -695,9 +603,7 @@ LinearProgrammingResult<M, N> simplxuprevsol_tiebreak(LinearProgrammingProblem<M
 
 template<int M, int N>
 LinearProgrammingResult<M, N> BoundedRevisedSimplex(LinearProgrammingProblem<M, N> problem) {
-    // Compatibility wrapper for older code.  New allocator code calls
-    // simplxuprevsol_tiebreak() directly.
-    return simplxuprevsol_tiebreak(problem);
+    return simplxuprevsol(problem);
 }
 
 
@@ -1092,17 +998,6 @@ public:
         // If there are resources that need to be released, you can add code here
     }
 
-    void setSimplexTieBreakOptions(const SimplexTieBreakOptions &opts) {
-        DP_LPCA_problem.simplex_opts = opts;
-        Pre_DP_LPCA_problem.simplex_opts = opts;
-        DPscaled_LPCA_problem.simplex_opts = opts;
-        Pre_DPscaled_LPCA_problem.simplex_opts = opts;
-    }
-
-    void setSimplexMachineEps(float machine_eps) {
-        setSimplexTieBreakOptions(SimplexTieBreakOptions::fromMachineEps(machine_eps));
-    }
-
     // To find an initial condition, many linear programming solvers treat the solution in two phases. Phase one solves a specially constructed problem designed to yield a basic feasible solution that is used to initialize the original problem in phase two.
     // So we have DP_LPCA and DPscaled_LPCA
     void DP_LPCA(float input[ControlSize], float output[EffectorSize], int& err, float & rho){
@@ -1151,8 +1046,8 @@ public:
         //         upper_lam  = the upper limit of lambda
 
         // Calls:
-        //         simplxuprevsol_tiebreak = Bounded Revised Simplex solver
-        //         with deterministic guarded pivot tie-breaks.
+        //         simplxuprevsol = Bounded Revised Simplex solver
+        //         aligned with MATLAB simplxuprevsol.m.
 
         // Notes:
         // If errout ~0 there was a problem in the solution. %
@@ -1172,7 +1067,7 @@ public:
         rho = 0;
 
         // DP_LPCA function uses aircraft data to describe the allocation
-        // problem as a DP_LP problem and solves it using simplxuprevsol_tiebreak.
+        // problem as a DP_LP problem and solves it using simplxuprevsol.
         //=======================
         // Figure out how big the problem is (use standard CA definitions for m & n)
         // but in here we use [m,k] = size(B) instead of [n,m] = size(B) in matlab. just for adapt to BoundedRevisedSimplex
@@ -1220,7 +1115,7 @@ public:
         }
 
         // Use Bounded Revised Simplex to find initial basic feasible point of original program
-        auto result_init = simplxuprevsol_tiebreak(Pre_DP_LPCA_problem);
+        auto result_init = simplxuprevsol(Pre_DP_LPCA_problem);
 
         // Check that Feasible Solution was found
         if(result_init.iters>=Pre_DP_LPCA_problem.itlim){
@@ -1273,7 +1168,7 @@ public:
             for(int i=0;i<DP_LPCA_problem.n;++i){
                 DP_LPCA_problem.e[i]=result_init.e[i];
             }
-            auto result = simplxuprevsol_tiebreak(DP_LPCA_problem);
+            auto result = simplxuprevsol(DP_LPCA_problem);
 
             for(int i=0;i<ControlSize;++i){
                 xout[result.inB[i]]=result.y0[i];
@@ -1347,8 +1242,8 @@ public:
         //                         -3,3 = Iteration limit exceeded
 
         // Calls:
-        //         simplxuprevsol_tiebreak = Bounded Revised Simplex solver
-        //         with deterministic guarded pivot tie-breaks.
+        //         simplxuprevsol = Bounded Revised Simplex solver
+        //         aligned with MATLAB simplxuprevsol.m.
 
         // Notes:
         // If yd is close to zero, u = 0;
@@ -1366,7 +1261,7 @@ public:
         rho = 0;
 
         // The DPscaled_LPCA function formulates the allocation problem as a
-        // DP_LP problem and solves it using simplxuprevsol_tiebreak.
+        // DP_LP problem and solves it using simplxuprevsol.
         //=======================
         // Figure out how big the problem is (use standard CA definitions for m & n)
         // but in here we use [m,k] = size(B) instead of [n,m] = size(B) in matlab. just for adapt to BoundedRevisedSimplex
@@ -1499,7 +1394,7 @@ public:
         }
 
         // Use Bounded Revised Simplex to find initial basic feasible point of original program
-        auto result_init = simplxuprevsol_tiebreak(Pre_DPscaled_LPCA_problem);
+        auto result_init = simplxuprevsol(Pre_DPscaled_LPCA_problem);
 
         auto cleanup_zero_artificial_basis = [&]() {
             const float cleanup_tol = Pre_DPscaled_LPCA_problem.tol;
@@ -1627,7 +1522,7 @@ public:
                 DPscaled_LPCA_problem.e[i]=result_init.e[i];
             }
 
-            auto result = simplxuprevsol_tiebreak(DPscaled_LPCA_problem);
+            auto result = simplxuprevsol(DPscaled_LPCA_problem);
 
             for(int i=0;i<ControlSize-1;++i){
                 xout[result.inB[i]]=result.y0[i];
@@ -1696,7 +1591,7 @@ public:
         rho = 0;
 
         // The DP_LPCA function describes the prioritized allocation problem
-        // as a DP_LP problem and solves it using simplxuprevsol_tiebreak.
+        // as a DP_LP problem and solves it using simplxuprevsol.
         //=======================
         // Figure out how big the problem is (use standard CA definitions for m & n)
         // but in here we use [m,k] = size(B) instead of [n,m] = size(B) in matlab. just for adapt to BoundedRevisedSimplex
@@ -1744,7 +1639,7 @@ public:
         }
 
         // Use Bounded Revised Simplex to find initial basic feasible point of original program
-        auto result_init = simplxuprevsol_tiebreak(Pre_DP_LPCA_problem);
+        auto result_init = simplxuprevsol(Pre_DP_LPCA_problem);
 
         // Check that Feasible Solution was found
         if(result_init.iters>=Pre_DP_LPCA_problem.itlim){
@@ -1797,7 +1692,7 @@ public:
             for(int i=0;i<DP_LPCA_problem.n;++i){
                 DP_LPCA_problem.e[i]=result_init.e[i];
             }
-            auto result = simplxuprevsol_tiebreak(DP_LPCA_problem);
+            auto result = simplxuprevsol(DP_LPCA_problem);
 
             for(int i=0;i<ControlSize;++i){
                 xout[result.inB[i]]=result.y0[i];

@@ -295,8 +295,6 @@ int main(int argc, char **argv)
         Aircraft<3, 6> aircraftSplit(BtorqueServo, umaxServo, uminServo);
         DP_LP_ControlAllocator<4, 7> allocatorBpar(aircraftBpar);
         DP_LP_ControlAllocator<3, 6> allocatorSplit(aircraftSplit);
-        allocatorBpar.setSimplexMachineEps(FLT_EPSILON);
-        allocatorSplit.setSimplexMachineEps(FLT_EPSILON);
 
         MethodOutput<4, 7> bparDir;
         MethodOutput<4, 7> bparScaled;

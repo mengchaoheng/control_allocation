@@ -280,7 +280,7 @@ int main() {
         // MATLAB test.m counterpart:
         //   DP_LPCA_prio(...), then restoring_cpp(...)
         // C++ DP_LPCA_prio() calls DP_LPCA_copy(), whose simplex
-        // pivot/tie-break rules follow PCA/simplxuprevsol_tiebreak.m.
+        // rules follow MATLAB PCA/simplxuprevsol.m.
         float u4[4]; int err4=0; float rho4=0; float u4_raw[4];
         start = std::chrono::high_resolution_clock::now();
         allocator_15003.DP_LPCA_prio(m_higher, yd, u4_raw, err4, rho4);

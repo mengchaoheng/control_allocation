@@ -26,3 +26,5 @@ LP_lib/SDLP/build/*
 !11_22_05.ulg
 !11_22_05.mat
 /results
+/test_results_figures
+*.log

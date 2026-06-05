@@ -37,10 +37,10 @@ dt = mean(controls_delta_t_s);
 t_full = 0:dt:dt*(len_command_px4-1);
 
 %% Test configuration
-test_time_window_s = [20 40];  % 测试时间窗口；[] = 全程，示例：[20 30] 只跑 20-30 秒。[24.8 25.4]
-use_restoring = 'both';            % true=只看 restoring；false=只看 raw allocation；'both'=raw/restoring 各画一张。
+test_time_window_s = [];  % 测试时间窗口；[] = 全程，示例：[20 30] 只跑 20-30 秒。[24.8 25.4]
+use_restoring = 'true';            % true=只看 restoring；false=只看 raw allocation；'both'=raw/restoring 各画一张。
 
-allocation_method_selection = {'pca_dir','cpp_dir'};  % 参与测试的分配算法；'all' = 全部，示例：[1 2 5] 或 {'inv','pca_dir','wls_gen','cpp_dir'}。
+allocation_method_selection = {'lib_lpwrap_dir','pca_dir'};  % 参与测试的分配算法；'all' = 全部，示例：[1 2 5] 或 {'inv','pca_dir','wls_gen','cpp_dir'}。
 % 常用名含义：
 %   inv: pinv(B)*y 后限幅，再按 use_restoring 决定是否 restoring_cpp。
 %   pca_dir: /PCA/DP_LPCA 后按 use_restoring 决定是否 restoring_cpp。
@@ -70,6 +70,7 @@ reports_to_run = {'allocator_summary','method_diff'};  % 输出报告；'all' = 
 %   reachable_set: 使用 QCAT/vview 画可达集。
 
 allocator_sample_print_count = 0;  % 逐样本打印数量；0 = 不打印，示例：3 表示每个算法打印前 3 个样本的 y/u/Bu。
+method_diff_large_du_threshold = 0.1;  % method_diff 里超过该 |u-u_inv| 的样本会继续分析是否 pinv 饱和、Bu 是否一致、谁的 y-Bu 更小。
 
 case_comparison_pairs = {  % case_diff 对比组合；每行 {case A, case B}，建议使用上面的正式名。
     '15008_SHW09_vtol_full8', '15008_SHW09_vtol_reduced6'
@@ -102,9 +103,6 @@ aircraft_cases{end+1} = make_shw09_vtol_mc_reduced6();
 % If cpp_tag is '', only MATLAB outputs are simulated and saved/plotted.
 aircraft_cases = select_aircraft_cases(aircraft_cases, aircraft_case_selection);
 
-%% Simplex backend
-tie_opts = struct(); % 默认使用新版 simplxuprevsol_tiebreak；对照原版时设为 struct('simplex_backend','original')。
-
 fprintf('MATLAB PCA methods: pca_dir=PCA/DP_LPCA, pca_dpscaled=PCA/DPscaled_LPCA, pca_prio=PCA/DP_LPCA_prio + restoring_cpp\n');
 fprintf('C++ methods: cpp_dir=DP_LPCA, cpp_dpscaled=DPscaled_LPCA, cpp_prio=DP_LPCA_prio + restoring() aligned to restoring_cpp\n');
 fprintf('Restoring: %s\n', string(use_restoring));
@@ -118,7 +116,7 @@ end
 tic;
 results = cell(size(aircraft_cases));
 for case_idx = 1:numel(aircraft_cases)
-    results{case_idx} = simulate_flight_process(aircraft_cases{case_idx}, v_test, tie_opts, allocation_methods_to_run, use_restoring);
+    results{case_idx} = simulate_flight_process(aircraft_cases{case_idx}, v_test, allocation_methods_to_run, use_restoring);
 end
 elapsed_time = toc;
 fprintf('MATLAB reference execution time: %.2f 秒\n', elapsed_time);
@@ -142,7 +140,7 @@ for case_idx = 1:numel(results)
     end
 
     if has_report(reports_to_run, 'method_diff')
-        report_allocator_method_differences(results{case_idx}, allocation_methods_to_run);
+        report_allocator_method_differences(results{case_idx}, allocation_methods_to_run, command_px4, t, method_diff_large_du_threshold);
     end
 end
 
@@ -163,9 +161,9 @@ end
 if numel(results) >= 2
     result6 = results{2};
 end
-save('test_results.mat', 'results', 'result4', 'result6', 'command_px4', 'len_command_px4', 't', 'tie_opts', 'test_time_window_s', 'test_sample_indices', ...
+save('test_results.mat', 'results', 'result4', 'result6', 'command_px4', 'len_command_px4', 't', 'test_time_window_s', 'test_sample_indices', ...
      'allocation_method_catalog', 'allocation_method_selection', 'allocation_methods_to_run', 'aircraft_case_selection', 'case_comparison_pairs', ...
-     'reports_to_run', 'allocator_sample_print_count', 'use_restoring');
+     'reports_to_run', 'allocator_sample_print_count', 'method_diff_large_du_threshold', 'use_restoring');
 plot_test_results('test_results.mat');
 
 %% 本地函数：aircraft case 构造
@@ -467,7 +465,7 @@ function enabled = has_report(reports_to_run, report_name)
 end
 
 %% 本地函数：仿真与 allocator 分发
-function result = simulate_flight_process(aircraft, v, tie_opts, allocation_methods_to_run, use_restoring)
+function result = simulate_flight_process(aircraft, v, allocation_methods_to_run, use_restoring)
     if nargin < 4 || isempty(allocation_methods_to_run)
         allocation_methods_to_run = {'pca_dir', 'pca_dpscaled', 'pca_prio'};
     end
@@ -513,7 +511,7 @@ function result = simulate_flight_process(aircraft, v, tie_opts, allocation_meth
                 continue;
             end
 
-            [u_raw, u_alloc, ok, err_msg] = run_allocator_method(method, command, B, umin, umax, tie_opts, use_restoring);
+            [u_raw, u_alloc, ok, err_msg] = run_allocator_method(method, command, B, umin, umax, use_restoring);
 
             result.([method '_raw'])(:, idx) = u_raw;
             result.(method)(:, idx) = u_alloc;
@@ -544,7 +542,7 @@ function tf = is_cpp_allocator_method(method)
     tf = strncmpi(char(method), 'cpp_', 4);
 end
 
-function [u_raw, u, ok, err_msg] = run_allocator_method(method, y, B, umin, umax, tie_opts, use_restoring)
+function [u_raw, u, ok, err_msg] = run_allocator_method(method, y, B, umin, umax, use_restoring)
     if nargin < 7
         use_restoring = true;
     end
@@ -561,18 +559,18 @@ function [u_raw, u, ok, err_msg] = run_allocator_method(method, y, B, umin, umax
                 u = apply_optional_restoring(B, u_raw, umin, umax, use_restoring);
 
             case 'pca_dir'
-                [u_tmp, ~, ~] = DP_LPCA(y, B, umin, umax, 100, tie_opts);
+                [u_tmp, ~, ~] = DP_LPCA(y, B, umin, umax, 100);
                 u_raw = clamp_u(u_tmp(:), umin, umax);
                 u = apply_optional_restoring(B, u_raw, umin, umax, use_restoring);
 
             case 'pca_dpscaled'
-                [u_tmp, ~, ~, ~] = DPscaled_LPCA(y, B, umin, umax, 100, tie_opts);
+                [u_tmp, ~, ~, ~] = DPscaled_LPCA(y, B, umin, umax, 100);
                 u_raw = clamp_u(u_tmp(:), umin, umax);
                 u = apply_optional_restoring(B, u_raw, umin, umax, use_restoring);
 
             case 'pca_prio'
                 m_higher = zeros(k, 1);
-                [u_tmp, ~, ~] = DP_LPCA_prio(m_higher, y, B, umin, umax, 100, tie_opts);
+                [u_tmp, ~, ~] = DP_LPCA_prio(m_higher, y, B, umin, umax, 100);
                 u_raw = clamp_u(u_tmp(:), umin, umax);
                 u = apply_optional_restoring(B, u_raw, umin, umax, use_restoring);
 
@@ -1022,9 +1020,19 @@ function report_allocator_methods(result, methods_to_run, command_full, t, print
     end
 end
 
-function report_allocator_method_differences(result, methods_to_run)
+function report_allocator_method_differences(result, methods_to_run, command_full, t, large_du_threshold)
     if ~isfield(result, 'alloc')
         return;
+    end
+
+    if nargin < 3
+        command_full = [];
+    end
+    if nargin < 4
+        t = [];
+    end
+    if nargin < 5 || isempty(large_du_threshold)
+        large_du_threshold = 0.1;
     end
 
     base_method = '';
@@ -1068,7 +1076,80 @@ function report_allocator_method_differences(result, methods_to_run)
         dy = max(abs(data.y_achieved(:, common_ok) - base.y_achieved(:, common_ok)), [], 'all');
         fprintf('[%-8s vs %-8s] common=%d, max|du|=%.6g, max|d(Bu)|=%.6g\n', ...
                 method, base_method, nnz(common_ok), du, dy);
+
+        % inv 是 pinv(B)*y 后限幅，不是“带限幅最优”的唯一真值。
+        % 所以当 u 差异很大时，要继续看两件事：
+        %   1) pinv(B)*y 是否已经越界，导致 inv 被 clamp 后失去跟踪；
+        %   2) 两个算法的 B*u 是否一致，以及谁的 y-B*u 更小。
+        % 这样可以把“数值抖动/选了不同零空间解”和“边界处优化目标不同”分开。
+        if strcmp(base_method, 'inv') && ~isempty(command_full)
+            report_large_du_diagnostics(result, method, base_method, data, base, command_full, t, common_ok, large_du_threshold);
+        end
     end
+end
+
+function report_large_du_diagnostics(result, method, base_method, data, base, command_full, t, common_ok, threshold)
+    n = min([numel(base.ok), numel(data.ok), size(command_full, 2)]);
+    common_ok = common_ok(1:n);
+    if ~any(common_ok)
+        return;
+    end
+
+    % 逐样本 u 差异；这里用 max over actuator，因为我们关心任意一个执行器是否跳得很大。
+    idx_common = find(common_ok);
+    du_by_sample = max(abs(data.u(:, idx_common) - base.u(:, idx_common)), [], 1);
+    idx_large = idx_common(du_by_sample > threshold);
+
+    if isempty(idx_large)
+        fprintf('          large-du diagnostic: no sample exceeds %.6g\n', threshold);
+        return;
+    end
+
+    command = command_full(:, 1:n);
+    B = result.B;
+
+    % pinv raw 是否越界：如果越界，inv 的 clamp 会改变 B*u，不能再期望其他算法 restoring 后回到 inv。
+    u_pinv_raw = pinv(B) * command(:, idx_large);
+    pinv_saturated = any(u_pinv_raw < result.umin - 1e-9 | u_pinv_raw > result.umax + 1e-9, 1);
+
+    % 用 achieved control 比较分配误差；data/base.y_achieved 已经是 B*u。
+    method_residual_norm = vecnorm(data.y_achieved(:, idx_large) - command(:, idx_large), 2, 1);
+    base_residual_norm = vecnorm(base.y_achieved(:, idx_large) - command(:, idx_large), 2, 1);
+    dBu_norm = vecnorm(data.y_achieved(:, idx_large) - base.y_achieved(:, idx_large), 2, 1);
+
+    same_Bu = dBu_norm < 1e-7;
+    exact_tol = 1e-7;
+    method_exact = method_residual_norm < exact_tol;
+    base_exact = base_residual_norm < exact_tol;
+    method_better = method_residual_norm < base_residual_norm - 1e-9;
+    base_better = base_residual_norm < method_residual_norm - 1e-9;
+
+    [worst_du, worst_local_common] = max(du_by_sample);
+    worst_idx = idx_common(worst_local_common);
+    if isempty(t)
+        worst_t = nan;
+    else
+        worst_t = t(worst_idx);
+    end
+
+    fprintf('          large-du diagnostic, |u-%s|>%.6g: %d/%d samples\n', base_method, threshold, numel(idx_large), numel(idx_common));
+    fprintf('            pinv raw saturated: %.2f%%, same B*u: %.2f%%\n', ...
+            100 * mean(pinv_saturated), 100 * mean(same_Bu));
+    fprintf('            nearly exact |y-Bu|<%.1e: %s %.2f%%, %s %.2f%%\n', ...
+            exact_tol, method, 100 * mean(method_exact), base_method, 100 * mean(base_exact));
+    fprintf('            smaller |y-Bu|: %s %.2f%%, %s %.2f%%\n', ...
+            method, 100 * mean(method_better), base_method, 100 * mean(base_better));
+    fprintf('            max residual norm: %s %.6g, %s %.6g; rms residual norm: %s %.6g, %s %.6g\n', ...
+            method, max(method_residual_norm), base_method, max(base_residual_norm), ...
+            method, sqrt(mean(method_residual_norm.^2)), base_method, sqrt(mean(base_residual_norm.^2)));
+    fprintf('            worst du sample=%d, t=%.6g s, max|du|=%.6g\n', worst_idx, worst_t, worst_du);
+    fprintf('              y        = ['); fprintf(' %.9g', command(:, worst_idx)); fprintf(' ]^T\n');
+    fprintf('              u_%s = [', base_method); fprintf(' %.9g', base.u(:, worst_idx)); fprintf(' ]^T\n');
+    fprintf('              u_%s = [', method); fprintf(' %.9g', data.u(:, worst_idx)); fprintf(' ]^T\n');
+    fprintf('              y-Bu_%s norm = %.9g, y-Bu_%s norm = %.9g, |dBu| norm = %.9g\n', ...
+            base_method, norm(command(:, worst_idx) - base.y_achieved(:, worst_idx)), ...
+            method, norm(command(:, worst_idx) - data.y_achieved(:, worst_idx)), ...
+            norm(data.y_achieved(:, worst_idx) - base.y_achieved(:, worst_idx)));
 end
 
 function report_case_comparisons(results, case_comparison_pairs, methods_to_run, t)

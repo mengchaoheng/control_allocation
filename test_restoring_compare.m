@@ -18,8 +18,6 @@ sample_indices = find(t_full >= test_time_window_s(1) & t_full <= test_time_wind
 v_test = v(:, sample_indices);
 t = t_full(sample_indices);
 
-tie_opts = struct(); % DP/PCA 默认使用新版 simplxuprevsol_tiebreak。
-
 cases = {make_aircraft_4(), make_aircraft_6()};
 restorers = { ...
     struct('name', 'restoring_cpp', 'fn', @restoring_cpp), ...
@@ -50,7 +48,7 @@ for case_idx = 1:numel(cases)
     end
 
     for idx = 1:N
-        [u, ~, ~] = DP_LPCA_copy(m_higher, v_test(:, idx), B, umin, umax, 100, tie_opts);
+        [u, ~, ~] = DP_LPCA_copy(m_higher, v_test(:, idx), B, umin, umax, 100);
         u = min(max(u, umin), umax);
         raw(:, idx) = u;
         for ridx = 1:numel(restorers)

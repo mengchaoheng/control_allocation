@@ -1,15 +1,11 @@
-function [u, itlim, errout, rho] = DPscaled_LPCA(yd, B, uMin, uMax, itlim, opts)
+function [u, itlim, errout, rho] = DPscaled_LPCA(yd, B, uMin, uMax, itlim, varargin)
 % Direction Preserving Control Allocation Linear Program, reduced form.
 %
 % Top-level version of the book DPscaled_LPCA routine.  The problem
 % construction matches control_allocation_lib/aircraft-control-allocation-
-% book-simulation. By default this uses simplxuprevsol_tiebreak, which has
-% deterministic guarded tie-break rules. Set opts.simplex_backend='original'
-% only when intentionally comparing against the book's simplxuprevsol.
-
-if nargin < 6
-    opts = struct();
-end
+% book-simulation, and the simplex backend is the original book/MATLAB
+% simplxuprevsol.m.
+% Extra varargin inputs are accepted only for legacy scripts and are ignored.
 
 errout = 0;
 rho = 0;
@@ -40,7 +36,7 @@ inBi = m + 1:m + n - 1;
 ei = true(m + n - 1, 1);
 hi = [h; 2 * abs(b)];
 
-[y1, inB1, e1, itlim, errsimp] = call_simplex(Ai, ci', b, inBi, hi, ei, n - 1, m + n - 1, itlim, opts);
+[y1, inB1, e1, itlim, errsimp] = call_simplex(Ai, ci', b, inBi, hi, ei, n - 1, m + n - 1, itlim);
 
 if itlim <= 0
     errout = -3;
@@ -61,7 +57,7 @@ if errout ~= 0
     xout(inB1(indv)) = y1(indv);
     xout(~e1(1:m)) = -xout(~e1(1:m)) + h(~e1(1:m));
 else
-    [y2, inB2, e2, itlim, errsimp] = call_simplex(A, c', b, inB1, h, e1(1:m), n - 1, m, itlim, opts);
+    [y2, inB2, e2, itlim, errsimp] = call_simplex(A, c', b, inB1, h, e1(1:m), n - 1, m, itlim);
 
     xout = zeros(m, 1);
     xout(inB2) = y2;
@@ -85,12 +81,6 @@ end
 
 end
 
-function [y, inB, e, itlim, errsimp] = call_simplex(A, c, b, inB, h, e, m, n, itlim, opts)
-    if ~isfield(opts, 'simplex_backend') || isempty(opts.simplex_backend) || strcmpi(opts.simplex_backend, 'tiebreak')
-        [y, inB, e, itlim, errsimp] = simplxuprevsol_tiebreak(A, c, b, inB, h, e, m, n, itlim, opts);
-    elseif strcmpi(opts.simplex_backend, 'original')
-        [y, inB, e, itlim, errsimp] = simplxuprevsol(A, c, b, inB, h, e, m, n, itlim);
-    else
-        error('DPscaled_LPCA:UnknownSimplexBackend', '未知 simplex_backend: %s', opts.simplex_backend);
-    end
+function [y, inB, e, itlim, errsimp] = call_simplex(A, c, b, inB, h, e, m, n, itlim)
+    [y, inB, e, itlim, errsimp] = simplxuprevsol(A, c, b, inB, h, e, m, n, itlim);
 end

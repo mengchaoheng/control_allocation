@@ -57,10 +57,6 @@ if exist('meta', 'var') == 1 && isfield(meta, 'benchmark_elapsed_s')
     fprintf('Wall    : %.4f s\n', meta.benchmark_elapsed_s);
 end
 
-if exist('meta', 'var') == 1 && isfield(meta, 'SIMPLEX_BACKEND')
-    fprintf('Simplex : %s\n', meta.SIMPLEX_BACKEND);
-end
-
 if exist('meta', 'var') == 1 && isfield(meta, 'WARMUP_SAMPLE_COUNT')
     fprintf('Warmup  : %d samples, not counted per method\n', meta.WARMUP_SAMPLE_COUNT);
 end
@@ -77,12 +73,8 @@ if exist('meta', 'var') == 1 && isfield(meta, 'inv_reference_note')
     fprintf('INV ref : offline inv recomputed on each current B case\n');
 end
 
-if exist('meta', 'var') == 1 && isfield(meta, 'px4_reference_note')
-    fprintf('PX4 ref : used only when u_px4 columns exactly match current B\n');
-end
-
-if exist('meta', 'var') == 1 && isfield(meta, 'px4_ca_info') && isfield(meta.px4_ca_info, 'summary')
-    fprintf('PX4 CA  : %s\n', meta.px4_ca_info.summary);
+if exist('meta', 'var') == 1 && (isfield(meta, 'reference_note') || isfield(meta, 'px4_reference_note'))
+    fprintf('PX4 ref : actuator output used only when columns exactly match current B\n');
 end
 
 fprintf('============================================================\n');
@@ -129,11 +121,12 @@ for case_idx = 1:numel(results)
             a.name, a.rmse_vs_inv, a.max_abs_vs_inv);
     end
 
-    has_px4_ref = any(arrayfun(@(a) isfinite(a.rmse_vs_px4), r.alg));
+    ref_name = reference_output_name(flightData);
+    has_ref = any(arrayfun(@(a) isfinite(a.rmse_vs_px4), r.alg));
 
-    if has_px4_ref
+    if has_ref
         fprintf('\n');
-        fprintf('  PX4 actuator output reference, interpolated to command samples:\n');
+        fprintf('  PX4 actuator output (%s):\n', ref_name);
         fprintf('  method              rms(u-u_px4)  max(u-u_px4)\n');
         fprintf('  ------------------  ------------  ------------\n');
 
@@ -146,12 +139,12 @@ for case_idx = 1:numel(results)
             end
         end
     else
-        px4_dim = px4_output_dim(flightData);
+        ref_dim = reference_output_dim(flightData);
 
-        if px4_dim > 0
+        if ref_dim > 0
             fprintf('\n');
-            fprintf('  PX4 actuator output skipped: log u_px4 has %d column(s), current B has %d actuator(s).\n', ...
-                px4_dim, size(r.B, 2));
+            fprintf('  PX4 actuator output skipped: %s has %d column(s), current B has %d actuator(s).\n', ...
+                ref_name, ref_dim, size(r.B, 2));
         end
     end
 end
@@ -250,11 +243,19 @@ end
 text = char(text);
 end
 
-function dim = px4_output_dim(flightData)
+function dim = reference_output_dim(flightData)
 dim = 0;
 
 if ~isempty(flightData.u_px4)
     dim = size(flightData.u_px4, 2);
+end
+end
+
+function name = reference_output_name(flightData)
+if isfield(flightData, 'u_px4_source') && strlength(string(flightData.u_px4_source)) > 0
+    name = char(string(flightData.u_px4_source));
+else
+    name = 'u_px4';
 end
 end
 

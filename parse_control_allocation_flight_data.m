@@ -1,8 +1,9 @@
 %% Parse ULog topics needed by main_control_allocation_benchmark.m
 %
 % 输入变量来自 main：
-%   LOG_PATH    : .ulg 文件完整路径
-%   COMMAND_MAT : 输出 MAT 路径
+%   LOG_PATH       : .ulg 文件完整路径
+%   COMMAND_MAT    : 输出 MAT 路径
+%   PYULOG_BIN_DIR : 可选，ulog2csv/ulog_info/ulog_params 所在目录；空则从 PATH 自动找
 %
 % 输出 MAT 保存原始 PX4 topic 表，变量名和日志 topic 名保持一致：
 %   vehicle_torque_setpoint_0
@@ -16,6 +17,8 @@
 %   v_sp_t                 : vehicle_torque_setpoint_0.timestamp, seconds
 %   log_v_sp_instances{i}  : 6 x N, [Mx My Mz Fx Fy Fz]
 %   u_px4                  : actuator_motors_0 + actuator_servos_0, 插值到 v_sp_t
+%   airframe_id            : SYS_AUTOSTART，例如 22005
+%   log_model_name         : string(airframe_id)
 %
 % v_sp 构造关系：
 %   v(1:3,:) = vehicle_torque_setpoint_*.xyz
@@ -31,12 +34,17 @@ work_dir = tempname;
 mkdir(work_dir);
 cleanup_obj = onCleanup(@() rmdir(work_dir, 's')); %#ok<NASGU>
 
-ulog2csv_path = find_ulog2csv();
+if ~exist('PYULOG_BIN_DIR', 'var')
+    PYULOG_BIN_DIR = "";
+end
+
+ulog2csv_path = find_ulog_tool('ulog2csv', PYULOG_BIN_DIR);
 topics = { ...
     'vehicle_torque_setpoint', ...
     'vehicle_thrust_setpoint', ...
     'actuator_motors', ...
-    'actuator_servos'};
+    'actuator_servos', ...
+    'allocation_value'};
 
 save_names = {};
 
@@ -132,36 +140,71 @@ else
 end
 
 u_px4_source = 'actuator_motors_0 + actuator_servos_0';
-save_names = [save_names, {'v_sp_t', 'log_v_sp_instances', 'u_px4', 'u_px4_source'}];
+[airframe_id, log_model_name] = read_airframe_id(LOG_PATH, PYULOG_BIN_DIR);
+fprintf('Airframe: %s\n', log_model_name);
+
+save_names = [save_names, {'v_sp_t', 'log_v_sp_instances', 'u_px4', 'u_px4_source', ...
+    'airframe_id', 'log_model_name'}];
 
 save(COMMAND_MAT, save_names{:}, '-v7.3');
 
 fprintf('Saved raw topic MAT:\n  %s\n', COMMAND_MAT);
 fprintf('Variables: %s\n', strjoin(save_names, ', '));
 
-function ulog2csv_path = find_ulog2csv()
-[status, out] = system('command -v ulog2csv');
-ulog2csv_path = strtrim(out);
+function [airframe_id, log_model_name] = read_airframe_id(log_path, pyulog_bin_dir)
+airframe_id = nan;
 
-if status == 0 && ~isempty(ulog2csv_path)
-    return;
-end
+ulog_info_path = find_ulog_tool('ulog_info', pyulog_bin_dir);
+[status, out] = system(sprintf('"%s" "%s"', ulog_info_path, log_path));
 
-home_dir = getenv('HOME');
-candidate_paths = { ...
-    fullfile(home_dir, 'Library', 'Python', '3.9', 'bin', 'ulog2csv'), ...
-    '/Users/mch/Library/Python/3.9/bin/ulog2csv', ...
-    '/opt/homebrew/bin/ulog2csv', ...
-    '/usr/local/bin/ulog2csv'};
+if status == 0
+    token = regexp(out, 'Airframe:\s*([0-9]+)', 'tokens', 'once');
 
-for i = 1:numel(candidate_paths)
-    if isfile(candidate_paths{i})
-        ulog2csv_path = candidate_paths{i};
-        return;
+    if ~isempty(token)
+        airframe_id = str2double(token{1});
     end
 end
 
-error('ulog2csv not found.');
+if ~isfinite(airframe_id)
+    ulog_params_path = find_ulog_tool('ulog_params', pyulog_bin_dir);
+    [status, out] = system(sprintf('"%s" -i -f csv "%s"', ulog_params_path, log_path));
+
+    if status == 0
+        token = regexp(out, '(?m)^SYS_AUTOSTART,([0-9]+(?:\.[0-9]+)?)', 'tokens', 'once');
+
+        if ~isempty(token)
+            airframe_id = str2double(token{1});
+        end
+    end
+end
+
+if isfinite(airframe_id)
+    log_model_name = string(round(airframe_id));
+else
+    log_model_name = "unknown";
+end
+end
+
+function tool_path = find_ulog_tool(tool_name, pyulog_bin_dir)
+pyulog_bin_dir = string(pyulog_bin_dir);
+
+if strlength(pyulog_bin_dir) > 0
+    tool_path = fullfile(char(pyulog_bin_dir), tool_name);
+
+    if isfile(tool_path)
+        return;
+    end
+
+    error('%s not found in PYULOG_BIN_DIR: %s', tool_name, pyulog_bin_dir);
+end
+
+[status, out] = system(['command -v ' tool_name]);
+tool_path = strtrim(out);
+
+if status ~= 0 || isempty(tool_path)
+    error('%s not found. Set PYULOG_BIN_DIR in main_control_allocation_benchmark.m or add it to PATH.', tool_name);
+end
+
 end
 
 function instance_id = instance_id_from_csv_name(file_name, topic)

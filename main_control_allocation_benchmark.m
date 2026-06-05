@@ -38,9 +38,6 @@
 % LOG_FILE:
 %   .ulg 文件名，例如 "04_08_18.ulg"。
 %
-% MODEL_NAME:
-%   只用于结果标记和打印，例如 "df4"、"shc09"、"shw09"。
-%
 % PARSE_LOG:
 %   true  : 重新从 LOG_PATH 解析 ULog，覆盖 COMMAND_MAT。
 %   false : 直接加载已有 COMMAND_MAT。第一次运行或改 parser 后设 true。
@@ -112,10 +109,10 @@ tool_dir = fileparts(mfilename('fullpath'));
 addpath(genpath(tool_dir));
 
 %% 1. User settings
-LOG_DIR = "/Users/mch/Proj/Mac_DF/PX4-Autopilot/build/px4_sitl_default/rootfs/log/2026-06-04";
-LOG_FILE = "04_08_18.ulg";
+LOG_DIR = "/Users/mch/Proj/Mac_DF/PX4-Autopilot/build/px4_sitl_default/rootfs/log/2026-06-05";
+LOG_FILE = "19_51_19.ulg";
 LOG_PATH = fullfile(LOG_DIR, LOG_FILE);
-MODEL_NAME = "df4";
+PYULOG_BIN_DIR = "/Users/mch/Library/Python/3.9/bin";  % "" 表示从 PATH 自动找 ulog2csv/ulog_info/ulog_params
 
 RESULT_DIR = fullfile(tool_dir, 'results');
 [~, log_stem] = fileparts(char(LOG_PATH));
@@ -163,7 +160,7 @@ NORMALIZE_RPY = true;
 
 RUN_PRINT_AFTER_COMPARE = true;
 RUN_PLOT_AFTER_COMPARE = true;
-PLOT_SAVE_PNG = true;
+PLOT_SAVE_PNG = false;
 PLOT_SAVE_FIG = false;
 PLOT_SHOW_FIGURES = usejava('desktop');
 PLOT_NORMALIZED = true;
@@ -185,6 +182,12 @@ end
 
 load(COMMAND_MAT);
 
+if exist('log_model_name', 'var')
+    MODEL_NAME = string(log_model_name);
+else
+    MODEL_NAME = "airframe_unknown";
+end
+
 %% 3. Select samples and run allocation
 if isempty(SAMPLE_RANGE)
     sample_idx = 1:numel(v_sp_t);
@@ -200,10 +203,14 @@ u_px4 = u_px4(sample_idx, :);
 
 flightData = struct();
 flightData.model = char(MODEL_NAME);
+if exist('airframe_id', 'var')
+    flightData.airframe_id = airframe_id;
+end
 flightData.t = v_sp_t(:);
 flightData.v_sp = log_v_sp_instances{1}';
 flightData.u_px4 = u_px4;
 flightData.u_px4_source = u_px4_source;
+flightData.allocation_runtime = summarize_allocation_value_topics(v_sp_t);
 
 benchmark_tic = tic;
 results = repmat(empty_case_result(), 1, numel(B_CASES));
@@ -218,6 +225,7 @@ fprintf('  restoring   : %s\n', yesno(USE_RESTORING));
 fprintf('  normalize B : %s\n', yesno(NORMALIZE_B));
 fprintf('  normalize v : %s\n', yesno(NORMALIZE_V_SP));
 fprintf('  C++ bridge  : %s\n', yesno(RUN_CPP_ALLOCATOR));
+print_online_allocation_runtime(flightData.allocation_runtime);
 
 for case_idx = 1:numel(B_CASES)
     cfg = B_CASES{case_idx};
@@ -276,6 +284,9 @@ benchmark_elapsed_s = toc(benchmark_tic);
 
 meta = struct();
 meta.MODEL_NAME = char(MODEL_NAME);
+if exist('airframe_id', 'var')
+    meta.AIRFRAME_ID = airframe_id;
+end
 meta.LOG_PATH = LOG_PATH;
 meta.COMMAND_MAT = COMMAND_MAT;
 meta.SAMPLE_RANGE = SAMPLE_RANGE;
@@ -490,11 +501,13 @@ end
 
 %% Allocation
 function alg = run_method_on_log(method, allocator_instances, allocator_instance_v_sp, v_sp, use_restoring)
+% elapsed_s 是整段 MATLAB 循环；allocator_s 只包 run_allocator；restore_s 只包 restoring_cpp。
 N = size(v_sp, 2);
 m_total = sum(arrayfun(@(x) size(x.B, 2), allocator_instances));
 u = nan(N, m_total);
 v_alloc = nan(N, 6);
 residual = nan(N, 6);
+allocator_s = 0;
 restore_s = 0;
 fail_count = 0;
 
@@ -510,7 +523,9 @@ for idx = 1:N
         v_sp_i = allocator_instance_v_sp{inst_idx}(:, idx);
 
         try
+            allocator_tic = tic;
             u_i = run_allocator(method, v_sp_i(rows), inst.B_alloc, inst.umin, inst.umax);
+            allocator_s = allocator_s + toc(allocator_tic);
             [u_i, restore_dt] = apply_restoring_if_needed(inst.B_alloc, u_i, inst.umin, inst.umax, use_restoring);
             v_alloc_sample = v_alloc_sample + inst.B * u_i;
         catch
@@ -540,7 +555,7 @@ alg.u = u;
 alg.v_achieved = v_alloc;
 alg.residual = residual;
 alg.elapsed_s = elapsed_s;
-alg.allocator_s = elapsed_s - restore_s;
+alg.allocator_s = allocator_s;
 alg.restore_s = restore_s;
 alg.avg_us_per_sample = 1e6 * alg.allocator_s / max(N, 1);
 alg.avg_restore_us_per_sample = 1e6 * restore_s / max(N, 1);
@@ -887,5 +902,102 @@ if condition
     value = a;
 else
     value = b;
+end
+end
+
+function print_online_allocation_runtime(runtime)
+if isempty(runtime)
+    fprintf('  online alloc: no allocation_value timing in command data\n');
+    return;
+end
+
+fprintf('  online alloc:\n');
+
+for i = 1:numel(runtime)
+    s = runtime(i);
+    fprintf('    instance %d %-14s samples=%6d avg=%7.2fus prep/core/post=%5.2f/%5.2f/%5.2fus\n', ...
+        s.instance, s.method_name, s.samples, s.mean_us, ...
+        s.prepare_mean_us, s.core_mean_us, s.post_mean_us);
+end
+end
+
+function runtime = summarize_allocation_value_topics(t_window)
+names = evalin('caller', "who('allocation_value_*')");
+runtime = repmat(empty_allocation_runtime(), 1, 0);
+
+for topic_idx = 1:numel(names)
+    T = evalin('caller', names{topic_idx});
+    token = regexp(names{topic_idx}, 'allocation_value_(\d+)$', 'tokens', 'once');
+    instance_id = ternary(isempty(token), topic_idx - 1, str2double(token{1}));
+    t = table_col(T, 'timestamp') * 1e-6;
+    method = table_col(T, 'requested_method');
+    keep = t >= min(t_window(:)) & t <= max(t_window(:));
+
+    for method_id = unique(method(keep & isfinite(method)))'
+        idx = keep & method == method_id & isfinite(table_col(T, 'allocation_running_time'));
+        if ~any(idx), continue; end
+
+        s = empty_allocation_runtime();
+        s.instance = instance_id;
+        s.method_id = method_id;
+        s.method_name = allocation_method_name(method_id);
+        s.samples = nnz(idx);
+        s.mean_us = mean_finite(table_col(T, 'allocation_running_time', idx));
+        s.prepare_mean_us = mean_finite(table_col(T, 'solver_prepare_time', idx));
+        s.core_mean_us = mean_finite(table_col(T, 'solver_core_time', idx));
+        s.post_mean_us = mean_finite(table_col(T, 'solver_post_time', idx));
+        runtime(end+1) = s; %#ok<AGROW>
+    end
+end
+end
+
+function runtime = empty_allocation_runtime()
+runtime = struct('instance', nan, 'method_id', nan, 'method_name', '', ...
+    'samples', 0, 'mean_us', nan, 'prepare_mean_us', nan, ...
+    'core_mean_us', nan, 'post_mean_us', nan);
+end
+
+function values = table_col(T, name, idx)
+if nargin < 3
+    idx = true(height(T), 1);
+end
+
+if ismember(name, T.Properties.VariableNames)
+    values = double(T.(name)(idx));
+else
+    values = nan(nnz(idx), 1);
+end
+end
+
+function name = allocation_method_name(method_id)
+switch round(method_id)
+    case -1
+        name = 'None';
+    case 0
+        name = 'PSEUDO_INV';
+    case 1
+        name = 'SEQ_DESAT';
+    case 2
+        name = 'AUTO';
+    case 3
+        name = 'INV';
+    case 4
+        name = 'DP_LPCA';
+    case 5
+        name = 'DPscaled_LPCA';
+    case 6
+        name = 'PCA';
+    otherwise
+        name = sprintf('method_%g', method_id);
+end
+end
+
+function value = mean_finite(values)
+values = values(isfinite(values));
+
+if isempty(values)
+    value = nan;
+else
+    value = mean(values);
 end
 end

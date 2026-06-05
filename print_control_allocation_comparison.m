@@ -59,6 +59,9 @@ end
 
 fprintf('============================================================\n');
 
+%% 0. PX4 online allocator runtime from allocation_value
+print_online_allocation_runtime(flightData);
+
 %% 1. 每个 B / 每个算法
 fprintf('\n[Per B / per algorithm]\n');
 
@@ -236,6 +239,26 @@ if isfield(flightData, 'u_px4_source') && strlength(string(flightData.u_px4_sour
     name = char(string(flightData.u_px4_source));
 else
     name = 'u_px4';
+end
+end
+
+function print_online_allocation_runtime(flightData)
+fprintf('\n[PX4 online allocation runtime]\n');
+
+if ~isfield(flightData, 'allocation_runtime') || isempty(flightData.allocation_runtime)
+    fprintf('  no allocation_value timing in result file\n');
+    return;
+end
+
+runtime = flightData.allocation_runtime;
+fprintf('  instance  method          samples  avg(us)  prep/core/post(us)\n');
+fprintf('  --------  --------------  -------  -------  ------------------\n');
+
+for i = 1:numel(runtime)
+    s = runtime(i);
+    fprintf('  %8d  %-14s  %7d  %7.2f  %6.2f/%6.2f/%6.2f\n', ...
+        s.instance, s.method_name, s.samples, s.mean_us, ...
+        s.prepare_mean_us, s.core_mean_us, s.post_mean_us);
 end
 end
 

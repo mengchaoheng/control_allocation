@@ -207,6 +207,13 @@ if ~isempty(comparison_figs)
     end
 end
 
+runtime_fig = plot_online_allocation_runtime(flightData, SHOW_FIGURES);
+
+if ~isempty(runtime_fig)
+    saved_files = [saved_files; save_current_figure(runtime_fig, output_root, ...
+        "online_allocation_runtime", SAVE_PNG, SAVE_FIG)]; %#ok<AGROW>
+end
+
 fprintf('\nSaved figures:\n');
 for i = 1:numel(saved_files)
     fprintf('  %s\n', saved_files(i));
@@ -482,6 +489,39 @@ set(gca, 'XTick', 1:numel(names), ...
     'XTickLabel', names, ...
     'XTickLabelRotation', 30, ...
     'TickLabelInterpreter', 'none');
+end
+
+function fig = plot_online_allocation_runtime(flightData, show_figures)
+fig = [];
+
+if ~isfield(flightData, 'allocation_runtime') || isempty(flightData.allocation_runtime)
+    return;
+end
+
+r = flightData.allocation_runtime;
+labels = arrayfun(@(x) sprintf('i%d %s', x.instance, x.method_name), r, 'UniformOutput', false);
+prep_core_post = [[r.prepare_mean_us]' [r.core_mean_us]' [r.post_mean_us]'];
+prep_core_post(~isfinite(prep_core_post)) = 0;
+fig = new_figure(show_figures, 'PX4 online allocation runtime');
+layout = tiledlayout(1, 2, 'TileSpacing', 'compact', 'Padding', 'compact');
+title(layout, 'PX4 online allocation runtime', 'Interpreter', 'none');
+
+nexttile;
+bar([r.mean_us]);
+style_runtime_axes(labels, 'avg allocation', 'us');
+
+nexttile;
+bar(prep_core_post, 'stacked');
+legend({'prep', 'core', 'post'}, 'Location', 'best', 'Interpreter', 'none');
+style_runtime_axes(labels, 'prep/core/post', 'us');
+end
+
+function style_runtime_axes(labels, title_text, ylabel_text)
+grid on;
+title(title_text, 'Interpreter', 'none');
+ylabel(ylabel_text, 'Interpreter', 'none');
+set(gca, 'XTick', 1:numel(labels), 'XTickLabel', labels, ...
+    'XTickLabelRotation', 30, 'TickLabelInterpreter', 'none');
 end
 
 function figures = plot_same_algorithm_different_B_outputs(results, methods_to_plot, ...
